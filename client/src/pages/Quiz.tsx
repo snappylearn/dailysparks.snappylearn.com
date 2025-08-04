@@ -162,27 +162,22 @@ export default function Quiz() {
             </CardContent>
           </Card>
 
-          {/* Term-based Quizzes */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {['Term 1', 'Term 2', 'Term 3'].map((term) => (
+          {/* Term-based Quizzes - Compact 3-column layout */}
+          <div className="grid grid-cols-3 gap-3">
+            {['Term 1', 'Term 2', 'Term 3'].map((term, index) => (
               <Card key={term} className="hover:shadow-md transition-shadow cursor-pointer group">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-lg flex items-center justify-center">
-                      <Calendar className="h-4 w-4 text-white" />
-                    </div>
-                    <CardTitle className="text-base">{term} Quiz</CardTitle>
+                <CardContent className="p-4 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <Calendar className="h-6 w-6 text-white" />
                   </div>
-                </CardHeader>
-                <CardContent className="pt-0">
+                  <h3 className="font-semibold text-gray-900 mb-3">{term} Quiz</h3>
                   <Button 
-                    variant="outline" 
                     size="sm"
-                    className="w-full hover:bg-orange-50 hover:border-orange-300"
+                    className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600"
                     onClick={() => handleStartQuiz('term', term.toLowerCase().replace(' ', ''))}
                     disabled={startQuizMutation.isPending}
                   >
-                    Start {term}
+                    Start {term.split(' ')[1]}
                   </Button>
                 </CardContent>
               </Card>
