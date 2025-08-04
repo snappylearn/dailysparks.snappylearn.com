@@ -14,9 +14,6 @@ import { MainLayout } from "@/components/MainLayout";
 export default function Home() {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
-  const [showProfile, setShowProfile] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState<any>(null);
-  const [showQuizTypes, setShowQuizTypes] = useState(false);
   const { toast } = useToast();
 
   // Fetch subjects
@@ -74,75 +71,55 @@ export default function Home() {
     return <Onboarding />;
   }
 
-  const handleSubjectSelect = (subject: any) => {
-    setSelectedSubject(subject);
-    setShowQuizTypes(true);
-  };
-
-  const handleStartQuiz = (quizType: string, topicId?: string, term?: string) => {
-    startQuizMutation.mutate({
-      subjectId: selectedSubject.id,
-      quizType,
-      topicId,
-      term,
-    });
-  };
-
-  const handleBackToSubjects = () => {
-    setShowQuizTypes(false);
-    setSelectedSubject(null);
-  };
-
-  if (showQuizTypes && selectedSubject) {
-    return (
-      <div className="min-h-screen pb-20 bg-gradient-to-br from-orange-100 via-white to-teal-50">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-teal-400 text-white p-4">
-          <div className="max-w-sm mx-auto flex items-center">
-            <button 
-              onClick={handleBackToSubjects}
-              className="w-8 h-8 flex items-center justify-center mr-4"
-            >
-              <i className="fas fa-arrow-left"></i>
-            </button>
-            <h1 className="text-xl font-bold font-poppins">{selectedSubject.name}</h1>
-          </div>
+  return (
+    <MainLayout>
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Daily Sparks!</h2>
+          <p className="text-gray-600">Choose a subject to start your learning journey</p>
         </div>
 
-        {/* Quiz Type Options */}
-        <div className="max-w-sm mx-auto p-4">
-          <div className="space-y-4">
-            {/* Random Quiz */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-xl flex items-center justify-center">
-                  <i className="fas fa-magic text-white text-lg"></i>
+        {/* Subjects Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {subjects?.map((subject: any) => (
+            <div key={subject.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${subject.color || 'bg-blue-500'} text-white`}>
+                  <BookOpen className="h-6 w-6" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-1 font-poppins">Random Quiz</h3>
-                  <p className="text-gray-600 text-sm mb-3">AI picks the best topics for your level. Perfect for daily practice!</p>
-                  <div className="flex items-center text-xs text-gray-500 mb-3">
-                    <i className="fas fa-brain mr-1"></i>
-                    <span>AI-Powered Selection</span>
-                  </div>
-                  <Button 
-                    onClick={() => handleStartQuiz('random')}
-                    disabled={startQuizMutation.isPending}
-                    className="w-full bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-600 hover:to-yellow-500 text-white py-3 font-semibold transform hover:scale-105 transition-all duration-200"
-                  >
-                    {startQuizMutation.isPending ? "Starting..." : "Start Random Quiz"}
-                  </Button>
+                <div>
+                  <h3 className="font-semibold text-lg">{subject.name}</h3>
+                  <p className="text-gray-500 text-sm">{subject.code}</p>
                 </div>
               </div>
+              
+              <Button 
+                onClick={() => setLocation(`/quiz?subject=${subject.id}`)}
+                className="w-full"
+              >
+                Start Quiz
+              </Button>
             </div>
+          ))}
+        </div>
 
-            {/* Term Quiz */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-gray-700 rounded-xl flex items-center justify-center">
-                  <i className="fas fa-calendar-alt text-white text-lg"></i>
-                </div>
-                <div className="flex-1">
+        {/* Today's Challenge */}
+        {challengeData && (
+          <div className="bg-gradient-to-r from-orange-500 to-yellow-400 rounded-lg p-6 text-white">
+            <h3 className="font-semibold text-lg mb-2">Today's Challenge</h3>
+            <p className="mb-4">{challengeData.description}</p>
+            <Button 
+              variant="secondary" 
+              onClick={() => setLocation(`/quiz?challenge=${challengeData.id}`)}
+            >
+              Take Challenge
+            </Button>
+          </div>
+        )}
+      </div>
+    </MainLayout>
+  );
+}
                   <h3 className="font-semibold text-lg text-gray-900 mb-1 font-poppins">Term Quiz</h3>
                   <p className="text-gray-600 text-sm mb-3">Questions from your current school term curriculum.</p>
                   <div className="flex items-center text-xs text-gray-500 mb-3">

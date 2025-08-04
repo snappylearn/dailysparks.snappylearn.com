@@ -127,11 +127,12 @@ export const questions = pgTable("questions", {
 // Quiz sessions table
 export const quizSessions = pgTable("quiz_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
   profileId: varchar("profile_id").notNull().references(() => profiles.id),
   subjectId: varchar("subject_id").notNull().references(() => subjects.id),
   quizType: varchar("quiz_type").notNull(), // random, topical, term
   topicId: varchar("topic_id").references(() => topics.id), // for topical quizzes
-  term: varchar("term"), // for term quizzes
+  termId: varchar("term_id").references(() => terms.id), // for term quizzes
   totalQuestions: integer("total_questions").default(30),
   correctAnswers: integer("correct_answers").default(0),
   sparksEarned: integer("sparks_earned").default(0),

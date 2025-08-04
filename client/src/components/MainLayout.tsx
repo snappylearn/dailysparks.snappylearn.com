@@ -104,13 +104,8 @@ export function MainLayout({ children }: MainLayoutProps) {
       </div>
 
       <div className="flex">
-        {/* Main Content Area */}
-        <main className="flex-1 p-6">
-          {children}
-        </main>
-
-        {/* Right Sidebar */}
-        <div className="w-80 bg-white/50 backdrop-blur-sm border-l border-gray-200 p-6">
+        {/* Left Sidebar */}
+        <div className="w-80 bg-white/50 backdrop-blur-sm border-r border-gray-200 p-6">
           <Card className="mb-6">
             <CardContent className="p-6">
               <div className="space-y-3">
@@ -159,6 +154,11 @@ export function MainLayout({ children }: MainLayoutProps) {
             </CardContent>
           </Card>
         </div>
+
+        {/* Main Content Area */}
+        <main className="flex-1 p-6">
+          {children}
+        </main>
       </div>
     </div>
   );
