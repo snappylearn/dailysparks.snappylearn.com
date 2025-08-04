@@ -107,12 +107,13 @@ export default function Quiz() {
   const startQuizMutation = useMutation({
     mutationFn: async (data: { quizType: string; subjectId: string; topicId?: string; termId?: string }) => {
       console.log('Making API request to start quiz...');
-      const response = await apiRequest("/api/quiz/start", "POST", {
+      const response = await apiRequest("POST", "/api/quiz/start", {
         profileId: currentProfile?.id,
         ...data
       });
-      console.log('Quiz start response:', response);
-      return response as unknown as QuizSession;
+      const jsonResponse = await response.json();
+      console.log('Quiz start response:', jsonResponse);
+      return jsonResponse as QuizSession;
     },
     onSuccess: (response) => {
       console.log('Quiz started successfully:', response);
@@ -131,12 +132,13 @@ export default function Quiz() {
   // Submit answer mutation
   const submitAnswerMutation = useMutation({
     mutationFn: async (data: { sessionId: string; questionId: string; userAnswer: string; timeSpent: number }) => {
-      const response = await apiRequest(`/api/quiz/${data.sessionId}/answer`, "POST", {
+      const response = await apiRequest("POST", `/api/quiz/${data.sessionId}/answer`, {
         questionId: data.questionId,
         userAnswer: data.userAnswer,
         timeSpent: data.timeSpent
       });
-      return response as unknown as { isCorrect: boolean };
+      const jsonResponse = await response.json();
+      return jsonResponse as { isCorrect: boolean };
     },
     onSuccess: (response, variables) => {
       setUserAnswers(prev => [...prev, {
@@ -158,8 +160,9 @@ export default function Quiz() {
   // Complete quiz mutation
   const completeQuizMutation = useMutation({
     mutationFn: async (data: { sessionId: string }) => {
-      const response = await apiRequest(`/api/quiz/${data.sessionId}/complete`, "POST", {});
-      return response as unknown as QuizResults;
+      const response = await apiRequest("POST", `/api/quiz/${data.sessionId}/complete`, {});
+      const jsonResponse = await response.json();
+      return jsonResponse as QuizResults;
     },
     onSuccess: (response) => {
       setQuizResults(response);
