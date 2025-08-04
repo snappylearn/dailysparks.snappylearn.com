@@ -9,6 +9,7 @@ The application offers gamified quiz experiences where students can take random 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Landing page design: SaaS-friendly landing page with "Start Your Journey" CTA prominent in hero section.
 
 ## System Architecture
 
