@@ -1,0 +1,220 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+
+  /* Daily Sparks custom colors */
+  --spark-orange: hsl(11, 100%, 60%);
+  --spark-turquoise: hsl(177, 56%, 56%);
+  --spark-blue: hsl(201, 61%, 55%);
+  --spark-mint: hsl(140, 35%, 70%);
+  --spark-yellow: hsl(43, 89%, 67%);
+  --spark-pink: hsl(302, 100%, 82%);
+  --spark-dark: hsl(210, 29%, 29%);
+  --spark-light: hsl(210, 25%, 92%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+@layer utilities {
+  .spark-orange {
+    background-color: var(--spark-orange);
+  }
+  
+  .spark-turquoise {
+    background-color: var(--spark-turquoise);
+  }
+  
+  .spark-blue {
+    background-color: var(--spark-blue);
+  }
+  
+  .spark-mint {
+    background-color: var(--spark-mint);
+  }
+  
+  .spark-yellow {
+    background-color: var(--spark-yellow);
+  }
+  
+  .spark-pink {
+    background-color: var(--spark-pink);
+  }
+  
+  .spark-dark {
+    background-color: var(--spark-dark);
+  }
+  
+  .spark-light {
+    background-color: var(--spark-light);
+  }
+
+  .text-spark-orange {
+    color: var(--spark-orange);
+  }
+  
+  .text-spark-turquoise {
+    color: var(--spark-turquoise);
+  }
+  
+  .text-spark-blue {
+    color: var(--spark-blue);
+  }
+  
+  .text-spark-mint {
+    color: var(--spark-mint);
+  }
+  
+  .text-spark-yellow {
+    color: var(--spark-yellow);
+  }
+  
+  .text-spark-pink {
+    color: var(--spark-pink);
+  }
+  
+  .text-spark-dark {
+    color: var(--spark-dark);
+  }
+  
+  .text-spark-light {
+    color: var(--spark-light);
+  }
+
+  .glass-effect {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .spark-glow {
+    box-shadow: 0 0 20px hsla(11, 100%, 60%, 0.3);
+  }
+
+  .streak-fire {
+    background: linear-gradient(45deg, var(--spark-orange), var(--spark-yellow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0);
+    animation: ripple 0.3s linear;
+    pointer-events: none;
+  }
+
+  @keyframes ripple {
+    to {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  .animate-bounce-soft {
+    animation: bounce 1s ease-in-out 2;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  .animate-wiggle {
+    animation: wiggle 1s ease-in-out infinite;
+  }
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+  }
+}
+
+/* Smooth scroll for mobile */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Prevent zoom on input focus on mobile */
+input[type="text"], input[type="email"], input[type="password"], select, textarea {
+  font-size: 16px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .mobile-safe-area {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Touch targets for mobile */
+button, a, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
