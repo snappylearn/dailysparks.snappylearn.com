@@ -37,7 +37,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-      onComplete();
+      // Force a page reload to redirect to the dashboard
+      window.location.reload();
     },
   });
 
