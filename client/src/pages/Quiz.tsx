@@ -85,26 +85,46 @@ export default function Quiz() {
   });
 
   // Get topics for topical quizzes
-  const { data: topics } = useQuery<Topic[]>({
+  const { data: topics, isLoading: topicsLoading, error: topicsError } = useQuery<Topic[]>({
     queryKey: ['/api/topics', subjectId, currentProfile?.levelId],
     enabled: !!subjectId && !!currentProfile?.levelId && selectedQuizType === 'topical',
   });
 
+  // Debug topics loading
+  useEffect(() => {
+    if (selectedQuizType === 'topical') {
+      console.log('=== TOPICS DEBUG ===');
+      console.log('Subject ID:', subjectId);
+      console.log('Current Profile Level ID:', currentProfile?.levelId);
+      console.log('Topics Loading:', topicsLoading);
+      console.log('Topics Error:', topicsError);
+      console.log('Topics Data:', topics);
+      console.log('Topics Count:', topics?.length || 0);
+    }
+  }, [selectedQuizType, subjectId, currentProfile, topicsLoading, topicsError, topics]);
+
   // Start quiz mutation
   const startQuizMutation = useMutation({
     mutationFn: async (data: { quizType: string; subjectId: string; topicId?: string; termId?: string }) => {
+      console.log('Making API request to start quiz...');
       const response = await apiRequest("/api/quiz/start", "POST", {
         profileId: currentProfile?.id,
         ...data
       });
+      console.log('Quiz start response:', response);
       return response as unknown as QuizSession;
     },
     onSuccess: (response) => {
+      console.log('Quiz started successfully:', response);
       setQuizSession(response);
       setCurrentQuestionIndex(0);
       setUserAnswers([]);
       setTimeSpent(0);
       setSelectedAnswer("");
+    },
+    onError: (error) => {
+      console.error('Quiz start failed:', error);
+      alert('Failed to start quiz: ' + error.message);
     },
   });
 
@@ -149,8 +169,35 @@ export default function Quiz() {
   });
 
   const handleStartQuiz = () => {
-    if (!subjectId || !currentProfile) {
-      console.log('Missing requirements:', { subjectId, currentProfile });
+    console.log('=== STARTING QUIZ DEBUG ===');
+    console.log('Subject ID:', subjectId);
+    console.log('Current Profile:', currentProfile);
+    console.log('Selected Quiz Type:', selectedQuizType);
+    console.log('Selected Topic:', selectedTopic);
+    console.log('Selected Term:', selectedTerm);
+    
+    if (!subjectId) {
+      alert('Missing subject ID - please go back to home and select a subject');
+      return;
+    }
+    
+    if (!currentProfile) {
+      alert('No profile found - please set up your profile first');
+      return;
+    }
+    
+    if (!selectedQuizType) {
+      alert('Please select a quiz type first');
+      return;
+    }
+    
+    if (selectedQuizType === 'topical' && !selectedTopic) {
+      alert('Please select a topic for topical quiz');
+      return;
+    }
+    
+    if (selectedQuizType === 'term' && !selectedTerm) {
+      alert('Please select a term for term quiz');
       return;
     }
     
@@ -434,33 +481,48 @@ export default function Quiz() {
               <CardDescription>Choose a specific topic to focus on</CardDescription>
             </CardHeader>
             <CardContent>
+              <Button 
+                variant="outline" 
+                className="w-full h-12 mb-4"
+                onClick={() => setShowTopicModal(true)}
+              >
+                {selectedTopicName || "Choose a Topic"}
+              </Button>
+              
               <Dialog open={showTopicModal} onOpenChange={setShowTopicModal}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full h-12">
-                    {selectedTopicName || "Choose a Topic"}
-                  </Button>
-                </DialogTrigger>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Select Topic</DialogTitle>
                     <DialogDescription>Choose a topic for your {subjectName} quiz</DialogDescription>
                   </DialogHeader>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-                    {topics?.map((topic) => (
-                      <Button
-                        key={topic.id}
-                        variant="outline"
-                        onClick={() => handleTopicSelect(topic)}
-                        className="h-auto p-4 text-left justify-start"
-                      >
-                        <div>
-                          <div className="font-medium">{topic.title}</div>
-                          {topic.description && (
-                            <div className="text-xs text-gray-500 mt-1">{topic.description}</div>
-                          )}
-                        </div>
-                      </Button>
-                    ))}
+                    {topicsLoading ? (
+                      <div className="col-span-full text-center py-8">Loading topics...</div>
+                    ) : topicsError ? (
+                      <div className="col-span-full text-center py-8 text-red-600">
+                        Error loading topics: {topicsError.message}
+                      </div>
+                    ) : !topics || topics.length === 0 ? (
+                      <div className="col-span-full text-center py-8 text-gray-500">
+                        No topics available for this subject and level
+                      </div>
+                    ) : (
+                      topics.map((topic) => (
+                        <Button
+                          key={topic.id}
+                          variant="outline"
+                          onClick={() => handleTopicSelect(topic)}
+                          className="h-auto p-4 text-left justify-start"
+                        >
+                          <div>
+                            <div className="font-medium">{topic.title}</div>
+                            {topic.description && (
+                              <div className="text-xs text-gray-500 mt-1">{topic.description}</div>
+                            )}
+                          </div>
+                        </Button>
+                      ))
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -476,12 +538,15 @@ export default function Quiz() {
               <CardDescription>Choose which academic term to focus on</CardDescription>
             </CardHeader>
             <CardContent>
+              <Button 
+                variant="outline" 
+                className="w-full h-12 mb-4"
+                onClick={() => setShowTermModal(true)}
+              >
+                {selectedTermName || "Choose a Term"}
+              </Button>
+              
               <Dialog open={showTermModal} onOpenChange={setShowTermModal}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full h-12">
-                    {selectedTermName || "Choose a Term"}
-                  </Button>
-                </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Select Term</DialogTitle>
