@@ -143,7 +143,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           {/* Create Profile Button */}
           <div className="pt-6">
             <Button
-              onClick={handleSubmit}
+              onClick={(e) => {
+                e.preventDefault();
+                console.log("Button clicked!", { selectedSystem, selectedLevel });
+                handleSubmit();
+              }}
               disabled={!selectedSystem || !selectedLevel || createProfileMutation.isPending}
               className="w-full bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-600 hover:to-yellow-500 text-white font-semibold py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
