@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 import { ArrowLeft, Clock, Target, Shuffle, BookOpen, Calendar, CheckCircle, XCircle, Zap, Trophy } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,7 +49,11 @@ export default function Quiz() {
   // Quiz wizard states
   const [selectedQuizType, setSelectedQuizType] = useState<string>("");
   const [selectedTopic, setSelectedTopic] = useState<string>("");
+  const [selectedTopicName, setSelectedTopicName] = useState<string>("");
   const [selectedTerm, setSelectedTerm] = useState<string>("");
+  const [selectedTermName, setSelectedTermName] = useState<string>("");
+  const [showTopicModal, setShowTopicModal] = useState(false);
+  const [showTermModal, setShowTermModal] = useState(false);
   
   // Quiz session states
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -72,7 +76,7 @@ export default function Quiz() {
     enabled: !!user,
   });
 
-  const currentProfile = profiles?.find(p => p.id === user?.defaultProfileId);
+  const currentProfile = profiles?.[0]; // Use first profile for now
 
   // Get terms for term-based quizzes
   const { data: terms } = useQuery<Term[]>({
@@ -93,7 +97,7 @@ export default function Quiz() {
         profileId: currentProfile?.id,
         ...data
       });
-      return response as QuizSession;
+      return response as unknown as QuizSession;
     },
     onSuccess: (response) => {
       setQuizSession(response);
@@ -112,7 +116,7 @@ export default function Quiz() {
         userAnswer: data.userAnswer,
         timeSpent: data.timeSpent
       });
-      return response as { isCorrect: boolean };
+      return response as unknown as { isCorrect: boolean };
     },
     onSuccess: (response, variables) => {
       setUserAnswers(prev => [...prev, {
@@ -135,7 +139,7 @@ export default function Quiz() {
   const completeQuizMutation = useMutation({
     mutationFn: async (data: { sessionId: string }) => {
       const response = await apiRequest(`/api/quiz/${data.sessionId}/complete`, "POST", {});
-      return response as QuizResults;
+      return response as unknown as QuizResults;
     },
     onSuccess: (response) => {
       setQuizResults(response);
@@ -145,7 +149,10 @@ export default function Quiz() {
   });
 
   const handleStartQuiz = () => {
-    if (!subjectId || !currentProfile) return;
+    if (!subjectId || !currentProfile) {
+      console.log('Missing requirements:', { subjectId, currentProfile });
+      return;
+    }
     
     const data: { quizType: string; subjectId: string; topicId?: string; termId?: string } = {
       quizType: selectedQuizType,
@@ -158,7 +165,20 @@ export default function Quiz() {
       data.termId = selectedTerm;
     }
 
+    console.log('Starting quiz with data:', data);
     startQuizMutation.mutate(data);
+  };
+
+  const handleTopicSelect = (topic: Topic) => {
+    setSelectedTopic(topic.id);
+    setSelectedTopicName(topic.title);
+    setShowTopicModal(false);
+  };
+
+  const handleTermSelect = (term: Term) => {
+    setSelectedTerm(term.id);
+    setSelectedTermName(term.title);
+    setShowTermModal(false);
   };
 
   const handleAnswerSubmit = () => {
@@ -414,23 +434,36 @@ export default function Quiz() {
               <CardDescription>Choose a specific topic to focus on</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {topics?.map((topic) => (
-                  <Button
-                    key={topic.id}
-                    variant={selectedTopic === topic.id ? 'default' : 'outline'}
-                    onClick={() => setSelectedTopic(topic.id)}
-                    className="h-auto p-4 text-left justify-start"
-                  >
-                    <div>
-                      <div className="font-medium">{topic.title}</div>
-                      {topic.description && (
-                        <div className="text-xs text-gray-500 mt-1">{topic.description}</div>
-                      )}
-                    </div>
+              <Dialog open={showTopicModal} onOpenChange={setShowTopicModal}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full h-12">
+                    {selectedTopicName || "Choose a Topic"}
                   </Button>
-                ))}
-              </div>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Select Topic</DialogTitle>
+                    <DialogDescription>Choose a topic for your {subjectName} quiz</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                    {topics?.map((topic) => (
+                      <Button
+                        key={topic.id}
+                        variant="outline"
+                        onClick={() => handleTopicSelect(topic)}
+                        className="h-auto p-4 text-left justify-start"
+                      >
+                        <div>
+                          <div className="font-medium">{topic.title}</div>
+                          {topic.description && (
+                            <div className="text-xs text-gray-500 mt-1">{topic.description}</div>
+                          )}
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         )}
@@ -443,21 +476,34 @@ export default function Quiz() {
               <CardDescription>Choose which academic term to focus on</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {terms?.map((term) => (
-                  <Button
-                    key={term.id}
-                    variant={selectedTerm === term.id ? 'default' : 'outline'}
-                    onClick={() => setSelectedTerm(term.id)}
-                    className="h-auto p-4 text-center"
-                  >
-                    <div>
-                      <div className="font-medium">{term.title}</div>
-                      <div className="text-xs text-gray-500 mt-1">Academic {term.title}</div>
-                    </div>
+              <Dialog open={showTermModal} onOpenChange={setShowTermModal}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full h-12">
+                    {selectedTermName || "Choose a Term"}
                   </Button>
-                ))}
-              </div>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Select Term</DialogTitle>
+                    <DialogDescription>Choose which academic term to focus on</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {terms?.map((term) => (
+                      <Button
+                        key={term.id}
+                        variant="outline"
+                        onClick={() => handleTermSelect(term)}
+                        className="h-auto p-4 text-center"
+                      >
+                        <div>
+                          <div className="font-medium">{term.title}</div>
+                          <div className="text-xs text-gray-500 mt-1">Academic {term.title}</div>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         )}

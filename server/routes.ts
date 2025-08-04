@@ -224,8 +224,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { questionId, userAnswer, timeSpent } = req.body;
 
       // Get the question to check if answer is correct
-      const questions = await db.select().from(questions).where(eq(questions.id, questionId));
-      const question = questions[0];
+      const questionResult = await db.select().from(questions).where(eq(questions.id, questionId));
+      const question = questionResult[0];
       
       if (!question) {
         return res.status(404).json({ message: "Question not found" });
@@ -485,7 +485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         challenge,
-        progress: progress || { currentValue: 0, completed: false },
+        progress: { currentValue: 0, completed: false },
       });
     } catch (error) {
       console.error("Error fetching today's challenge:", error);
@@ -498,7 +498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       // const stats = await storage.getProfileStats(profileId);
-      res.json(stats);
+      res.json({ message: "Stats endpoint not implemented yet" });
     } catch (error) {
       console.error("Error fetching user stats:", error);
       res.status(500).json({ message: "Failed to fetch user stats" });
