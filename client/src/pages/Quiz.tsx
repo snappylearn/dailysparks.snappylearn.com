@@ -101,25 +101,19 @@ export default function Quiz() {
           </div>
         </div>
 
-        {/* Quiz Type Selection */}
-        <div className="space-y-4">
-          {/* Random Quiz */}
+        {/* Quiz Type Selection - Single Row with 3 Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Column 1: Random Quiz */}
           <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                    <Shuffle className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">Random Quiz</CardTitle>
-                    <CardDescription>
-                      Mixed questions from all topics
-                    </CardDescription>
-                  </div>
-                </div>
-                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">30 Questions</span>
+            <CardHeader className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Shuffle className="h-8 w-8 text-white" />
               </div>
+              <CardTitle className="text-lg">Random Quiz</CardTitle>
+              <CardDescription>
+                Mixed questions from all topics
+              </CardDescription>
+              <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">30 Questions</span>
             </CardHeader>
             <CardContent>
               <Button 
@@ -132,23 +126,17 @@ export default function Quiz() {
             </CardContent>
           </Card>
 
-          {/* Topical Quiz */}
+          {/* Column 2: Topical Quiz */}
           <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-600 rounded-lg flex items-center justify-center">
-                    <Target className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">Topical Quiz</CardTitle>
-                    <CardDescription>
-                      Focus on specific topics
-                    </CardDescription>
-                  </div>
-                </div>
-                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">Choose Topics</span>
+            <CardHeader className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Target className="h-8 w-8 text-white" />
               </div>
+              <CardTitle className="text-lg">Topical Quiz</CardTitle>
+              <CardDescription>
+                Focus on specific topics
+              </CardDescription>
+              <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">Choose Topics</span>
             </CardHeader>
             <CardContent>
               <Button 
@@ -162,27 +150,32 @@ export default function Quiz() {
             </CardContent>
           </Card>
 
-          {/* Term-based Quizzes - Compact 3-column layout */}
-          <div className="grid grid-cols-3 gap-3">
-            {['Term 1', 'Term 2', 'Term 3'].map((term, index) => (
-              <Card key={term} className="hover:shadow-md transition-shadow cursor-pointer group">
-                <CardContent className="p-4 text-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <Calendar className="h-6 w-6 text-white" />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-3">{term} Quiz</h3>
-                  <Button 
-                    size="sm"
-                    className="w-full bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600"
-                    onClick={() => handleStartQuiz('term', term.toLowerCase().replace(' ', ''))}
-                    disabled={startQuizMutation.isPending}
-                  >
-                    Start {term.split(' ')[1]}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {/* Column 3: Termly Quizzes */}
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <CardHeader className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Calendar className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-lg">Termly Quizzes</CardTitle>
+              <CardDescription>
+                Select your preferred term
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {['Term 1', 'Term 2', 'Term 3'].map((term) => (
+                <Button
+                  key={term}
+                  variant="outline"
+                  size="sm"
+                  className="w-full hover:bg-orange-50 hover:border-orange-300"
+                  onClick={() => handleStartQuiz('term', term.toLowerCase().replace(' ', ''))}
+                  disabled={startQuizMutation.isPending}
+                >
+                  Start {term}
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Quiz Info */}
