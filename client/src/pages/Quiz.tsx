@@ -442,7 +442,10 @@ export default function Quiz() {
           </Card>
 
           <Card className={`cursor-pointer transition-all ${selectedQuizType === 'topical' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:shadow-lg'}`}>
-            <CardContent className="p-6" onClick={() => setSelectedQuizType('topical')}>
+            <CardContent className="p-6" onClick={() => {
+              setSelectedQuizType('topical');
+              setShowTopicModal(true);
+            }}>
               <div className="text-center space-y-4">
                 <div className="mx-auto p-4 rounded-full bg-green-100 w-fit">
                   <Target className="h-8 w-8 text-green-600" />
@@ -459,7 +462,10 @@ export default function Quiz() {
           </Card>
 
           <Card className={`cursor-pointer transition-all ${selectedQuizType === 'term' ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:shadow-lg'}`}>
-            <CardContent className="p-6" onClick={() => setSelectedQuizType('term')}>
+            <CardContent className="p-6" onClick={() => {
+              setSelectedQuizType('term');
+              setShowTermModal(true);
+            }}>
               <div className="text-center space-y-4">
                 <div className="mx-auto p-4 rounded-full bg-purple-100 w-fit">
                   <Calendar className="h-8 w-8 text-purple-600" />
@@ -476,23 +482,8 @@ export default function Quiz() {
           </Card>
         </div>
 
-        {/* Topic Selection (for topical quiz) */}
-        {selectedQuizType === 'topical' && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Select Topic</CardTitle>
-              <CardDescription>Choose a specific topic to focus on</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                variant="outline" 
-                className="w-full h-12 mb-4"
-                onClick={() => setShowTopicModal(true)}
-              >
-                {selectedTopicName || "Choose a Topic"}
-              </Button>
-              
-              <Dialog open={showTopicModal} onOpenChange={setShowTopicModal}>
+        {/* Topic Selection Modal */}
+        <Dialog open={showTopicModal} onOpenChange={setShowTopicModal}>
                 <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Select Topic</DialogTitle>
@@ -529,27 +520,9 @@ export default function Quiz() {
                   </div>
                 </DialogContent>
               </Dialog>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Term Selection (for term quiz) */}
-        {selectedQuizType === 'term' && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Select Term</CardTitle>
-              <CardDescription>Choose which academic term to focus on</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                variant="outline" 
-                className="w-full h-12 mb-4"
-                onClick={() => setShowTermModal(true)}
-              >
-                {selectedTermName || "Choose a Term"}
-              </Button>
-              
-              <Dialog open={showTermModal} onOpenChange={setShowTermModal}>
+        {/* Term Selection Modal */}
+        <Dialog open={showTermModal} onOpenChange={setShowTermModal}>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Select Term</DialogTitle>
@@ -572,9 +545,6 @@ export default function Quiz() {
                   </div>
                 </DialogContent>
               </Dialog>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Start Quiz Button */}
         <Button
