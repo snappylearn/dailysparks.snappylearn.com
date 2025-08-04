@@ -281,11 +281,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createQuestions(questionsData: InsertQuestion[]): Promise<Question[]> {
-    const createdQuestions = await db.insert(questions).values(questionsData).returning();
-    return createdQuestions;
-  }
-
-  async createQuestions(questionsData: InsertQuestion[]): Promise<Question[]> {
     return await db.insert(questions).values(questionsData).returning();
   }
 

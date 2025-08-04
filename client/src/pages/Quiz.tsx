@@ -12,6 +12,7 @@ import { ArrowLeft, Clock, Target, Shuffle, BookOpen, Calendar, CheckCircle, XCi
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
+import { MainLayout } from "@/components/MainLayout";
 import type { Profile, Topic, Term, Question } from "@shared/schema";
 
 interface QuizQuestion {
@@ -326,7 +327,7 @@ export default function Quiz() {
     const progress = ((currentQuestionIndex + 1) / quizSession.questions.length) * 100;
     
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50 p-4">
+      <MainLayout showNavigation={false}>
         <div className="max-w-2xl mx-auto">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
@@ -401,13 +402,14 @@ export default function Quiz() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   // Show quiz wizard (selection screen)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50 p-4">
+    <MainLayout>
+      <div className="max-w-2xl mx-auto">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <Button 
@@ -545,6 +547,7 @@ export default function Quiz() {
                   </div>
                 </DialogContent>
               </Dialog>
+            </div>
 
         {/* Start Quiz Button */}
         <Button
@@ -560,6 +563,6 @@ export default function Quiz() {
           {startQuizMutation.isPending ? "Starting Quiz..." : "Start Quiz"}
         </Button>
       </div>
-    </div>
+    </MainLayout>
   );
 }

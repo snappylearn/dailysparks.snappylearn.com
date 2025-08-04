@@ -9,6 +9,7 @@ import ProfileModal from "@/components/ProfileModal";
 import BottomNavigation from "@/components/BottomNavigation";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { MainLayout } from "@/components/MainLayout";
 
 export default function Home() {
   const { user, isLoading } = useAuth();

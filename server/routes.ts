@@ -177,11 +177,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create quiz session
       const quizSession = await storage.createQuizSession({
+        userId: req.user.claims.sub,
         profileId,
         subjectId,
         quizType,
-        topicId,
-        term,
+        topicId: topicId || null,
+        termId: termId || null,
         totalQuestions: aiQuestions.length,
       });
 
