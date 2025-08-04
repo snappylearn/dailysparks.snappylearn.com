@@ -1,21 +1,30 @@
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import { Profile } from "@shared/schema";
 import Landing from "@/pages/Landing";
-import Home from "@/pages/Home";
+import SimpleHome from "@/pages/SimpleHome";
 import Quiz from "@/pages/Quiz";
 import Results from "@/pages/Results";
 import NotFound from "@/pages/not-found";
+import Onboarding from "@/components/Onboarding";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading) {
+  // Get user profiles if authenticated
+  const { data: profiles, isLoading: profilesLoading } = useQuery<Profile[]>({
+    queryKey: ['/api/profiles'],
+    enabled: isAuthenticated,
+  });
+
+  // Show loading state
+  if (isLoading || (isAuthenticated && profilesLoading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-spark-light via-white to-green-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-100 via-white to-teal-50">
         <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-full flex items-center justify-center animate-pulse">
           <i className="fas fa-fire text-white text-2xl"></i>
         </div>
@@ -23,17 +32,22 @@ function Router() {
     );
   }
 
+  // Show landing page if not authenticated
+  if (!isAuthenticated) {
+    return <Landing />;
+  }
+
+  // Show onboarding if no profiles exist
+  if (profiles && profiles.length === 0) {
+    return <Onboarding onComplete={() => window.location.reload()} />;
+  }
+
+  // Show main app
   return (
     <Switch>
-      {!isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
-        <>
-          <Route path="/" component={Home} />
-          <Route path="/quiz/:sessionId?" component={Quiz} />
-          <Route path="/results/:sessionId" component={Results} />
-        </>
-      )}
+      <Route path="/" component={SimpleHome} />
+      <Route path="/quiz/:sessionId?" component={Quiz} />
+      <Route path="/results/:sessionId" component={Results} />
       <Route component={NotFound} />
     </Switch>
   );

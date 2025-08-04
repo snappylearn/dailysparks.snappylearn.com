@@ -19,10 +19,10 @@ export default function Landing() {
             Daily Sparks
           </h1>
           <p className="text-xl text-gray-600 font-medium">
-            Dead Simple AI Revision Platform
+            The Fun Way to Ace Your Exams
           </p>
           <p className="text-gray-500">
-            Make revision as addictive as TikTok, as effective as private tutoring
+            Turn studying into a game and watch your grades soar
           </p>
         </div>
 
@@ -30,21 +30,27 @@ export default function Landing() {
         <div className="space-y-4 text-left">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-              <i className="fas fa-brain text-orange-500 text-sm"></i>
+              <i className="fas fa-trophy text-orange-500 text-sm"></i>
             </div>
-            <span className="text-gray-700">AI-powered question selection</span>
+            <span className="text-gray-700">Earn sparks and build streaks</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
               <i className="fas fa-gamepad text-teal-500 text-sm"></i>
             </div>
-            <span className="text-gray-700">Gamified learning experience</span>
+            <span className="text-gray-700">Fun quizzes that adapt to you</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-              <i className="fas fa-graduation-cap text-blue-500 text-sm"></i>
+              <i className="fas fa-users text-blue-500 text-sm"></i>
             </div>
-            <span className="text-gray-700">KCSE curriculum aligned</span>
+            <span className="text-gray-700">Compete with classmates</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+              <i className="fas fa-graduation-cap text-purple-500 text-sm"></i>
+            </div>
+            <span className="text-gray-700">All exam systems supported</span>
           </div>
         </div>
 
@@ -53,11 +59,11 @@ export default function Landing() {
           onClick={handleLogin}
           className="w-full bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-600 hover:to-yellow-500 text-white py-4 text-lg font-semibold font-poppins transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
         >
-          Start Your Journey 🚀
+          Let's Get Started
         </Button>
 
         <p className="text-xs text-gray-500">
-          Join thousands of Kenyan students achieving their dream grades
+          Join thousands of students who are already winning
         </p>
       </div>
     </div>

@@ -1,5 +1,8 @@
 import {
   users,
+  examinationSystems,
+  levels,
+  profiles,
   subjects,
   topics,
   questions,
@@ -9,6 +12,9 @@ import {
   userChallengeProgress,
   type User,
   type UpsertUser,
+  type ExaminationSystem,
+  type Level,
+  type Profile,
   type Subject,
   type Topic,
   type Question,
@@ -16,6 +22,9 @@ import {
   type UserAnswer,
   type DailyChallenge,
   type UserChallengeProgress,
+  type InsertExaminationSystem,
+  type InsertLevel,
+  type InsertProfile,
   type InsertSubject,
   type InsertTopic,
   type InsertQuestion,
@@ -31,27 +40,41 @@ export interface IStorage {
   // User operations (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  updateUserOnboarding(userId: string, examType: string, form: string, school?: string): Promise<User>;
+  
+  // Examination system operations
+  getExaminationSystems(): Promise<ExaminationSystem[]>;
+  createExaminationSystem(system: InsertExaminationSystem): Promise<ExaminationSystem>;
+  
+  // Level operations
+  getLevelsBySystem(examinationSystemId: string): Promise<Level[]>;
+  createLevel(level: InsertLevel): Promise<Level>;
+  
+  // Profile operations
+  getUserProfiles(userId: string): Promise<Profile[]>;
+  getProfile(profileId: string): Promise<Profile | undefined>;
+  createProfile(profile: InsertProfile): Promise<Profile>;
+  setDefaultProfile(userId: string, profileId: string): Promise<User>;
+  updateProfile(profileId: string, data: Partial<Profile>): Promise<Profile>;
   
   // Subject operations
-  getSubjects(examType: string): Promise<Subject[]>;
+  getSubjectsBySystem(examinationSystemId: string): Promise<Subject[]>;
   createSubject(subject: InsertSubject): Promise<Subject>;
   
   // Topic operations
-  getTopicsBySubject(subjectId: string, form?: string, term?: string): Promise<Topic[]>;
+  getTopicsBySubjectAndLevel(subjectId: string, levelId: string, term?: string): Promise<Topic[]>;
   createTopic(topic: InsertTopic): Promise<Topic>;
   
   // Question operations
   getQuestionsByTopic(topicId: string, limit?: number): Promise<Question[]>;
-  getRandomQuestions(subjectId: string, form: string, limit?: number): Promise<Question[]>;
-  getTermQuestions(subjectId: string, form: string, term: string, limit?: number): Promise<Question[]>;
+  getRandomQuestions(subjectId: string, levelId: string, limit?: number): Promise<Question[]>;
+  getTermQuestions(subjectId: string, levelId: string, term: string, limit?: number): Promise<Question[]>;
   createQuestion(question: InsertQuestion): Promise<Question>;
   
   // Quiz session operations
   createQuizSession(session: InsertQuizSession): Promise<QuizSession>;
   updateQuizSession(sessionId: string, data: Partial<QuizSession>): Promise<QuizSession>;
   getQuizSession(sessionId: string): Promise<QuizSession | undefined>;
-  getUserQuizSessions(userId: string, limit?: number): Promise<QuizSession[]>;
+  getProfileQuizSessions(profileId: string, limit?: number): Promise<QuizSession[]>;
   
   // User answer operations
   createUserAnswer(answer: InsertUserAnswer): Promise<UserAnswer>;
@@ -60,14 +83,14 @@ export interface IStorage {
   // Challenge operations
   getTodaysChallenge(): Promise<DailyChallenge | undefined>;
   createDailyChallenge(challenge: InsertDailyChallenge): Promise<DailyChallenge>;
-  getUserChallengeProgress(userId: string, challengeId: string): Promise<UserChallengeProgress | undefined>;
-  updateChallengeProgress(userId: string, challengeId: string, progress: Partial<InsertUserChallengeProgress>): Promise<UserChallengeProgress>;
+  getProfileChallengeProgress(profileId: string, challengeId: string): Promise<UserChallengeProgress | undefined>;
+  updateChallengeProgress(profileId: string, challengeId: string, progress: Partial<InsertUserChallengeProgress>): Promise<UserChallengeProgress>;
   
   // Analytics operations
-  getUserStats(userId: string): Promise<any>;
-  getSubjectPerformance(userId: string, subjectId: string): Promise<any>;
-  updateUserSparks(userId: string, sparks: number): Promise<User>;
-  updateUserStreak(userId: string): Promise<User>;
+  getProfileStats(profileId: string): Promise<any>;
+  getSubjectPerformance(profileId: string, subjectId: string): Promise<any>;
+  updateProfileSparks(profileId: string, sparks: number): Promise<Profile>;
+  updateProfileStreak(profileId: string): Promise<Profile>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -92,14 +115,50 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUserOnboarding(userId: string, examType: string, form: string, school?: string): Promise<User> {
+  // Examination system operations
+  async getExaminationSystems(): Promise<ExaminationSystem[]> {
+    return await db.select().from(examinationSystems).where(eq(examinationSystems.isActive, true));
+  }
+
+  async createExaminationSystem(system: InsertExaminationSystem): Promise<ExaminationSystem> {
+    const [newSystem] = await db.insert(examinationSystems).values(system).returning();
+    return newSystem;
+  }
+
+  // Level operations
+  async getLevelsBySystem(examinationSystemId: string): Promise<Level[]> {
+    return await db.select().from(levels)
+      .where(and(eq(levels.examinationSystemId, examinationSystemId), eq(levels.isActive, true)))
+      .orderBy(levels.order);
+  }
+
+  async createLevel(level: InsertLevel): Promise<Level> {
+    const [newLevel] = await db.insert(levels).values(level).returning();
+    return newLevel;
+  }
+
+  // Profile operations
+  async getUserProfiles(userId: string): Promise<Profile[]> {
+    return await db.select().from(profiles)
+      .where(and(eq(profiles.userId, userId), eq(profiles.isActive, true)))
+      .orderBy(desc(profiles.createdAt));
+  }
+
+  async getProfile(profileId: string): Promise<Profile | undefined> {
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, profileId));
+    return profile;
+  }
+
+  async createProfile(profile: InsertProfile): Promise<Profile> {
+    const [newProfile] = await db.insert(profiles).values(profile).returning();
+    return newProfile;
+  }
+
+  async setDefaultProfile(userId: string, profileId: string): Promise<User> {
     const [user] = await db
       .update(users)
       .set({
-        examType,
-        form,
-        school,
-        onboardingCompleted: true,
+        defaultProfileId: profileId,
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId))
@@ -107,9 +166,18 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async updateProfile(profileId: string, data: Partial<Profile>): Promise<Profile> {
+    const [profile] = await db
+      .update(profiles)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(profiles.id, profileId))
+      .returning();
+    return profile;
+  }
+
   // Subject operations
-  async getSubjects(examType: string): Promise<Subject[]> {
-    return await db.select().from(subjects).where(eq(subjects.examType, examType));
+  async getSubjectsBySystem(examinationSystemId: string): Promise<Subject[]> {
+    return await db.select().from(subjects).where(eq(subjects.examinationSystemId, examinationSystemId));
   }
 
   async createSubject(subject: InsertSubject): Promise<Subject> {
@@ -118,15 +186,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Topic operations
-  async getTopicsBySubject(subjectId: string, form?: string, term?: string): Promise<Topic[]> {
-    let query = db.select().from(topics).where(eq(topics.subjectId, subjectId));
-    
-    if (form) {
-      query = query.where(and(eq(topics.subjectId, subjectId), eq(topics.form, form)));
-    }
+  async getTopicsBySubjectAndLevel(subjectId: string, levelId: string, term?: string): Promise<Topic[]> {
+    let query = db.select().from(topics)
+      .where(and(eq(topics.subjectId, subjectId), eq(topics.levelId, levelId)));
     
     if (term) {
-      query = query.where(and(eq(topics.subjectId, subjectId), eq(topics.form, form!), eq(topics.term, term)));
+      query = query.where(eq(topics.term, term));
     }
     
     return await query.orderBy(topics.order);
@@ -145,7 +210,7 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async getRandomQuestions(subjectId: string, form: string, limit: number = 30): Promise<Question[]> {
+  async getRandomQuestions(subjectId: string, levelId: string, limit: number = 30): Promise<Question[]> {
     return await db.select({
       id: questions.id,
       topicId: questions.topicId,
@@ -161,12 +226,12 @@ export class DatabaseStorage implements IStorage {
     })
     .from(questions)
     .innerJoin(topics, eq(questions.topicId, topics.id))
-    .where(and(eq(topics.subjectId, subjectId), eq(topics.form, form)))
+    .where(and(eq(topics.subjectId, subjectId), eq(topics.levelId, levelId)))
     .orderBy(sql`RANDOM()`)
     .limit(limit);
   }
 
-  async getTermQuestions(subjectId: string, form: string, term: string, limit: number = 30): Promise<Question[]> {
+  async getTermQuestions(subjectId: string, levelId: string, term: string, limit: number = 30): Promise<Question[]> {
     return await db.select({
       id: questions.id,
       topicId: questions.topicId,
@@ -184,7 +249,7 @@ export class DatabaseStorage implements IStorage {
     .innerJoin(topics, eq(questions.topicId, topics.id))
     .where(and(
       eq(topics.subjectId, subjectId),
-      eq(topics.form, form),
+      eq(topics.levelId, levelId),
       eq(topics.term, term)
     ))
     .orderBy(sql`RANDOM()`)
@@ -216,9 +281,9 @@ export class DatabaseStorage implements IStorage {
     return session;
   }
 
-  async getUserQuizSessions(userId: string, limit: number = 10): Promise<QuizSession[]> {
+  async getProfileQuizSessions(profileId: string, limit: number = 10): Promise<QuizSession[]> {
     return await db.select().from(quizSessions)
-      .where(eq(quizSessions.userId, userId))
+      .where(eq(quizSessions.profileId, profileId))
       .orderBy(desc(quizSessions.startedAt))
       .limit(limit);
   }
@@ -248,25 +313,25 @@ export class DatabaseStorage implements IStorage {
     return newChallenge;
   }
 
-  async getUserChallengeProgress(userId: string, challengeId: string): Promise<UserChallengeProgress | undefined> {
+  async getProfileChallengeProgress(profileId: string, challengeId: string): Promise<UserChallengeProgress | undefined> {
     const [progress] = await db.select().from(userChallengeProgress)
       .where(and(
-        eq(userChallengeProgress.userId, userId),
+        eq(userChallengeProgress.profileId, profileId),
         eq(userChallengeProgress.challengeId, challengeId)
       ));
     return progress;
   }
 
-  async updateChallengeProgress(userId: string, challengeId: string, progress: Partial<InsertUserChallengeProgress>): Promise<UserChallengeProgress> {
+  async updateChallengeProgress(profileId: string, challengeId: string, progress: Partial<InsertUserChallengeProgress>): Promise<UserChallengeProgress> {
     const [updatedProgress] = await db
       .insert(userChallengeProgress)
       .values({
-        userId,
+        profileId,
         challengeId,
         ...progress,
       })
       .onConflictDoUpdate({
-        target: [userChallengeProgress.userId, userChallengeProgress.challengeId],
+        target: [userChallengeProgress.profileId, userChallengeProgress.challengeId],
         set: progress,
       })
       .returning();
@@ -274,20 +339,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Analytics operations
-  async getUserStats(userId: string): Promise<any> {
+  async getProfileStats(profileId: string): Promise<any> {
     const [totalQuizzes] = await db.select({ count: count() })
       .from(quizSessions)
-      .where(and(eq(quizSessions.userId, userId), eq(quizSessions.completed, true)));
+      .where(and(eq(quizSessions.profileId, profileId), eq(quizSessions.completed, true)));
 
     const [avgScore] = await db.select({ 
       avg: avg(sql`CAST(${quizSessions.correctAnswers} AS DECIMAL) / ${quizSessions.totalQuestions} * 100`) 
     })
       .from(quizSessions)
-      .where(and(eq(quizSessions.userId, userId), eq(quizSessions.completed, true)));
+      .where(and(eq(quizSessions.profileId, profileId), eq(quizSessions.completed, true)));
 
     const [totalSparks] = await db.select({ total: sql`SUM(${quizSessions.sparksEarned})` })
       .from(quizSessions)
-      .where(eq(quizSessions.userId, userId));
+      .where(eq(quizSessions.profileId, profileId));
 
     return {
       totalQuizzes: totalQuizzes.count || 0,
@@ -296,10 +361,10 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getSubjectPerformance(userId: string, subjectId: string): Promise<any> {
+  async getSubjectPerformance(profileId: string, subjectId: string): Promise<any> {
     const sessions = await db.select().from(quizSessions)
       .where(and(
-        eq(quizSessions.userId, userId),
+        eq(quizSessions.profileId, profileId),
         eq(quizSessions.subjectId, subjectId),
         eq(quizSessions.completed, true)
       ))
@@ -313,27 +378,27 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async updateUserSparks(userId: string, sparks: number): Promise<User> {
-    const [user] = await db
-      .update(users)
+  async updateProfileSparks(profileId: string, sparks: number): Promise<Profile> {
+    const [profile] = await db
+      .update(profiles)
       .set({
-        sparks: sql`${users.sparks} + ${sparks}`,
+        sparks: sql`${profiles.sparks} + ${sparks}`,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, userId))
+      .where(eq(profiles.id, profileId))
       .returning();
-    return user;
+    return profile;
   }
 
-  async updateUserStreak(userId: string): Promise<User> {
+  async updateProfileStreak(profileId: string): Promise<Profile> {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    const user = await this.getUser(userId);
-    if (!user) throw new Error('User not found');
+    const profile = await this.getProfile(profileId);
+    if (!profile) throw new Error('Profile not found');
 
-    const lastActivity = user.lastActivity ? new Date(user.lastActivity) : null;
+    const lastActivity = profile.lastActivity ? new Date(profile.lastActivity) : null;
     let newStreak = 1;
 
     if (lastActivity) {
@@ -341,21 +406,21 @@ export class DatabaseStorage implements IStorage {
       const yesterdayDate = new Date(yesterday.toISOString().split('T')[0]);
       
       if (lastActivityDate.getTime() === yesterdayDate.getTime()) {
-        newStreak = (user.streak || 0) + 1;
+        newStreak = (profile.streak || 0) + 1;
       }
     }
 
-    const [updatedUser] = await db
-      .update(users)
+    const [updatedProfile] = await db
+      .update(profiles)
       .set({
         streak: newStreak,
         lastActivity: today,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, userId))
+      .where(eq(profiles.id, profileId))
       .returning();
 
-    return updatedUser;
+    return updatedProfile;
   }
 }
 

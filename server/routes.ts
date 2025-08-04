@@ -21,35 +21,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Onboarding route
-  app.post('/api/onboarding', isAuthenticated, async (req: any, res) => {
+  // Examination system routes
+  app.get('/api/examination-systems', async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const { examType, form, school } = req.body;
-      
-      if (!examType || !form) {
-        return res.status(400).json({ message: "Exam type and form are required" });
-      }
-
-      const user = await storage.updateUserOnboarding(userId, examType, form, school);
-      res.json(user);
+      const systems = await storage.getExaminationSystems();
+      res.json(systems);
     } catch (error) {
-      console.error("Error updating onboarding:", error);
-      res.status(500).json({ message: "Failed to update onboarding" });
+      console.error("Error fetching examination systems:", error);
+      res.status(500).json({ message: "Failed to fetch examination systems" });
     }
   });
 
-  // Get subjects for user's exam type
-  app.get('/api/subjects', isAuthenticated, async (req: any, res) => {
+  // Level routes
+  app.get('/api/levels/:systemId', async (req, res) => {
+    try {
+      const { systemId } = req.params;
+      const levels = await storage.getLevelsBySystem(systemId);
+      res.json(levels);
+    } catch (error) {
+      console.error("Error fetching levels:", error);
+      res.status(500).json({ message: "Failed to fetch levels" });
+    }
+  });
+
+  // Profile routes
+  app.get('/api/profiles', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const profiles = await storage.getUserProfiles(userId);
+      res.json(profiles);
+    } catch (error) {
+      console.error("Error fetching profiles:", error);
+      res.status(500).json({ message: "Failed to fetch profiles" });
+    }
+  });
+
+  app.post('/api/profiles', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { examinationSystemId, levelId } = req.body;
       
-      if (!user || !user.examType) {
-        return res.status(400).json({ message: "User not found or onboarding not completed" });
+      const profile = await storage.createProfile({
+        userId,
+        examinationSystemId,
+        levelId,
+      });
+
+      // If this is the user's first profile, set it as default
+      const userProfiles = await storage.getUserProfiles(userId);
+      if (userProfiles.length === 1) {
+        await storage.setDefaultProfile(userId, profile.id);
       }
 
-      const subjects = await storage.getSubjects(user.examType);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error creating profile:", error);
+      res.status(500).json({ message: "Failed to create profile" });
+    }
+  });
+
+  app.put('/api/profiles/:profileId/default', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { profileId } = req.params;
+      
+      const user = await storage.setDefaultProfile(userId, profileId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error setting default profile:", error);
+      res.status(500).json({ message: "Failed to set default profile" });
+    }
+  });
+
+  // Subject routes
+  app.get('/api/subjects/:systemId', async (req, res) => {
+    try {
+      const { systemId } = req.params;
+      const subjects = await storage.getSubjectsBySystem(systemId);
       res.json(subjects);
     } catch (error) {
       console.error("Error fetching subjects:", error);
@@ -57,13 +105,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get topics for a subject
-  app.get('/api/subjects/:subjectId/topics', isAuthenticated, async (req: any, res) => {
+  // Get topics for a subject and level
+  app.get('/api/subjects/:subjectId/topics/:levelId', async (req, res) => {
     try {
-      const { subjectId } = req.params;
-      const { form, term } = req.query;
+      const { subjectId, levelId } = req.params;
+      const { term } = req.query;
       
-      const topics = await storage.getTopicsBySubject(subjectId, form, term);
+      const topics = await storage.getTopicsBySubjectAndLevel(subjectId, levelId, term as string);
       res.json(topics);
     } catch (error) {
       console.error("Error fetching topics:", error);
@@ -74,21 +122,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Start a quiz session
   app.post('/api/quiz/start', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const { subjectId, quizType, topicId, term } = req.body;
+      const { profileId, subjectId, quizType, topicId, term } = req.body;
 
-      if (!subjectId || !quizType) {
-        return res.status(400).json({ message: "Subject ID and quiz type are required" });
+      if (!profileId || !subjectId || !quizType) {
+        return res.status(400).json({ message: "Profile ID, Subject ID and quiz type are required" });
       }
 
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
+      const profile = await storage.getProfile(profileId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
       }
 
       // Create quiz session
       const quizSession = await storage.createQuizSession({
-        userId,
+        profileId,
         subjectId,
         quizType,
         topicId: quizType === 'topical' ? topicId : undefined,
@@ -100,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let questions;
       switch (quizType) {
         case 'random':
-          questions = await storage.getRandomQuestions(subjectId, user.form, 30);
+          questions = await storage.getRandomQuestions(subjectId, profile.levelId, 30);
           break;
         case 'topical':
           if (!topicId) {
@@ -109,8 +156,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           questions = await storage.getQuestionsByTopic(topicId, 30);
           break;
         case 'term':
-          const termToUse = term || user.currentTerm || 'Term 1';
-          questions = await storage.getTermQuestions(subjectId, user.form, termToUse, 30);
+          const termToUse = term || profile.currentTerm || 'Term 1';
+          questions = await storage.getTermQuestions(subjectId, profile.levelId, termToUse, 30);
           break;
         default:
           return res.status(400).json({ message: "Invalid quiz type" });

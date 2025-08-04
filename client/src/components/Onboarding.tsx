@@ -1,193 +1,137 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
+import { ExaminationSystem, Level } from "@shared/schema";
 
-export default function Onboarding() {
-  const [selectedExam, setSelectedExam] = useState("");
-  const [selectedForm, setSelectedForm] = useState("");
-  const [school, setSchool] = useState("");
-  const { toast } = useToast();
+interface OnboardingProps {
+  onComplete: () => void;
+}
 
-  const onboardingMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/onboarding", data);
-      return res.json();
+export default function Onboarding({ onComplete }: OnboardingProps) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [selectedSystem, setSelectedSystem] = useState<string>("");
+  const [selectedLevel, setSelectedLevel] = useState<string>("");
+
+  // Fetch examination systems
+  const { data: systems, isLoading: systemsLoading } = useQuery<ExaminationSystem[]>({
+    queryKey: ['/api/examination-systems'],
+  });
+
+  // Fetch levels for selected system
+  const { data: levels, isLoading: levelsLoading } = useQuery<Level[]>({
+    queryKey: ['/api/levels', selectedSystem],
+    enabled: !!selectedSystem,
+  });
+
+  // Create profile mutation
+  const createProfileMutation = useMutation({
+    mutationFn: async (data: { examinationSystemId: string; levelId: string }) => {
+      const response = await apiRequest("/api/profiles", "POST", data);
+      return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      toast({
-        title: "Welcome to Daily Sparks!",
-        description: "Your account has been set up successfully.",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to complete onboarding. Please try again.",
-        variant: "destructive",
-      });
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      onComplete();
     },
   });
 
   const handleSubmit = () => {
-    if (!selectedExam || !selectedForm) {
-      toast({
-        title: "Missing Information",
-        description: "Please select both exam type and form level.",
-        variant: "destructive",
+    if (selectedSystem && selectedLevel) {
+      createProfileMutation.mutate({
+        examinationSystemId: selectedSystem,
+        levelId: selectedLevel,
       });
-      return;
     }
-
-    onboardingMutation.mutate({
-      examType: selectedExam,
-      form: selectedForm,
-      school: school || undefined,
-    });
   };
 
+  const selectedSystemData = systems?.find(s => s.id === selectedSystem);
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-100 via-white to-teal-50">
-      <div className="max-w-sm w-full space-y-6">
-        {/* Welcome Header */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-full mx-auto mb-4 flex items-center justify-center spark-glow animate-pulse-slow">
-            <i className="fas fa-fire text-white text-2xl"></i>
+    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-full mx-auto flex items-center justify-center mb-4">
+            <i className="fas fa-graduation-cap text-white text-2xl"></i>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 font-poppins">Daily Sparks</h1>
-          <p className="text-gray-600 text-sm">Make revision as addictive as TikTok</p>
-        </div>
-
-        {/* Onboarding Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 space-y-6">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2 font-poppins">I'm preparing for:</h2>
-          </div>
-
-          {/* Exam Type Selection */}
-          <div className="grid grid-cols-3 gap-3">
-            <button 
-              onClick={() => setSelectedExam("KCSE")}
-              className={`py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-                selectedExam === "KCSE" 
-                  ? "bg-orange-500 text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              KCSE
-            </button>
-            <button 
-              onClick={() => setSelectedExam("IGCSE")}
-              className={`py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-                selectedExam === "IGCSE" 
-                  ? "bg-orange-500 text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              IGCSE
-            </button>
-            <button 
-              onClick={() => setSelectedExam("KPSEA")}
-              className={`py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-                selectedExam === "KPSEA" 
-                  ? "bg-orange-500 text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              KPSEA
-            </button>
-          </div>
-
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 font-poppins">My Form/Grade:</h3>
-          </div>
-
-          {/* Form Selection */}
-          <div className="grid grid-cols-2 gap-3">
-            <button 
-              onClick={() => setSelectedForm("Form 1")}
-              className={`py-4 px-6 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-                selectedForm === "Form 1" 
-                  ? "bg-teal-400 text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Form 1
-            </button>
-            <button 
-              onClick={() => setSelectedForm("Form 2")}
-              className={`py-4 px-6 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-                selectedForm === "Form 2" 
-                  ? "bg-teal-400 text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Form 2
-            </button>
-            <button 
-              onClick={() => setSelectedForm("Form 3")}
-              className={`py-4 px-6 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-                selectedForm === "Form 3" 
-                  ? "bg-teal-400 text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Form 3
-            </button>
-            <button 
-              onClick={() => setSelectedForm("Form 4")}
-              className={`py-4 px-6 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-                selectedForm === "Form 4" 
-                  ? "bg-teal-400 text-white" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Form 4
-            </button>
-          </div>
-
-          {/* Optional School Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              School (Optional)
+          <CardTitle className="text-2xl font-bold text-gray-900">
+            Welcome to Daily Sparks!
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            Let's set up your learning profile to get started
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          {/* Examination System Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">
+              Which exam are you preparing for?
             </label>
-            <input
-              type="text"
-              value={school}
-              onChange={(e) => setSchool(e.target.value)}
-              placeholder="Enter your school name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            />
+            <Select value={selectedSystem} onValueChange={setSelectedSystem}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose your examination system" />
+              </SelectTrigger>
+              <SelectContent>
+                {systems?.map((system) => (
+                  <SelectItem key={system.id} value={system.id}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{system.code}</span>
+                      <span className="text-xs text-gray-500">{system.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Start Button */}
-          <Button 
-            onClick={handleSubmit}
-            disabled={onboardingMutation.isPending || !selectedExam || !selectedForm}
-            className="w-full bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-600 hover:to-yellow-500 text-white py-4 text-lg font-semibold font-poppins transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            {onboardingMutation.isPending ? "Setting up..." : "Let's Start! 🚀"}
-          </Button>
+          {/* Level Selection */}
+          {selectedSystem && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                What's your current level?
+              </label>
+              <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+                <SelectTrigger>
+                  <SelectValue placeholder={`Choose your ${selectedSystemData?.code} level`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {levels?.map((level) => (
+                    <SelectItem key={level.id} value={level.id}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{level.title}</span>
+                        {level.description && (
+                          <span className="text-xs text-gray-500">{level.description}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-          <p className="text-xs text-gray-500 text-center">
-            *Add your school later for leaderboards
-          </p>
-        </div>
-      </div>
+          {/* Action Buttons */}
+          <div className="space-y-4 pt-4">
+            <Button
+              onClick={handleSubmit}
+              disabled={!selectedSystem || !selectedLevel || createProfileMutation.isPending}
+              className="w-full bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-600 hover:to-yellow-500 text-white font-semibold py-3"
+            >
+              {createProfileMutation.isPending ? "Setting up..." : "Create My Profile"}
+            </Button>
+            
+            <p className="text-xs text-gray-500 text-center">
+              You can add more profiles later to study for different exams
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

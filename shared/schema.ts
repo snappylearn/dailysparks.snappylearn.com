@@ -32,15 +32,45 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  examType: varchar("exam_type").notNull().default('KCSE'), // KCSE, IGCSE, KPSEA
-  form: varchar("form").notNull(), // Form 1, Form 2, Form 3, Form 4
-  school: varchar("school"),
+  defaultProfileId: varchar("default_profile_id"),
+  isPremium: boolean("is_premium").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Examination systems table
+export const examinationSystems = pgTable("examination_systems", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(), // KCSE, IGCSE, KPSEA
+  code: varchar("code").notNull().unique(),
+  description: text("description"),
+  country: varchar("country"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Levels table (Form 1, Form 2, etc.)
+export const levels = pgTable("levels", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(), // Form 1, Form 2, Grade 9, etc.
+  description: text("description"),
+  examinationSystemId: varchar("examination_system_id").notNull().references(() => examinationSystems.id),
+  order: integer("order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Student profiles table
+export const profiles = pgTable("profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  examinationSystemId: varchar("examination_system_id").notNull().references(() => examinationSystems.id),
+  levelId: varchar("level_id").notNull().references(() => levels.id),
   currentTerm: varchar("current_term").default('Term 1'),
   sparks: integer("sparks").default(0),
   streak: integer("streak").default(0),
   lastActivity: timestamp("last_activity").defaultNow(),
-  isPremium: boolean("is_premium").default(false),
-  onboardingCompleted: boolean("onboarding_completed").default(false),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -50,7 +80,7 @@ export const subjects = pgTable("subjects", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name").notNull(),
   code: varchar("code").notNull().unique(),
-  examType: varchar("exam_type").notNull(),
+  examinationSystemId: varchar("examination_system_id").notNull().references(() => examinationSystems.id),
   icon: varchar("icon"),
   color: varchar("color"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -60,8 +90,8 @@ export const subjects = pgTable("subjects", {
 export const topics = pgTable("topics", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   subjectId: varchar("subject_id").notNull().references(() => subjects.id),
+  levelId: varchar("level_id").notNull().references(() => levels.id),
   name: varchar("name").notNull(),
-  form: varchar("form").notNull(),
   term: varchar("term").notNull(),
   order: integer("order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
@@ -85,7 +115,7 @@ export const questions = pgTable("questions", {
 // Quiz sessions table
 export const quizSessions = pgTable("quiz_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  profileId: varchar("profile_id").notNull().references(() => profiles.id),
   subjectId: varchar("subject_id").notNull().references(() => subjects.id),
   quizType: varchar("quiz_type").notNull(), // random, topical, term
   topicId: varchar("topic_id").references(() => topics.id), // for topical quizzes
@@ -124,7 +154,7 @@ export const dailyChallenges = pgTable("daily_challenges", {
 // User challenge progress table
 export const userChallengeProgress = pgTable("user_challenge_progress", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  profileId: varchar("profile_id").notNull().references(() => profiles.id),
   challengeId: varchar("challenge_id").notNull().references(() => dailyChallenges.id),
   currentValue: integer("current_value").default(0),
   completed: boolean("completed").default(false),
@@ -133,13 +163,51 @@ export const userChallengeProgress = pgTable("user_challenge_progress", {
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
+  profiles: many(profiles),
+  defaultProfile: one(profiles, {
+    fields: [users.defaultProfileId],
+    references: [profiles.id],
+  }),
+}));
+
+export const examinationSystemsRelations = relations(examinationSystems, ({ many }) => ({
+  levels: many(levels),
+  subjects: many(subjects),
+  profiles: many(profiles),
+}));
+
+export const levelsRelations = relations(levels, ({ one, many }) => ({
+  examinationSystem: one(examinationSystems, {
+    fields: [levels.examinationSystemId],
+    references: [examinationSystems.id],
+  }),
+  topics: many(topics),
+  profiles: many(profiles),
+}));
+
+export const profilesRelations = relations(profiles, ({ one, many }) => ({
+  user: one(users, {
+    fields: [profiles.userId],
+    references: [users.id],
+  }),
+  examinationSystem: one(examinationSystems, {
+    fields: [profiles.examinationSystemId],
+    references: [examinationSystems.id],
+  }),
+  level: one(levels, {
+    fields: [profiles.levelId],
+    references: [levels.id],
+  }),
   quizSessions: many(quizSessions),
-  userAnswers: many(userAnswers),
   challengeProgress: many(userChallengeProgress),
 }));
 
-export const subjectsRelations = relations(subjects, ({ many }) => ({
+export const subjectsRelations = relations(subjects, ({ one, many }) => ({
+  examinationSystem: one(examinationSystems, {
+    fields: [subjects.examinationSystemId],
+    references: [examinationSystems.id],
+  }),
   topics: many(topics),
   quizSessions: many(quizSessions),
 }));
@@ -148,6 +216,10 @@ export const topicsRelations = relations(topics, ({ one, many }) => ({
   subject: one(subjects, {
     fields: [topics.subjectId],
     references: [subjects.id],
+  }),
+  level: one(levels, {
+    fields: [topics.levelId],
+    references: [levels.id],
   }),
   questions: many(questions),
 }));
@@ -161,9 +233,9 @@ export const questionsRelations = relations(questions, ({ one, many }) => ({
 }));
 
 export const quizSessionsRelations = relations(quizSessions, ({ one, many }) => ({
-  user: one(users, {
-    fields: [quizSessions.userId],
-    references: [users.id],
+  profile: one(profiles, {
+    fields: [quizSessions.profileId],
+    references: [profiles.id],
   }),
   subject: one(subjects, {
     fields: [quizSessions.subjectId],
@@ -192,9 +264,9 @@ export const dailyChallengesRelations = relations(dailyChallenges, ({ many }) =>
 }));
 
 export const userChallengeProgressRelations = relations(userChallengeProgress, ({ one }) => ({
-  user: one(users, {
-    fields: [userChallengeProgress.userId],
-    references: [users.id],
+  profile: one(profiles, {
+    fields: [userChallengeProgress.profileId],
+    references: [profiles.id],
   }),
   challenge: one(dailyChallenges, {
     fields: [userChallengeProgress.challengeId],
@@ -204,6 +276,22 @@ export const userChallengeProgressRelations = relations(userChallengeProgress, (
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertExaminationSystemSchema = createInsertSchema(examinationSystems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertLevelSchema = createInsertSchema(levels).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertProfileSchema = createInsertSchema(profiles).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -247,6 +335,9 @@ export const insertUserChallengeProgressSchema = createInsertSchema(userChalleng
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type ExaminationSystem = typeof examinationSystems.$inferSelect;
+export type Level = typeof levels.$inferSelect;
+export type Profile = typeof profiles.$inferSelect;
 export type Subject = typeof subjects.$inferSelect;
 export type Topic = typeof topics.$inferSelect;
 export type Question = typeof questions.$inferSelect;
@@ -256,6 +347,9 @@ export type DailyChallenge = typeof dailyChallenges.$inferSelect;
 export type UserChallengeProgress = typeof userChallengeProgress.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertExaminationSystem = z.infer<typeof insertExaminationSystemSchema>;
+export type InsertLevel = z.infer<typeof insertLevelSchema>;
+export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type InsertSubject = z.infer<typeof insertSubjectSchema>;
 export type InsertTopic = z.infer<typeof insertTopicSchema>;
 export type InsertQuestion = z.infer<typeof insertQuestionSchema>;
