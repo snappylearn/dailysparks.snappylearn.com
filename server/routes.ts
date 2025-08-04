@@ -2,6 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { generateQuestions } from "./aiService";
+import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { insertQuizSessionSchema, insertUserAnswerSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -102,6 +106,188 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching subjects:", error);
       res.status(500).json({ message: "Failed to fetch subjects" });
+    }
+  });
+
+  // Topic routes
+  app.get('/api/topics/:subjectId/:levelId', async (req, res) => {
+    try {
+      const { subjectId, levelId } = req.params;
+      const { term } = req.query;
+      const topics = await storage.getTopicsBySubjectAndLevel(subjectId, levelId, term as string);
+      res.json(topics);
+    } catch (error) {
+      console.error("Error fetching topics:", error);
+      res.status(500).json({ message: "Failed to fetch topics" });
+    }
+  });
+
+  // Quiz session routes
+  app.post('/api/quiz/start', isAuthenticated, async (req: any, res) => {
+    try {
+      const { profileId, subjectId, quizType, topicId, term } = req.body;
+      
+      // Get profile to access level information
+      const profile = await storage.getProfile(profileId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      // Get subject information  
+      const subjects = await storage.getSubjectsBySystem(profile.examinationSystemId);
+      const subject = subjects.find(s => s.id === subjectId);
+      if (!subject) {
+        return res.status(404).json({ message: "Subject not found" });
+      }
+
+      // Get level information
+      const levels = await storage.getLevelsBySystem(profile.examinationSystemId);
+      const level = levels.find(l => l.id === profile.levelId);
+      if (!level) {
+        return res.status(404).json({ message: "Level not found" });
+      }
+
+      // Generate questions using AI
+      let topics: string[] = [];
+      if (quizType === 'topical' && topicId) {
+        const topic = await db.select({ title: topics.title }).from(topics).where(eq(topics.id, topicId));
+        if (topic[0]) topics = [topic[0].title];
+      }
+
+      console.log(`Generating questions for ${subject.name} ${level.title} (${quizType})`);
+      
+      const aiQuestions = await generateQuestions({
+        subject: subject.name,
+        level: level.title,
+        topics,
+        term,
+        quizType: quizType as 'random' | 'topical' | 'term',
+        questionCount: 30
+      });
+
+      // Create quiz session
+      const quizSession = await storage.createQuizSession({
+        profileId,
+        subjectId,
+        quizType,
+        topicId,
+        term,
+        totalQuestions: aiQuestions.length,
+      });
+
+      // Save generated questions to database
+      const questionsToInsert = aiQuestions.map(q => ({
+        topicId: topicId || null, // For random quizzes, topicId might be null
+        questionText: q.questionText,
+        optionA: q.optionA,
+        optionB: q.optionB,
+        optionC: q.optionC,
+        optionD: q.optionD,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        difficulty: q.difficulty,
+      }));
+
+      const savedQuestions = await storage.createQuestions(questionsToInsert);
+
+      res.json({
+        sessionId: quizSession.id,
+        questions: savedQuestions.map(q => ({
+          id: q.id,
+          questionText: q.questionText,
+          optionA: q.optionA,
+          optionB: q.optionB,
+          optionC: q.optionC,
+          optionD: q.optionD,
+        }))
+      });
+
+    } catch (error) {
+      console.error("Error starting quiz:", error);
+      res.status(500).json({ message: "Failed to start quiz", error: error.message });
+    }
+  });
+
+  app.post('/api/quiz/:sessionId/answer', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      const { questionId, userAnswer, timeSpent } = req.body;
+
+      // Get the question to check if answer is correct
+      const questions = await db.select().from(questions).where(eq(questions.id, questionId));
+      const question = questions[0];
+      
+      if (!question) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+
+      const isCorrect = question.correctAnswer === userAnswer;
+
+      // Save user answer
+      const answer = await storage.createUserAnswer({
+        quizSessionId: sessionId,
+        questionId,
+        userAnswer,
+        isCorrect,
+        timeSpent,
+      });
+
+      res.json({
+        isCorrect,
+        correctAnswer: question.correctAnswer,
+        explanation: question.explanation,
+      });
+
+    } catch (error) {
+      console.error("Error submitting answer:", error);
+      res.status(500).json({ message: "Failed to submit answer" });
+    }
+  });
+
+  app.post('/api/quiz/:sessionId/complete', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      
+      // Get all answers for this quiz session
+      const answers = await storage.getQuizAnswers(sessionId);
+      const correctAnswers = answers.filter(a => a.isCorrect).length;
+      const totalTime = answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);
+      
+      // Calculate sparks earned (base + accuracy bonus)
+      const accuracy = correctAnswers / answers.length;
+      const baseSparks = correctAnswers * 10;
+      const bonusMultiplier = accuracy >= 0.8 ? 1.5 : accuracy >= 0.6 ? 1.2 : 1;
+      const sparksEarned = Math.round(baseSparks * bonusMultiplier);
+
+      // Update quiz session
+      const updatedSession = await storage.updateQuizSession(sessionId, {
+        correctAnswers,
+        sparksEarned,
+        timeSpent: totalTime,
+        completed: true,
+        completedAt: new Date(),
+      });
+
+      // Update profile sparks
+      const profile = await storage.getProfile(updatedSession.profileId);
+      if (profile) {
+        await storage.updateProfile(profile.id, {
+          sparks: (profile.sparks || 0) + sparksEarned,
+          lastActivity: new Date(),
+        });
+      }
+
+      res.json({
+        correctAnswers,
+        totalQuestions: answers.length,
+        accuracy: Math.round(accuracy * 100),
+        sparksEarned,
+        timeSpent: totalTime,
+      });
+
+    } catch (error) {
+      console.error("Error completing quiz:", error);
+      res.status(500).json({ message: "Failed to complete quiz" });
     }
   });
 

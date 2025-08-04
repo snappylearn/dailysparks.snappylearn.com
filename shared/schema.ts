@@ -91,8 +91,10 @@ export const topics = pgTable("topics", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   subjectId: varchar("subject_id").notNull().references(() => subjects.id),
   levelId: varchar("level_id").notNull().references(() => levels.id),
-  name: varchar("name").notNull(),
-  term: varchar("term").notNull(),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  summaryContent: text("summary_content"),
+  term: varchar("term").notNull(), // term1, term2, term3
   order: integer("order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
