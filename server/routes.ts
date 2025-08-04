@@ -6,7 +6,6 @@ import { generateQuestions } from "./aiService";
 import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { insertQuizSessionSchema, insertUserAnswerSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -45,6 +44,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching levels:", error);
       res.status(500).json({ message: "Failed to fetch levels" });
+    }
+  });
+
+  // Terms routes
+  app.get('/api/terms', async (req, res) => {
+    try {
+      const terms = await storage.getTerms();
+      res.json(terms);
+    } catch (error) {
+      console.error("Error fetching terms:", error);
+      res.status(500).json({ message: "Failed to fetch terms" });
     }
   });
 
@@ -113,8 +123,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/topics/:subjectId/:levelId', async (req, res) => {
     try {
       const { subjectId, levelId } = req.params;
-      const { term } = req.query;
-      const topics = await storage.getTopicsBySubjectAndLevel(subjectId, levelId, term as string);
+      const { termId } = req.query;
+      const topics = await storage.getTopicsBySubjectAndLevel(subjectId, levelId, termId as string);
       res.json(topics);
     } catch (error) {
       console.error("Error fetching topics:", error);
@@ -148,10 +158,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate questions using AI
-      let topics: string[] = [];
+      let topicNames: string[] = [];
       if (quizType === 'topical' && topicId) {
         const topic = await db.select({ title: topics.title }).from(topics).where(eq(topics.id, topicId));
-        if (topic[0]) topics = [topic[0].title];
+        if (topic[0]) topicNames = [topic[0].title];
       }
 
       console.log(`Generating questions for ${subject.name} ${level.title} (${quizType})`);
@@ -159,7 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const aiQuestions = await generateQuestions({
         subject: subject.name,
         level: level.title,
-        topics,
+        topics: topicNames,
         term,
         quizType: quizType as 'random' | 'topical' | 'term',
         questionCount: 30
@@ -204,7 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       console.error("Error starting quiz:", error);
-      res.status(500).json({ message: "Failed to start quiz", error: error.message });
+      res.status(500).json({ message: "Failed to start quiz", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -433,9 +443,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         completedAt: new Date(),
       });
 
-      // Update user sparks and streak
-      await storage.updateUserSparks(userId, sparksEarned);
-      const updatedUser = await storage.updateUserStreak(userId);
+      // Update profile sparks and streak (placeholder - implement if needed)
+      // await storage.updateProfileSparks(profileId, sparksEarned);
+      // const updatedProfile = await storage.updateProfileStreak(profileId);
 
       // Calculate grade
       const percentage = Math.round((correctAnswers / totalQuestions) * 100);
@@ -452,8 +462,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         percentage,
         grade,
         sparksEarned,
-        currentStreak: updatedUser.streak,
-        totalSparks: updatedUser.sparks,
+        // currentStreak: updatedProfile?.streak || 0,
+        // totalSparks: updatedProfile?.sparks || 0,
       });
     } catch (error) {
       console.error("Error completing quiz:", error);
@@ -471,7 +481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "No challenge for today" });
       }
 
-      const progress = await storage.getUserChallengeProgress(userId, challenge.id);
+      // const progress = await storage.getProfileChallengeProgress(profileId, challenge.id);
       
       res.json({
         challenge,
@@ -487,7 +497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/user/stats', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const stats = await storage.getUserStats(userId);
+      // const stats = await storage.getProfileStats(profileId);
       res.json(stats);
     } catch (error) {
       console.error("Error fetching user stats:", error);
@@ -512,11 +522,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Seed initial data (for development)
   app.post('/api/seed', async (req, res) => {
     try {
+      // Get KCSE system
+      const systems = await storage.getExaminationSystems();
+      const kcseSystem = systems.find(s => s.name === 'Kenya Certificate of Secondary Education');
+      if (!kcseSystem) throw new Error('KCSE system not found');
+
       // Create KCSE subjects
       const mathSubject = await storage.createSubject({
         name: 'Mathematics',
         code: 'MATH',
-        examType: 'KCSE',
+        examinationSystemId: kcseSystem.id,
         icon: 'fas fa-calculator',
         color: 'from-spark-blue to-spark-turquoise',
       });
@@ -524,17 +539,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const physicsSubject = await storage.createSubject({
         name: 'Physics',
         code: 'PHYS',
-        examType: 'KCSE',
+        examinationSystemId: kcseSystem.id,
         icon: 'fas fa-atom',
         color: 'from-spark-mint to-spark-turquoise',
       });
 
+      // Get form 1 level and term 1
+      const levels = await storage.getLevelsBySystem(kcseSystem.id);
+      const form1Level = levels.find(l => l.title === 'Form 1');
+      const terms = await storage.getTerms();
+      const term1 = terms.find(t => t.title === 'Term 1');
+      
+      if (!form1Level || !term1) throw new Error('Level or term not found');
+
       // Create topics for Form 1 Mathematics
       const algebraTopic = await storage.createTopic({
+        examinationSystemId: kcseSystem.id,
         subjectId: mathSubject.id,
-        name: 'Algebra I',
-        form: 'Form 1',
-        term: 'Term 1',
+        levelId: form1Level.id,
+        termId: term1.id,
+        title: 'Algebra I',
+        description: 'Introduction to algebraic expressions and equations',
         order: 1,
       });
 

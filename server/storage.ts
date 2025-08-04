@@ -4,6 +4,7 @@ import {
   levels,
   profiles,
   subjects,
+  terms,
   topics,
   questions,
   quizSessions,
@@ -16,6 +17,7 @@ import {
   type Level,
   type Profile,
   type Subject,
+  type Term,
   type Topic,
   type Question,
   type QuizSession,
@@ -26,6 +28,7 @@ import {
   type InsertLevel,
   type InsertProfile,
   type InsertSubject,
+  type InsertTerm,
   type InsertTopic,
   type InsertQuestion,
   type InsertQuizSession,
@@ -49,6 +52,9 @@ export interface IStorage {
   getLevelsBySystem(examinationSystemId: string): Promise<Level[]>;
   createLevel(level: InsertLevel): Promise<Level>;
   
+  // Term operations
+  getTerms(): Promise<Term[]>;
+  
   // Profile operations
   getUserProfiles(userId: string): Promise<Profile[]>;
   getProfile(profileId: string): Promise<Profile | undefined>;
@@ -61,14 +67,16 @@ export interface IStorage {
   createSubject(subject: InsertSubject): Promise<Subject>;
   
   // Topic operations
-  getTopicsBySubjectAndLevel(subjectId: string, levelId: string, term?: string): Promise<Topic[]>;
+  getTopicsBySubjectAndLevel(subjectId: string, levelId: string, termId?: string): Promise<Topic[]>;
+  getTopicsByTerm(termId: string): Promise<Topic[]>;
   createTopic(topic: InsertTopic): Promise<Topic>;
   
   // Question operations
   getQuestionsByTopic(topicId: string, limit?: number): Promise<Question[]>;
   getRandomQuestions(subjectId: string, levelId: string, limit?: number): Promise<Question[]>;
-  getTermQuestions(subjectId: string, levelId: string, term: string, limit?: number): Promise<Question[]>;
+  getTermQuestions(subjectId: string, levelId: string, termId: string, limit?: number): Promise<Question[]>;
   createQuestion(question: InsertQuestion): Promise<Question>;
+  createQuestions(questions: InsertQuestion[]): Promise<Question[]>;
   
   // Quiz session operations
   createQuizSession(session: InsertQuizSession): Promise<QuizSession>;
@@ -137,6 +145,11 @@ export class DatabaseStorage implements IStorage {
     return newLevel;
   }
 
+  // Term operations
+  async getTerms(): Promise<Term[]> {
+    return await db.select().from(terms).orderBy(terms.order);
+  }
+
   // Profile operations
   async getUserProfiles(userId: string): Promise<Profile[]> {
     return await db.select().from(profiles)
@@ -186,15 +199,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Topic operations
-  async getTopicsBySubjectAndLevel(subjectId: string, levelId: string, term?: string): Promise<Topic[]> {
+  async getTopicsBySubjectAndLevel(subjectId: string, levelId: string, termId?: string): Promise<Topic[]> {
     let query = db.select().from(topics)
       .where(and(eq(topics.subjectId, subjectId), eq(topics.levelId, levelId)));
     
-    if (term) {
-      query = query.where(eq(topics.term, term));
+    if (termId) {
+      query = query.where(eq(topics.termId, termId));
     }
     
     return await query.orderBy(topics.order);
+  }
+
+  async getTopicsByTerm(termId: string): Promise<Topic[]> {
+    return await db.select().from(topics)
+      .where(eq(topics.termId, termId))
+      .orderBy(topics.order);
   }
 
   async createTopic(topic: InsertTopic): Promise<Topic> {
@@ -231,7 +250,7 @@ export class DatabaseStorage implements IStorage {
     .limit(limit);
   }
 
-  async getTermQuestions(subjectId: string, levelId: string, term: string, limit: number = 30): Promise<Question[]> {
+  async getTermQuestions(subjectId: string, levelId: string, termId: string, limit: number = 30): Promise<Question[]> {
     return await db.select({
       id: questions.id,
       topicId: questions.topicId,
@@ -250,7 +269,7 @@ export class DatabaseStorage implements IStorage {
     .where(and(
       eq(topics.subjectId, subjectId),
       eq(topics.levelId, levelId),
-      eq(topics.term, term)
+      eq(topics.termId, termId)
     ))
     .orderBy(sql`RANDOM()`)
     .limit(limit);
@@ -259,6 +278,11 @@ export class DatabaseStorage implements IStorage {
   async createQuestion(question: InsertQuestion): Promise<Question> {
     const [newQuestion] = await db.insert(questions).values(question).returning();
     return newQuestion;
+  }
+
+  async createQuestions(questionsData: InsertQuestion[]): Promise<Question[]> {
+    const createdQuestions = await db.insert(questions).values(questionsData).returning();
+    return createdQuestions;
   }
 
   async createQuestions(questionsData: InsertQuestion[]): Promise<Question[]> {

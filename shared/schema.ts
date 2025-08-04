@@ -86,15 +86,25 @@ export const subjects = pgTable("subjects", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Terms table - represents academic terms (Term 1, Term 2, Term 3)
+export const terms = pgTable("terms", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(), // "Term 1", "Term 2", "Term 3"
+  description: text("description"),
+  order: integer("order").notNull(), // 1, 2, 3
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Topics table (within subjects)
 export const topics = pgTable("topics", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  examinationSystemId: varchar("examination_system_id").notNull().references(() => examinationSystems.id),
   subjectId: varchar("subject_id").notNull().references(() => subjects.id),
   levelId: varchar("level_id").notNull().references(() => levels.id),
+  termId: varchar("term_id").notNull().references(() => terms.id),
   title: varchar("title").notNull(),
   description: text("description"),
   summaryContent: text("summary_content"),
-  term: varchar("term").notNull(), // term1, term2, term3
   order: integer("order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -214,7 +224,15 @@ export const subjectsRelations = relations(subjects, ({ one, many }) => ({
   quizSessions: many(quizSessions),
 }));
 
+export const termsRelations = relations(terms, ({ many }) => ({
+  topics: many(topics),
+}));
+
 export const topicsRelations = relations(topics, ({ one, many }) => ({
+  examinationSystem: one(examinationSystems, {
+    fields: [topics.examinationSystemId],
+    references: [examinationSystems.id],
+  }),
   subject: one(subjects, {
     fields: [topics.subjectId],
     references: [subjects.id],
@@ -222,6 +240,10 @@ export const topicsRelations = relations(topics, ({ one, many }) => ({
   level: one(levels, {
     fields: [topics.levelId],
     references: [levels.id],
+  }),
+  term: one(terms, {
+    fields: [topics.termId],
+    references: [terms.id],
   }),
   questions: many(questions),
 }));
@@ -304,6 +326,11 @@ export const insertSubjectSchema = createInsertSchema(subjects).omit({
   createdAt: true,
 });
 
+export const insertTermSchema = createInsertSchema(terms).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertTopicSchema = createInsertSchema(topics).omit({
   id: true,
   createdAt: true,
@@ -341,6 +368,7 @@ export type ExaminationSystem = typeof examinationSystems.$inferSelect;
 export type Level = typeof levels.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;
 export type Subject = typeof subjects.$inferSelect;
+export type Term = typeof terms.$inferSelect;
 export type Topic = typeof topics.$inferSelect;
 export type Question = typeof questions.$inferSelect;
 export type QuizSession = typeof quizSessions.$inferSelect;
@@ -353,6 +381,7 @@ export type InsertExaminationSystem = z.infer<typeof insertExaminationSystemSche
 export type InsertLevel = z.infer<typeof insertLevelSchema>;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type InsertSubject = z.infer<typeof insertSubjectSchema>;
+export type InsertTerm = z.infer<typeof insertTermSchema>;
 export type InsertTopic = z.infer<typeof insertTopicSchema>;
 export type InsertQuestion = z.infer<typeof insertQuestionSchema>;
 export type InsertQuizSession = z.infer<typeof insertQuizSessionSchema>;
