@@ -107,47 +107,53 @@ export default function Home() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Zap className="h-5 w-5 text-orange-500" />
-                <span>Start Learning</span>
-              </CardTitle>
-              <CardDescription>
-                Take a 30-question quiz and earn sparks
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {subjects.length > 0 ? (
-                subjects.slice(0, 3).map((subject) => (
-                  <Button
-                    key={subject.id}
-                    variant="outline"
-                    className="w-full justify-start"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <div 
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: subject.color || '#666' }}
-                      />
-                      <span>{subject.name}</span>
+        {/* All Subjects */}
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <Zap className="h-5 w-5 text-orange-500 mr-2" />
+            Choose Your Subject
+          </h2>
+          <p className="text-gray-600 mb-6">Select a subject to start your quiz</p>
+          
+          {subjects.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+              {subjects.map((subject) => (
+                <Card 
+                  key={subject.id}
+                  className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 border-2 hover:border-orange-300 bg-white"
+                  onClick={() => {
+                    console.log('Clicking subject card:', subject.name, subject.id);
+                    window.location.href = `/quiz?subject=${subject.id}&name=${encodeURIComponent(subject.name)}`;
+                  }}
+                >
+                  <CardContent className="p-4 text-center">
+                    <div 
+                      className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold text-lg"
+                      style={{ backgroundColor: subject.color || '#666' }}
+                    >
+                      {subject.name.charAt(0)}
                     </div>
-                  </Button>
-                ))
-              ) : (
-                <div className="text-center py-4">
-                  <Book className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">
-                    No subjects available yet. Check back soon!
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    <h3 className="font-medium text-gray-900 text-sm leading-tight">
+                      {subject.name}
+                    </h3>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="mb-6">
+              <CardContent className="text-center py-8">
+                <Book className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">
+                  No subjects available yet. Check back soon!
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
-          {/* Performance Overview */}
+        {/* Progress Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
