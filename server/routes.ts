@@ -182,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subjectId,
         quizType,
         topicId: topicId || null,
-        termId: termId || null,
+        termId: term || null,
         totalQuestions: aiQuestions.length,
       });
 

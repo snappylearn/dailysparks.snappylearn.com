@@ -13,12 +13,12 @@ import {
   User, 
   Flame,
   Crown,
-  Star
+  Star,
+  LogOut
 } from 'lucide-react';
 
 interface MainLayoutProps {
   children: ReactNode;
-  showNavigation?: boolean;
 }
 
 interface Profile {
@@ -30,13 +30,7 @@ interface Profile {
   level: string;
 }
 
-interface DailyRanking {
-  position: number;
-  totalParticipants: number;
-  todaysSparks: number;
-}
-
-export function MainLayout({ children, showNavigation = true }: MainLayoutProps) {
+export function MainLayout({ children }: MainLayoutProps) {
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuth();
 
@@ -45,13 +39,6 @@ export function MainLayout({ children, showNavigation = true }: MainLayoutProps)
     queryKey: ['/api/profiles'],
     enabled: !!user,
   });
-
-  // Get daily ranking (mock for now)
-  const dailyRanking: DailyRanking = {
-    position: 47,
-    totalParticipants: 2341,
-    todaysSparks: 180
-  };
 
   const currentProfile = profiles?.[0];
 
@@ -62,132 +49,117 @@ export function MainLayout({ children, showNavigation = true }: MainLayoutProps)
     { icon: User, label: 'Profile', path: '/profile', active: location === '/profile' },
   ];
 
+  if (!isAuthenticated) {
+    return <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50">{children}</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50">
-      {/* Top Bar with Daily Spark Ranking */}
-      {isAuthenticated && (
-        <div className="bg-white/80 backdrop-blur-sm border-b border-orange-200 sticky top-0 z-50">
-          <div className="max-w-6xl mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              {/* Left: Daily Spark Ranking */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full text-sm font-semibold">
-                  <Flame className="h-4 w-4" />
-                  Daily Spark #{dailyRanking.position}
-                </div>
-                <div className="text-sm text-gray-600 hidden sm:block">
-                  {dailyRanking.todaysSparks} sparks today
-                </div>
+      {/* Top Navigation Bar */}
+      <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Left: Greeting */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-full flex items-center justify-center">
+                <Flame className="h-5 w-5 text-white" />
               </div>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">
+                  Hey there, {currentProfile?.name || user?.firstName || 'Student'}!
+                </h1>
+                <p className="text-sm text-gray-600">Ready to earn some sparks today?</p>
+              </div>
+            </div>
 
-              {/* Right: User Profile */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="text-right hidden sm:block">
-                    <div className="text-sm font-medium">{currentProfile?.name || user?.firstName || 'Student'}</div>
-                    <div className="text-xs text-gray-500">
-                      {currentProfile?.totalSparks || 0} total sparks
-                    </div>
+            {/* Right: Stats and Logout */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4">
+                <div className="text-center">
+                  <div className="flex items-center gap-1 text-orange-500">
+                    <Flame className="h-4 w-4" />
+                    <span className="font-semibold">{currentProfile?.totalSparks || 0}</span>
                   </div>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.profileImageUrl} />
-                    <AvatarFallback>
-                      {currentProfile?.name?.substring(0, 2).toUpperCase() || user?.firstName?.substring(0, 2).toUpperCase() || 'DS'}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="text-xs text-gray-500">Sparks</div>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center gap-1 text-orange-600">
+                    <Flame className="h-4 w-4" />
+                    <span className="font-semibold">{currentProfile?.currentStreak || 0}</span>
+                  </div>
+                  <div className="text-xs text-gray-500">Day streak</div>
                 </div>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.location.href = '/api/logout'}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Logout
+              </Button>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Main Content */}
-      <div className="flex flex-col lg:flex-row max-w-6xl mx-auto">
+      <div className="flex">
         {/* Main Content Area */}
-        <main className="flex-1 p-4">
+        <main className="flex-1 p-6">
           {children}
         </main>
 
-        {/* Bottom Navigation for Mobile / Sidebar for Desktop */}
-        {showNavigation && isAuthenticated && (
-          <>
-            {/* Mobile Bottom Navigation */}
-            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-orange-200">
-              <div className="flex items-center justify-around py-2">
+        {/* Right Sidebar */}
+        <div className="w-80 bg-white/50 backdrop-blur-sm border-l border-gray-200 p-6">
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="space-y-3">
                 {navigationItems.map((item) => (
                   <Link key={item.path} href={item.path}>
                     <Button
                       variant={item.active ? "default" : "ghost"}
-                      size="sm"
-                      className="flex flex-col gap-1 h-auto py-2 px-3"
+                      className="w-full justify-start gap-3 h-12 text-left"
                     >
-                      <item.icon className="h-4 w-4" />
-                      <span className="text-xs">{item.label}</span>
+                      <item.icon className="h-5 w-5" />
+                      <span className="text-base">{item.label}</span>
                     </Button>
                   </Link>
                 ))}
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Desktop Sidebar */}
-            <div className="hidden lg:block w-64 p-4">
-              <Card className="sticky top-24">
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    {navigationItems.map((item) => (
-                      <Link key={item.path} href={item.path}>
-                        <Button
-                          variant={item.active ? "default" : "ghost"}
-                          className="w-full justify-start gap-3"
-                        >
-                          <item.icon className="h-4 w-4" />
-                          {item.label}
-                        </Button>
-                      </Link>
-                    ))}
-                  </div>
-
-                  {/* Stats Card */}
-                  {currentProfile && (
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                      <h3 className="font-semibold text-sm text-gray-700 mb-3">Quick Stats</h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="flex items-center gap-2">
-                            <Star className="h-3 w-3 text-yellow-500" />
-                            Total Sparks
-                          </span>
-                          <span className="font-medium">{currentProfile?.totalSparks || 0}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="flex items-center gap-2">
-                            <Flame className="h-3 w-3 text-orange-500" />
-                            Current Streak
-                          </span>
-                          <span className="font-medium">{currentProfile?.currentStreak || 0} days</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="flex items-center gap-2">
-                            <Crown className="h-3 w-3 text-purple-500" />
-                            Today's Rank
-                          </span>
-                          <span className="font-medium">#{dailyRanking.position}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </>
-        )}
+          {/* Quick Stats Card */}
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="font-semibold text-lg text-gray-800 mb-4">Quick Stats</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-gray-600">
+                    <Star className="h-4 w-4 text-yellow-500" />
+                    Total Sparks
+                  </span>
+                  <span className="font-semibold text-lg">{currentProfile?.totalSparks || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-gray-600">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                    Current Streak
+                  </span>
+                  <span className="font-semibold text-lg">{currentProfile?.currentStreak || 0} days</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-gray-600">
+                    <Crown className="h-4 w-4 text-purple-500" />
+                    Today's Rank
+                  </span>
+                  <span className="font-semibold text-lg">#47</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-
-      {/* Add padding bottom for mobile navigation */}
-      {showNavigation && isAuthenticated && (
-        <div className="h-20 lg:h-0" />
-      )}
     </div>
   );
 }

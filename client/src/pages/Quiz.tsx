@@ -327,7 +327,7 @@ export default function Quiz() {
     const progress = ((currentQuestionIndex + 1) / quizSession.questions.length) * 100;
     
     return (
-      <MainLayout showNavigation={false}>
+      <MainLayout>
         <div className="max-w-2xl mx-auto">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
@@ -409,7 +409,7 @@ export default function Quiz() {
   // Show quiz wizard (selection screen)
   return (
     <MainLayout>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <Button 
