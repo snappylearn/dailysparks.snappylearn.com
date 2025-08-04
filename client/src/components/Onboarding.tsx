@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { ExaminationSystem, Level } from "@shared/schema";
+import { GraduationCap } from "lucide-react";
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -53,80 +53,103 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const selectedSystemData = systems?.find(s => s.id === selectedSystem);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-full mx-auto flex items-center justify-center mb-4">
-            <i className="fas fa-graduation-cap text-white text-2xl"></i>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-lg shadow-lg border-0">
+        <CardHeader className="text-center pb-8">
+          <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-full mx-auto flex items-center justify-center mb-6">
+            <GraduationCap className="h-10 w-10 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
+          <CardTitle className="text-3xl font-bold text-gray-900">
             Welcome to Daily Sparks!
           </CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardDescription className="text-lg text-gray-600 mt-2">
             Let's set up your learning profile to get started
           </CardDescription>
         </CardHeader>
         
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-8">
           {/* Examination System Selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">
               Which exam are you preparing for?
-            </label>
-            <Select value={selectedSystem} onValueChange={setSelectedSystem}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose your examination system" />
-              </SelectTrigger>
-              <SelectContent>
-                {systems?.map((system) => (
-                  <SelectItem key={system.id} value={system.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{system.code}</span>
-                      <span className="text-xs text-gray-500">{system.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              {systemsLoading ? (
+                <>
+                  <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                  <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                  <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                  <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                </>
+              ) : (
+                systems?.map((system) => (
+                  <Button
+                    key={system.id}
+                    variant={selectedSystem === system.id ? "default" : "outline"}
+                    onClick={() => {
+                      setSelectedSystem(system.id);
+                      setSelectedLevel(""); // Reset level when system changes
+                    }}
+                    className={`h-16 p-4 text-left flex flex-col items-start justify-center ${
+                      selectedSystem === system.id
+                        ? "bg-gradient-to-r from-orange-500 to-yellow-400 text-white border-0"
+                        : "hover:border-orange-300 hover:bg-orange-50"
+                    }`}
+                  >
+                    <span className="font-semibold text-sm">{system.code}</span>
+                    <span className="text-xs opacity-80 truncate w-full">{system.name}</span>
+                  </Button>
+                ))
+              )}
+            </div>
           </div>
 
           {/* Level Selection */}
           {selectedSystem && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                What's your current level?
-              </label>
-              <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                <SelectTrigger>
-                  <SelectValue placeholder={`Choose your ${selectedSystemData?.code} level`} />
-                </SelectTrigger>
-                <SelectContent>
-                  {levels?.map((level) => (
-                    <SelectItem key={level.id} value={level.id}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{level.title}</span>
-                        {level.description && (
-                          <span className="text-xs text-gray-500">{level.description}</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-300">
+              <h3 className="text-lg font-semibold text-gray-900">
+                What's your current level in {selectedSystemData?.code}?
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                {levelsLoading ? (
+                  <>
+                    <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                    <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                  </>
+                ) : (
+                  levels?.map((level) => (
+                    <Button
+                      key={level.id}
+                      variant={selectedLevel === level.id ? "default" : "outline"}
+                      onClick={() => setSelectedLevel(level.id)}
+                      className={`h-16 p-4 text-left flex flex-col items-start justify-center ${
+                        selectedLevel === level.id
+                          ? "bg-gradient-to-r from-orange-500 to-yellow-400 text-white border-0"
+                          : "hover:border-orange-300 hover:bg-orange-50"
+                      }`}
+                    >
+                      <span className="font-semibold">{level.title}</span>
+                      {level.description && (
+                        <span className="text-xs opacity-80">{level.description}</span>
+                      )}
+                    </Button>
+                  ))
+                )}
+              </div>
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="space-y-4 pt-4">
+          {/* Create Profile Button */}
+          <div className="pt-6">
             <Button
               onClick={handleSubmit}
               disabled={!selectedSystem || !selectedLevel || createProfileMutation.isPending}
-              className="w-full bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-600 hover:to-yellow-500 text-white font-semibold py-3"
+              className="w-full bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-600 hover:to-yellow-500 text-white font-semibold py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {createProfileMutation.isPending ? "Setting up..." : "Create My Profile"}
             </Button>
             
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-gray-500 text-center mt-3">
               You can add more profiles later to study for different exams
             </p>
           </div>
