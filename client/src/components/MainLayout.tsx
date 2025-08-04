@@ -82,22 +82,20 @@ export function MainLayout({ children, showNavigation = true }: MainLayoutProps)
 
               {/* Right: User Profile */}
               <div className="flex items-center gap-3">
-                {currentProfile && (
-                  <div className="flex items-center gap-2">
-                    <div className="text-right hidden sm:block">
-                      <div className="text-sm font-medium">{currentProfile.name}</div>
-                      <div className="text-xs text-gray-500">
-                        {currentProfile.totalSparks} total sparks
-                      </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-right hidden sm:block">
+                    <div className="text-sm font-medium">{currentProfile?.name || user?.firstName || 'Student'}</div>
+                    <div className="text-xs text-gray-500">
+                      {currentProfile?.totalSparks || 0} total sparks
                     </div>
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.profileImageUrl} />
-                      <AvatarFallback>
-                        {currentProfile.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
                   </div>
-                )}
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.profileImageUrl} />
+                    <AvatarFallback>
+                      {currentProfile?.name?.substring(0, 2).toUpperCase() || user?.firstName?.substring(0, 2).toUpperCase() || 'DS'}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
               </div>
             </div>
           </div>
@@ -160,14 +158,14 @@ export function MainLayout({ children, showNavigation = true }: MainLayoutProps)
                             <Star className="h-3 w-3 text-yellow-500" />
                             Total Sparks
                           </span>
-                          <span className="font-medium">{currentProfile.totalSparks}</span>
+                          <span className="font-medium">{currentProfile?.totalSparks || 0}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
                           <span className="flex items-center gap-2">
                             <Flame className="h-3 w-3 text-orange-500" />
                             Current Streak
                           </span>
-                          <span className="font-medium">{currentProfile.currentStreak} days</span>
+                          <span className="font-medium">{currentProfile?.currentStreak || 0} days</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
                           <span className="flex items-center gap-2">
