@@ -49,6 +49,9 @@ export function MainLayout({ children }: MainLayoutProps) {
     { icon: User, label: 'Profile', path: '/profile', active: location === '/profile' },
   ];
 
+  // Check if we should show sidebar (only on dashboard)
+  const showSidebar = location === '/';
+
   if (!isAuthenticated) {
     return <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50">{children}</div>;
   }
@@ -104,59 +107,61 @@ export function MainLayout({ children }: MainLayoutProps) {
       </div>
 
       <div className="flex">
-        {/* Left Sidebar */}
-        <div className="w-80 bg-white/50 backdrop-blur-sm border-r border-gray-200 p-6">
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="space-y-3">
-                {navigationItems.map((item) => (
-                  <Link key={item.path} href={item.path}>
-                    <Button
-                      variant={item.active ? "default" : "ghost"}
-                      className="w-full justify-start gap-3 h-12 text-left"
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span className="text-base">{item.label}</span>
-                    </Button>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Left Sidebar - Only show on dashboard */}
+        {showSidebar && (
+          <div className="w-80 bg-white/50 backdrop-blur-sm border-r border-gray-200 p-6">
+            <Card className="mb-6">
+              <CardContent className="p-6">
+                <div className="space-y-3">
+                  {navigationItems.map((item) => (
+                    <Link key={item.path} href={item.path}>
+                      <Button
+                        variant={item.active ? "default" : "ghost"}
+                        className="w-full justify-start gap-3 h-12 text-left"
+                      >
+                        <item.icon className="h-5 w-5" />
+                        <span className="text-base">{item.label}</span>
+                      </Button>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Quick Stats Card */}
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-lg text-gray-800 mb-4">Quick Stats</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-gray-600">
-                    <Star className="h-4 w-4 text-yellow-500" />
-                    Total Sparks
-                  </span>
-                  <span className="font-semibold text-lg">{currentProfile?.totalSparks || 0}</span>
+            {/* Quick Stats Card */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold text-lg text-gray-800 mb-4">Quick Stats</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-gray-600">
+                      <Star className="h-4 w-4 text-yellow-500" />
+                      Total Sparks
+                    </span>
+                    <span className="font-semibold text-lg">{currentProfile?.totalSparks || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-gray-600">
+                      <Flame className="h-4 w-4 text-orange-500" />
+                      Current Streak
+                    </span>
+                    <span className="font-semibold text-lg">{currentProfile?.currentStreak || 0} days</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-gray-600">
+                      <Crown className="h-4 w-4 text-purple-500" />
+                      Today's Rank
+                    </span>
+                    <span className="font-semibold text-lg">#47</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-gray-600">
-                    <Flame className="h-4 w-4 text-orange-500" />
-                    Current Streak
-                  </span>
-                  <span className="font-semibold text-lg">{currentProfile?.currentStreak || 0} days</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-gray-600">
-                    <Crown className="h-4 w-4 text-purple-500" />
-                    Today's Rank
-                  </span>
-                  <span className="font-semibold text-lg">#47</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Main Content Area */}
-        <main className="flex-1 p-6">
+        <main className={`flex-1 p-6 ${!showSidebar ? 'max-w-full' : ''}`}>
           {children}
         </main>
       </div>

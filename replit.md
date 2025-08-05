@@ -11,6 +11,7 @@ The application offers gamified quiz experiences where students can take random 
 Preferred communication style: Simple, everyday language.
 Landing page design: SaaS-friendly landing page with "Start Your Journey" CTA prominent in hero section.
 Onboarding design: Examination systems as buttons in a grid, when selected shows levels as buttons underneath. Clean, button-based interface preferred over dropdowns.
+Layout preferences: Sidebar navigation should only appear on the dashboard page, not on other pages like Quiz, Leaderboard, or Profile.
 
 ## System Architecture
 
