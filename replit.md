@@ -12,7 +12,7 @@ Preferred communication style: Simple, everyday language.
 Landing page design: SaaS-friendly landing page with "Start Your Journey" CTA prominent in hero section.
 Onboarding design: Examination systems as buttons in a grid, when selected shows levels as buttons underneath. Clean, button-based interface preferred over dropdowns.
 Layout preferences: Sidebar navigation should only appear on the dashboard page, not on other pages like Quiz, Leaderboard, or Profile.
-Top navigation design: Minimal, functional top bar with user avatar dropdown on left, "Start A Quiz" and "Leaderboard" buttons in center, and stats (position, sparks, streak) with icons on right. No greeting text on every page for cleaner design.
+Top navigation design: Consistent navbar across all pages with Daily Sparks logo on left, "Start A Quiz" and "Leaderboard" buttons in center, stats (position, sparks, streak) with icons and user avatar dropdown on right. No greeting text for cleaner design.
 
 ## System Architecture
 

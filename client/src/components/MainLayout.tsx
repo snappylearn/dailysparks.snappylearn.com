@@ -61,12 +61,56 @@ export function MainLayout({ children }: MainLayoutProps) {
     <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50">
       {/* Top Navigation Bar */}
       <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="px-6 py-3">
+        <div className="px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Left: User Avatar with Dropdown */}
+            {/* Left: Logo and Brand */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-full flex items-center justify-center">
+                <Flame className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-gray-900">Daily Sparks</span>
+            </div>
+
+            {/* Center: Navigation Actions */}
             <div className="flex items-center gap-4">
+              <Link href="/quiz">
+                <Button variant="default" className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
+                  <Target className="h-4 w-4 mr-2" />
+                  Start A Quiz
+                </Button>
+              </Link>
+              
+              <Link href="/leaderboard">
+                <Button variant="ghost" className="text-gray-700 hover:text-gray-900">
+                  <Trophy className="h-4 w-4 mr-2" />
+                  Leaderboard
+                </Button>
+              </Link>
+            </div>
+
+            {/* Right: Stats and User Avatar */}
+            <div className="flex items-center gap-4">
+              {/* Stats */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1 text-purple-600">
+                  <Crown className="h-4 w-4" />
+                  <span className="font-semibold">#47</span>
+                </div>
+                
+                <div className="flex items-center gap-1 text-orange-500">
+                  <Star className="h-4 w-4" />
+                  <span className="font-semibold">{currentProfile?.totalSparks || 0}</span>
+                </div>
+                
+                <div className="flex items-center gap-1 text-orange-600">
+                  <Flame className="h-4 w-4" />
+                  <span className="font-semibold">{currentProfile?.currentStreak || 0}</span>
+                </div>
+              </div>
+
+              {/* User Avatar with Dropdown */}
               <div className="relative group">
-                <button className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={(user as any)?.profileImageUrl} />
                     <AvatarFallback className="bg-gradient-to-br from-orange-500 to-yellow-400 text-white">
@@ -77,7 +121,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                 </button>
                 
                 {/* Dropdown Menu */}
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                   <div className="p-3 border-b border-gray-100">
                     <div className="font-medium text-sm">{currentProfile?.name || (user as any)?.firstName || 'Student'}</div>
                     <div className="text-xs text-gray-500">{(user as any)?.email}</div>
@@ -98,41 +142,6 @@ export function MainLayout({ children }: MainLayoutProps) {
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Center: Navigation Actions */}
-            <div className="flex items-center gap-6">
-              <Link href="/quiz">
-                <Button variant="default" className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
-                  <Target className="h-4 w-4 mr-2" />
-                  Start A Quiz
-                </Button>
-              </Link>
-              
-              <Link href="/leaderboard">
-                <Button variant="ghost" className="text-gray-700 hover:text-gray-900">
-                  <Trophy className="h-4 w-4 mr-2" />
-                  Leaderboard
-                </Button>
-              </Link>
-            </div>
-
-            {/* Right: Stats Display */}
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-1 text-purple-600">
-                <Crown className="h-4 w-4" />
-                <span className="font-semibold">#47</span>
-              </div>
-              
-              <div className="flex items-center gap-1 text-orange-500">
-                <Star className="h-4 w-4" />
-                <span className="font-semibold">{currentProfile?.totalSparks || 0}</span>
-              </div>
-              
-              <div className="flex items-center gap-1 text-orange-600">
-                <Flame className="h-4 w-4" />
-                <span className="font-semibold">{currentProfile?.currentStreak || 0}</span>
               </div>
             </div>
           </div>
