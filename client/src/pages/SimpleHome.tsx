@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/hooks/useAuth";
 import { Profile, Subject } from "@shared/schema";
 import { Book, Flame, Zap, TrendingUp, Plus } from "lucide-react";
+import { MainLayout } from "@/components/MainLayout";
 
 export default function Home() {
   const { user } = useAuth();
@@ -58,55 +59,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-orange-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-full flex items-center justify-center">
-                <Flame className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  Hey there, {user?.firstName || 'Student'}!
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Ready to earn some sparks today?
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-center">
-                <div className="flex items-center space-x-1">
-                  <Zap className="h-4 w-4 text-orange-500" />
-                  <span className="text-lg font-bold text-gray-900">{currentProfile.sparks || 0}</span>
-                </div>
-                <p className="text-xs text-gray-500">Sparks</p>
-              </div>
-              
-              <div className="text-center">
-                <div className="flex items-center space-x-1">
-                  <Flame className="h-4 w-4 text-red-500" />
-                  <span className="text-lg font-bold text-gray-900">{currentProfile.streak || 0}</span>
-                </div>
-                <p className="text-xs text-gray-500">Day streak</p>
-              </div>
-              
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => window.location.href = '/api/logout'}
-              >
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+    <MainLayout>
+      <div className="space-y-6">
         {/* All Subjects */}
         <div>
           <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
@@ -190,6 +144,6 @@ export default function Home() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </MainLayout>
   );
 }
