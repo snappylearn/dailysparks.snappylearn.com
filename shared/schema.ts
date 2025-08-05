@@ -112,7 +112,7 @@ export const topics = pgTable("topics", {
 // Questions table
 export const questions = pgTable("questions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  topicId: varchar("topic_id").notNull().references(() => topics.id),
+  topicId: varchar("topic_id").references(() => topics.id),
   questionText: text("question_text").notNull(),
   optionA: text("option_a").notNull(),
   optionB: text("option_b").notNull(),
