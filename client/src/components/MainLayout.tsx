@@ -68,9 +68,9 @@ export function MainLayout({ children }: MainLayoutProps) {
               <div className="relative group">
                 <button className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.profileImageUrl} />
+                    <AvatarImage src={(user as any)?.profileImageUrl} />
                     <AvatarFallback className="bg-gradient-to-br from-orange-500 to-yellow-400 text-white">
-                      {currentProfile?.name?.substring(0, 2).toUpperCase() || user?.firstName?.substring(0, 2).toUpperCase() || 'DS'}
+                      {currentProfile?.name?.substring(0, 2).toUpperCase() || (user as any)?.firstName?.substring(0, 2).toUpperCase() || 'DS'}
                     </AvatarFallback>
                   </Avatar>
                   <ChevronDown className="h-4 w-4 text-gray-500" />
@@ -79,8 +79,8 @@ export function MainLayout({ children }: MainLayoutProps) {
                 {/* Dropdown Menu */}
                 <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                   <div className="p-3 border-b border-gray-100">
-                    <div className="font-medium text-sm">{currentProfile?.name || user?.firstName || 'Student'}</div>
-                    <div className="text-xs text-gray-500">{user?.email}</div>
+                    <div className="font-medium text-sm">{currentProfile?.name || (user as any)?.firstName || 'Student'}</div>
+                    <div className="text-xs text-gray-500">{(user as any)?.email}</div>
                   </div>
                   <div className="p-1">
                     <Link href="/profile">
