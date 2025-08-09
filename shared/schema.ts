@@ -135,6 +135,7 @@ export const quizSessions = pgTable("quiz_sessions", {
   termId: varchar("term_id").references(() => terms.id), // for term quizzes
   quizQuestions: jsonb("quiz_questions"), // JSONB snapshot of questions
   totalQuestions: integer("total_questions").default(30),
+  currentQuestionIndex: integer("current_question_index").default(0), // Track current question
   correctAnswers: integer("correct_answers").default(0),
   sparksEarned: integer("sparks_earned").default(0),
   timeSpent: integer("time_spent"), // in seconds

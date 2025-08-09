@@ -315,6 +315,21 @@ export class DatabaseStorage implements IStorage {
     return newSession;
   }
 
+  async getIncompleteQuizSession(profileId: string, subjectId: string): Promise<QuizSession | undefined> {
+    const [incompleteSession] = await db
+      .select()
+      .from(quizSessions)
+      .where(and(
+        eq(quizSessions.profileId, profileId),
+        eq(quizSessions.subjectId, subjectId),
+        eq(quizSessions.completed, false)
+      ))
+      .orderBy(desc(quizSessions.startedAt))
+      .limit(1);
+    
+    return incompleteSession;
+  }
+
   async updateQuizSession(sessionId: string, data: Partial<QuizSession>): Promise<QuizSession> {
     const [updatedSession] = await db
       .update(quizSessions)

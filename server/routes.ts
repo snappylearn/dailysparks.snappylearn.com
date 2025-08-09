@@ -721,16 +721,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "No questions found in selected quiz" });
       }
 
-      // Create quiz session
-      const quizSession = await storage.createQuizSession({
-        profileId,
-        subjectId,
-        quizType: 'random', // Using random for now
-        totalQuestions: quizWithQuestions.questions.length,
-      });
+      // Check if user has an incomplete quiz session for this subject
+      const incompleteSession = await storage.getIncompleteQuizSession(profileId, subjectId);
+      
+      let quizSession;
+      if (incompleteSession) {
+        // Return existing incomplete session
+        quizSession = incompleteSession;
+      } else {
+        // Create new quiz session with questions snapshot
+        quizSession = await storage.createQuizSession({
+          profileId,
+          subjectId,
+          quizType: 'random',
+          totalQuestions: quizWithQuestions.questions.length,
+          currentQuestionIndex: 0,
+          quizQuestions: quizWithQuestions.questions, // Save questions snapshot
+        });
+      }
 
+      // Get questions - use session questions if resuming, otherwise use new ones
+      let questionsToUse;
+      if (incompleteSession && quizSession.quizQuestions) {
+        questionsToUse = quizSession.quizQuestions;
+      } else {
+        questionsToUse = quizWithQuestions.questions;
+        // If this is a new session, save questions snapshot
+        if (!incompleteSession) {
+          await db.update(quizSessions)
+            .set({ quizQuestions: quizWithQuestions.questions })
+            .where(eq(quizSessions.id, quizSession.id));
+        }
+      }
+      
       // Transform questions to expected format
-      const questions = quizWithQuestions.questions.map((q: any) => ({
+      const questions = questionsToUse.map((q: any) => ({
         id: q.id,
         questionText: q.content,
         optionA: q.choices[0]?.content || 'Option A',
@@ -745,6 +770,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionId: quizSession.id,
         questions: questions,
         totalQuestions: questions.length,
+        currentQuestionIndex: quizSession.currentQuestionIndex || 0,
+        isResuming: !!incompleteSession
       });
     } catch (error) {
       console.error("Error starting quiz:", error);
@@ -752,38 +779,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Submit an answer
-  app.post('/api/quiz/answer', isAuthenticated, async (req: any, res) => {
+  // Submit individual answer with session persistence
+  app.post('/api/quiz/:sessionId/answer', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { quizSessionId, questionId, userAnswer, timeSpent } = req.body;
+      const sessionId = req.params.sessionId;
+      const { questionId, userAnswer, timeSpent } = req.body;
 
-      if (!quizSessionId || !questionId || !userAnswer) {
-        return res.status(400).json({ message: "Quiz session ID, question ID, and user answer are required" });
+      if (!sessionId || !questionId || !userAnswer) {
+        return res.status(400).json({ message: "Session ID, question ID, and user answer are required" });
       }
 
-      // Get the question to check correct answer
-      const questions = await storage.getQuestionsByTopic('', 1); // We'll need to modify this
+      // Get quiz session to access the questions snapshot  
+      const [quizSession] = await db
+        .select()
+        .from(quizSessions)
+        .where(eq(quizSessions.id, sessionId));
+
+      if (!quizSession) {
+        return res.status(404).json({ message: "Quiz session not found" });
+      }
+
+      // Get the question from the quiz session's questions snapshot
+      const questions = quizSession.quizQuestions as any[];
       const question = questions.find(q => q.id === questionId);
       
       if (!question) {
-        return res.status(404).json({ message: "Question not found" });
+        return res.status(404).json({ message: "Question not found in this quiz" });
       }
 
-      const isCorrect = question.correctAnswer === userAnswer;
+      // Find the correct answer from choices
+      const correctChoice = question.choices?.find((c: any) => c.isCorrect);
+      const correctAnswer = correctChoice ? correctChoice.content.charAt(0).toUpperCase() : 'A';
+      const isCorrect = userAnswer.toUpperCase() === correctAnswer;
 
       // Save user answer
-      const answer = await storage.createUserAnswer({
-        quizSessionId,
+      await db.insert(userAnswers).values({
+        quizSessionId: sessionId,
         questionId,
         userAnswer,
         isCorrect,
         timeSpent,
       });
 
+      // Update current question index in quiz session
+      const currentIndex = quizSession.currentQuestionIndex || 0;
+      await db
+        .update(quizSessions)
+        .set({ currentQuestionIndex: currentIndex + 1 })
+        .where(eq(quizSessions.id, sessionId));
+
       res.json({
         isCorrect,
-        correctAnswer: question.correctAnswer,
+        correctAnswer,
         explanation: question.explanation,
         sparksEarned: isCorrect ? 10 : 0,
       });
@@ -793,18 +841,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Complete quiz
-  app.post('/api/quiz/complete', isAuthenticated, async (req: any, res) => {
+  // Complete quiz  
+  app.post('/api/quiz/:sessionId/complete', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { quizSessionId } = req.body;
+      const sessionId = req.params.sessionId;
 
-      if (!quizSessionId) {
-        return res.status(400).json({ message: "Quiz session ID is required" });
+      if (!sessionId) {
+        return res.status(400).json({ message: "Session ID is required" });
       }
 
-      // Get quiz answers
-      const answers = await storage.getQuizAnswers(quizSessionId);
+      // Get quiz answers from user_answers table
+      const answers = await db
+        .select()
+        .from(userAnswers)
+        .where(eq(userAnswers.quizSessionId, sessionId));
       const correctAnswers = answers.filter(a => a.isCorrect).length;
       const totalQuestions = answers.length;
       
@@ -815,12 +866,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update quiz session
-      const updatedSession = await storage.updateQuizSession(quizSessionId, {
+      await db.update(quizSessions).set({
         correctAnswers,
         sparksEarned,
         completed: true,
         completedAt: new Date(),
-      });
+      }).where(eq(quizSessions.id, sessionId));
 
       // Update profile sparks and streak (placeholder - implement if needed)
       // await storage.updateProfileSparks(profileId, sparksEarned);

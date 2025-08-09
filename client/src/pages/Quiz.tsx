@@ -125,10 +125,15 @@ export default function Quiz() {
         totalQuestions: response.totalQuestions || response.questions.length
       };
       setQuizSession(quizSessionData);
-      setCurrentQuestionIndex(0);
+      setCurrentQuestionIndex(response.currentQuestionIndex || 0);
       setUserAnswers([]);
       setTimeSpent(0);
       setSelectedAnswer("");
+      
+      // Show resumption message if applicable
+      if (response.isResuming) {
+        alert(`Resuming your ${subjectName} quiz from question ${(response.currentQuestionIndex || 0) + 1}`);
+      }
     },
     onError: (error) => {
       console.error('Quiz start failed:', error);
@@ -136,33 +141,25 @@ export default function Quiz() {
     },
   });
 
-  // Submit answer mutation - optimized for better UX
+  // Submit answer mutation - individual submission with session persistence
   const submitAnswerMutation = useMutation({
     mutationFn: async (data: { sessionId: string; questionId: string; userAnswer: string; timeSpent: number }) => {
-      // For better UX, we'll move to next question immediately and submit in background
-      return new Promise((resolve) => {
-        // Simulate immediate response for UX while actual submission happens in background
-        resolve({ isCorrect: true }); // We'll validate later
-        
-        // Submit answer in background
-        apiRequest("POST", `/api/quiz/${data.sessionId}/answer`, {
-          questionId: data.questionId,
-          userAnswer: data.userAnswer,
-          timeSpent: data.timeSpent
-        }).catch(error => {
-          console.error("Background answer submission failed:", error);
-        });
+      const response = await apiRequest("POST", `/api/quiz/${data.sessionId}/answer`, {
+        questionId: data.questionId,
+        userAnswer: data.userAnswer,
+        timeSpent: data.timeSpent
       });
+      const jsonResponse = await response.json();
+      return jsonResponse as { isCorrect: boolean };
     },
     onSuccess: (response, variables) => {
-      // Store answer locally for immediate UX
       setUserAnswers(prev => [...prev, {
         questionId: variables.questionId,
         answer: variables.userAnswer,
         isCorrect: response.isCorrect
       }]);
       
-      // Move to next question immediately for better UX
+      // Move to next question or show results
       if (currentQuestionIndex < (quizSession?.questions.length || 0) - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
         setSelectedAnswer("");
@@ -172,22 +169,9 @@ export default function Quiz() {
     },
   });
 
-  // Complete quiz mutation - optimized with batch answer submission
+  // Complete quiz mutation
   const completeQuizMutation = useMutation({
     mutationFn: async (data: { sessionId: string }) => {
-      // Submit all answers in batch for final validation
-      const batchAnswers = userAnswers.map(answer => ({
-        questionId: answer.questionId,
-        userAnswer: answer.answer,
-        timeSpent: Math.floor(timeSpent / userAnswers.length) // Approximate time per question
-      }));
-
-      // Submit all answers at once
-      await apiRequest("POST", `/api/quiz/${data.sessionId}/batch-answers`, {
-        answers: batchAnswers
-      });
-
-      // Complete the quiz
       const response = await apiRequest("POST", `/api/quiz/${data.sessionId}/complete`, {});
       const jsonResponse = await response.json();
       return jsonResponse as QuizResults;
@@ -244,21 +228,12 @@ export default function Quiz() {
     if (!selectedAnswer || !quizSession || !quizSession.sessionId) return;
     
     const currentQuestion = quizSession.questions[currentQuestionIndex];
-    
-    // Immediately move to next question for better UX
-    setUserAnswers(prev => [...prev, {
+    submitAnswerMutation.mutate({
+      sessionId: quizSession.sessionId,
       questionId: currentQuestion.id,
-      answer: selectedAnswer,
-      isCorrect: true // Will be validated later
-    }]);
-    
-    // Move to next question or show results immediately
-    if (currentQuestionIndex < quizSession.questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-      setSelectedAnswer("");
-    } else {
-      completeQuizMutation.mutate({ sessionId: quizSession.sessionId });
-    }
+      userAnswer: selectedAnswer,
+      timeSpent: Math.floor(timeSpent / 1000)
+    });
   };
 
   // Timer effect for each question
