@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -594,9 +594,16 @@ export default function AdminQuizzes() {
 function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // Ensure questions is always an array
-  const initialQuestions = Array.isArray(quiz.questions) ? quiz.questions : [
+  const [editChoicesOpen, setEditChoicesOpen] = useState(false);
+  const [editingQuestionIndex, setEditingQuestionIndex] = useState<number>(-1);
+
+  // Fetch complete quiz data with questions
+  const { data: fullQuizData, isLoading: quizLoading } = useQuery({
+    queryKey: [`/api/admin/quizzes/${quiz.id}`],
+  });
+
+  // Default questions
+  const defaultQuestions = [
     {
       id: "q_1",
       content: "What is the basic unit of life in all living organisms?",
@@ -611,7 +618,27 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
     }
   ];
   
-  const [questions, setQuestions] = useState(initialQuestions);
+  // Initialize questions state
+  const [questions, setQuestions] = useState(defaultQuestions);
+
+  // Update questions when data loads
+  useEffect(() => {
+    if (fullQuizData?.questions && Array.isArray(fullQuizData.questions)) {
+      setQuestions(fullQuizData.questions);
+    }
+  }, [fullQuizData]);
+
+  // Show loading state
+  if (quizLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading quiz details...</p>
+        </div>
+      </div>
+    );
+  }
 
   const editQuizSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -623,10 +650,10 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
   const form = useForm({
     resolver: zodResolver(editQuizSchema),
     defaultValues: {
-      title: quiz.title || "",
-      description: quiz.description || "",
-      timeLimit: quiz.timeLimit || 30,
-      totalQuestions: quiz.totalQuestions || initialQuestions.length
+      title: (fullQuizData?.title || quiz.title) || "",
+      description: (fullQuizData?.description || quiz.description) || "",
+      timeLimit: (fullQuizData?.timeLimit || quiz.timeLimit) || 30,
+      totalQuestions: (fullQuizData?.totalQuestions || quiz.totalQuestions) || questions.length
     }
   });
 
@@ -703,6 +730,7 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
   };
 
   return (
+    <>
     <Form {...form}>
       <form onSubmit={form.handleSubmit((data) => updateQuizMutation.mutate(data))} className="space-y-6">
         {/* Basic Quiz Info */}
@@ -786,27 +814,35 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
                 />
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Answer Choices</label>
-                  {question.choices.map((choice: any, choiceIndex: number) => (
-                    <div key={choice.id} className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name={`correct_${questionIndex}`}
-                        checked={choice.isCorrect}
-                        onChange={() => setCorrectAnswer(questionIndex, choiceIndex)}
-                        className="w-4 h-4"
-                      />
-                      <span className="w-6 text-sm font-medium">
-                        {String.fromCharCode(65 + choiceIndex)}
-                      </span>
-                      <Input
-                        value={choice.content}
-                        onChange={(e) => updateChoice(questionIndex, choiceIndex, 'content', e.target.value)}
-                        placeholder={`Choice ${String.fromCharCode(65 + choiceIndex)}`}
-                        className="flex-1"
-                      />
-                    </div>
-                  ))}
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Answer Choices</label>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setEditingQuestionIndex(questionIndex);
+                        setEditChoicesOpen(true);
+                      }}
+                    >
+                      Edit Choices
+                    </Button>
+                  </div>
+                  
+                  {/* Show simplified choices preview */}
+                  <div className="space-y-1">
+                    {question.choices?.slice(0, 4).map((choice: any, choiceIndex: number) => (
+                      <div key={choice.id} className="flex items-center gap-2 text-sm">
+                        <span className="w-6 font-medium">
+                          {String.fromCharCode(65 + choiceIndex)}
+                        </span>
+                        <span className={`flex-1 ${choice.isCorrect ? 'font-semibold text-green-600' : 'text-gray-600'}`}>
+                          {choice.content || `Choice ${String.fromCharCode(65 + choiceIndex)}`}
+                        </span>
+                        {choice.isCorrect && <span className="text-green-600 text-xs">✓ Correct</span>}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
@@ -834,5 +870,101 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
         </div>
       </form>
     </Form>
+
+    {/* Edit Choices Dialog */}
+    <Dialog open={editChoicesOpen} onOpenChange={setEditChoicesOpen}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit Answer Choices</DialogTitle>
+        </DialogHeader>
+        {editingQuestionIndex >= 0 && questions[editingQuestionIndex] && (
+          <EditChoicesForm
+            question={questions[editingQuestionIndex]}
+            onSave={(updatedChoices) => {
+              const updatedQuestions = [...questions];
+              updatedQuestions[editingQuestionIndex].choices = updatedChoices;
+              setQuestions(updatedQuestions);
+              setEditChoicesOpen(false);
+            }}
+            onCancel={() => setEditChoicesOpen(false)}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
+  );
+}
+
+// Edit Choices Form Component
+function EditChoicesForm({ 
+  question, 
+  onSave, 
+  onCancel 
+}: { 
+  question: any; 
+  onSave: (choices: any[]) => void; 
+  onCancel: () => void; 
+}) {
+  const [choices, setChoices] = useState(question.choices || [
+    { id: `c_${Date.now()}_1`, content: "", isCorrect: false },
+    { id: `c_${Date.now()}_2`, content: "", isCorrect: false },
+    { id: `c_${Date.now()}_3`, content: "", isCorrect: false },
+    { id: `c_${Date.now()}_4`, content: "", isCorrect: false }
+  ]);
+
+  const updateChoice = (choiceIndex: number, field: string, value: any) => {
+    const updatedChoices = [...choices];
+    updatedChoices[choiceIndex] = { ...updatedChoices[choiceIndex], [field]: value };
+    setChoices(updatedChoices);
+  };
+
+  const setCorrectAnswer = (choiceIndex: number) => {
+    const updatedChoices = [...choices];
+    updatedChoices.forEach((choice: any, idx: number) => {
+      choice.isCorrect = idx === choiceIndex;
+    });
+    setChoices(updatedChoices);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="text-sm font-medium">Question:</label>
+        <p className="text-sm text-gray-600 mt-1">{question.content}</p>
+      </div>
+      
+      <div className="space-y-3">
+        <label className="text-sm font-medium">Answer Choices (Select the correct answer):</label>
+        {choices.map((choice: any, choiceIndex: number) => (
+          <div key={choice.id} className="flex items-center gap-3 p-3 border rounded-lg">
+            <input
+              type="radio"
+              name="correct_answer"
+              checked={choice.isCorrect}
+              onChange={() => setCorrectAnswer(choiceIndex)}
+              className="w-4 h-4"
+            />
+            <span className="w-8 text-sm font-semibold">
+              {String.fromCharCode(65 + choiceIndex)}
+            </span>
+            <Input
+              value={choice.content}
+              onChange={(e) => updateChoice(choiceIndex, 'content', e.target.value)}
+              placeholder={`Enter choice ${String.fromCharCode(65 + choiceIndex)}`}
+              className="flex-1"
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="button" onClick={() => onSave(choices)}>
+          Save Choices
+        </Button>
+      </div>
+    </div>
   );
 }

@@ -15,6 +15,8 @@ import {
   quizTypes,
   questionTypes,
   quizzes,
+  quizQuestions,
+  quizQuestionChoices,
   type User,
   type UpsertUser,
   type ExaminationSystem,
@@ -578,7 +580,6 @@ export class DatabaseStorage implements IStorage {
 
   async getAdminQuizList(filters: any): Promise<any[]> {
     // Fetch from the correct quizzes table (admin-created templates)
-    // Note: Using actual column names from database
     const quizTemplates = await db
       .select({
         id: quizzes.id,
@@ -591,7 +592,7 @@ export class DatabaseStorage implements IStorage {
       .from(quizzes)
       .orderBy(desc(quizzes.createdAt));
 
-    // Get subject names and session counts
+    // Get subject names, actual question counts, and session counts
     const quizList = await Promise.all(
       quizTemplates.map(async (quiz) => {
         // Get subject name
@@ -599,6 +600,12 @@ export class DatabaseStorage implements IStorage {
           .select({ name: subjects.name })
           .from(subjects)
           .where(eq(subjects.id, quiz.subjectId));
+
+        // Count actual questions from quiz_questions table
+        const [questionCount] = await db
+          .select({ count: count() })
+          .from(quizQuestions)
+          .where(eq(quizQuestions.quizId, quiz.id));
 
         // Count sessions using this quiz template
         const [sessionCount] = await db
@@ -611,9 +618,9 @@ export class DatabaseStorage implements IStorage {
           title: quiz.title,
           subject: subject?.name || 'Unknown',
           type: 'topical', // Default for now
-          questions: quiz.questionCount,
+          questions: questionCount?.count || 0, // Use actual count from quiz_questions
           sessions: sessionCount?.count || 0,
-          users: sessionCount?.count || 0, // For now, assume 1 user per session
+          users: sessionCount?.count || 0,
           created: quiz.createdAt,
           actions: 'View | Edit | Delete'
         };
@@ -660,6 +667,72 @@ export class DatabaseStorage implements IStorage {
     if (diffMins < 60) return `${diffMins} minutes ago`;
     if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
     return `${Math.floor(diffMins / 1440)} days ago`;
+  }
+
+  // Get quiz with questions and choices
+  async getQuizWithQuestions(quizId: string): Promise<any> {
+    try {
+      // Get quiz details
+      const [quiz] = await db
+        .select()
+        .from(quizzes)
+        .where(eq(quizzes.id, quizId));
+
+      if (!quiz) {
+        throw new Error("Quiz not found");
+      }
+
+      // Get questions with choices
+      const quizQuestionsWithChoices = await db
+        .select({
+          id: quizQuestions.id,
+          content: quizQuestions.content,
+          explanation: quizQuestions.explanation,
+          orderIndex: quizQuestions.orderIndex,
+          choiceId: quizQuestionChoices.id,
+          choiceContent: quizQuestionChoices.content,
+          isCorrect: quizQuestionChoices.isCorrect,
+          choiceOrderIndex: quizQuestionChoices.orderIndex,
+        })
+        .from(quizQuestions)
+        .leftJoin(quizQuestionChoices, eq(quizQuestions.id, quizQuestionChoices.quizQuestionId))
+        .where(eq(quizQuestions.quizId, quizId))
+        .orderBy(quizQuestions.orderIndex, quizQuestionChoices.orderIndex);
+
+      // Group choices by question
+      const questionsMap = new Map();
+      
+      quizQuestionsWithChoices.forEach((row) => {
+        if (!questionsMap.has(row.id)) {
+          questionsMap.set(row.id, {
+            id: row.id,
+            content: row.content,
+            explanation: row.explanation,
+            orderIndex: row.orderIndex,
+            choices: []
+          });
+        }
+        
+        if (row.choiceId) {
+          questionsMap.get(row.id).choices.push({
+            id: row.choiceId,
+            content: row.choiceContent,
+            isCorrect: row.isCorrect,
+            orderIndex: row.choiceOrderIndex
+          });
+        }
+      });
+
+      const questions = Array.from(questionsMap.values());
+      
+      return {
+        ...quiz,
+        questions
+      };
+    } catch (error) {
+      console.error("Error fetching quiz with questions:", error);
+      throw new Error("Failed to fetch quiz details");
+    }
   }
 
   // Update quiz

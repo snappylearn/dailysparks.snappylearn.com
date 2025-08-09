@@ -240,6 +240,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get quiz details with questions
+  app.get('/api/admin/quizzes/:quizId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { quizId } = req.params;
+      const quizWithQuestions = await storage.getQuizWithQuestions(quizId);
+      res.json(quizWithQuestions);
+    } catch (error) {
+      console.error("Error fetching quiz details:", error);
+      res.status(500).json({ message: "Failed to fetch quiz details" });
+    }
+  });
+
   // Update quiz
   app.put('/api/admin/quizzes/:quizId', isAuthenticated, async (req: any, res) => {
     try {
