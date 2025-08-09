@@ -103,10 +103,7 @@ export default function AdminQuizzes() {
 
   const generateQuizMutation = useMutation({
     mutationFn: async (data: GenerateQuizFormData) => {
-      return apiRequest("/api/admin/generate-quiz", {
-        method: "POST",
-        body: JSON.stringify(data)
-      });
+      return apiRequest("POST", "/api/admin/generate-quiz", data);
     },
     onSuccess: () => {
       toast({
