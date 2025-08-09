@@ -124,7 +124,7 @@ export const questions = pgTable("questions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Quiz sessions table
+// Quiz sessions table with JSONB questions support
 export const quizSessions = pgTable("quiz_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -133,6 +133,7 @@ export const quizSessions = pgTable("quiz_sessions", {
   quizType: varchar("quiz_type").notNull(), // random, topical, term
   topicId: varchar("topic_id").references(() => topics.id), // for topical quizzes
   termId: varchar("term_id").references(() => terms.id), // for term quizzes
+  quizQuestions: jsonb("quiz_questions"), // JSONB snapshot of questions
   totalQuestions: integer("total_questions").default(30),
   correctAnswers: integer("correct_answers").default(0),
   sparksEarned: integer("sparks_earned").default(0),

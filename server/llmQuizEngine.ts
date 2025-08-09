@@ -469,10 +469,19 @@ Generate exactly ${params.questionCount} questions following this format.`;
       }))
     }));
 
+    // For admin-generated quizzes, we need a profileId - use the user's first profile
+    const profiles = await import('./storage').then(({ storage }) => storage.getUserProfiles(userId));
+    const profileId = profiles[0]?.id;
+    
+    if (!profileId) {
+      throw new Error('No profile found for admin user');
+    }
+
     const [session] = await db
       .insert(quizSessions)
       .values({
         userId,
+        profileId,
         subjectId: params.subjectId,
         quizType: params.quizType,
         topicId: params.topicId,
