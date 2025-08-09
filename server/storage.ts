@@ -547,7 +547,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTotalQuizzesCount(): Promise<number> {
-    const result = await db.select({ count: sql<number>`count(*)` }).from(quizSessions);
+    const result = await db.select({ count: sql<number>`count(*)` }).from(quizzes);
     return result[0].count;
   }
 
@@ -568,8 +568,8 @@ export class DatabaseStorage implements IStorage {
     if (completedSessions.length === 0) return 0;
     
     const totalScore = completedSessions.reduce((sum, session) => {
-      const accuracy = session.totalQuestions > 0 ? 
-        (session.correctAnswers / session.totalQuestions) * 100 : 0;
+      const accuracy = (session.totalQuestions || 0) > 0 ? 
+        ((session.correctAnswers || 0) / (session.totalQuestions || 1)) * 100 : 0;
       return sum + accuracy;
     }, 0);
     
@@ -584,7 +584,7 @@ export class DatabaseStorage implements IStorage {
         id: quizzes.id,
         title: quizzes.title,
         subjectId: quizzes.subjectId,
-        questionCount: quizzes.questionCount, // actual column name
+        questionCount: quizzes.totalQuestions,
         timeLimit: quizzes.timeLimit,
         createdAt: quizzes.createdAt,
       })
@@ -637,7 +637,7 @@ export class DatabaseStorage implements IStorage {
     return recentSessions.map((session) => ({
       action: `Started ${session.quizType} quiz`,
       user: `User ${session.userId.slice(-6)}`,
-      time: this.getTimeAgo(session.startedAt),
+      time: this.getTimeAgo(session.startedAt || new Date()),
       type: 'Session'
     }));
   }
