@@ -143,8 +143,10 @@ Note: Only include variables that are provided. If a variable is missing (null),
 3. **Topical Quiz** → Use examination_system + level + subject + topic.
 
 ## Output Requirements:
-- Format the quiz as an array of objects in JSON.
-- Each object must have:
+- CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no code blocks, no additional text.
+- Format the response as a JSON object with a "questions" array.
+- The JSON structure must be: {"questions": [...array of question objects...]}
+- Each question object must have exactly:
   - "question": string — the question text.
   - "options": array of 4 strings — the possible answers.
   - "correct_answer": string — exactly matches one of the options.
@@ -171,7 +173,7 @@ Generate exactly ${params.questionCount} questions following this format.`;
         },
         {
           role: "user", 
-          content: `Generate ${params.questionCount} multiple choice questions now.`
+          content: `Generate exactly ${params.questionCount} multiple choice questions. Respond with ONLY valid JSON in this exact format: {"questions": [...]} with no additional text or formatting.`
         }
       ],
       response_format: { type: "json_object" },
@@ -182,16 +184,17 @@ Generate exactly ${params.questionCount} questions following this format.`;
     console.log('OpenAI raw response:', content);
 
     try {
-      // Parse response - handle both array and object formats
+      // Parse response - expect {"questions": [...]} format
       const parsed = JSON.parse(content);
       let questions: GeneratedQuestion[];
       
-      if (Array.isArray(parsed)) {
-        questions = parsed;
-      } else if (parsed.questions && Array.isArray(parsed.questions)) {
+      if (parsed.questions && Array.isArray(parsed.questions)) {
         questions = parsed.questions;
+      } else if (Array.isArray(parsed)) {
+        questions = parsed;
       } else {
-        throw new Error('Invalid response format from LLM');
+        console.error('Unexpected LLM response structure:', parsed);
+        throw new Error('Invalid response format from LLM - expected {"questions": [...]} structure');
       }
 
       // Validate questions structure
