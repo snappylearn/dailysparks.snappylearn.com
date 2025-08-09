@@ -132,8 +132,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeLimit
       };
 
-      const { QuizEngine } = await import('./quizEngine');
-      const sessionId = await QuizEngine.generateQuiz(params, userId, currentProfile.id);
+      const { LLMQuizEngine } = await import('./llmQuizEngine');
+      const sessionId = await LLMQuizEngine.generateQuiz(params, userId, currentProfile.id);
       
       res.json({ sessionId, message: "Quiz generated successfully" });
     } catch (error) {
@@ -148,8 +148,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sessionId } = req.params;
       const userId = req.user.claims.sub;
       
-      const { QuizEngine } = await import('./quizEngine');
-      const sessionData = await QuizEngine.getQuizSession(sessionId);
+      const { LLMQuizEngine } = await import('./llmQuizEngine');
+      const sessionData = await LLMQuizEngine.getQuizSession(sessionId);
       
       // Verify session belongs to user
       const profiles = await storage.getUserProfiles(userId);
@@ -170,15 +170,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { sessionId } = req.params;
       const { questionId, choiceId, answer, timeSpent } = req.body;
       
-      const { QuizEngine } = await import('./quizEngine');
-      const isCorrect = await QuizEngine.submitAnswer(sessionId, {
-        questionId,
-        choiceId,
-        answer,
-        timeSpent: timeSpent || 0
-      });
+      const { LLMQuizEngine } = await import('./llmQuizEngine');
+      const result = await LLMQuizEngine.submitAnswer(sessionId, questionId, choiceId, answer, timeSpent || 0);
       
-      res.json({ isCorrect, message: "Answer submitted successfully" });
+      res.json({ isCorrect: result.isCorrect, message: "Answer submitted successfully" });
     } catch (error) {
       console.error("Error submitting answer:", error);
       res.status(500).json({ message: "Failed to submit answer: " + error.message });
@@ -190,8 +185,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sessionId } = req.params;
       
-      const { QuizEngine } = await import('./quizEngine');
-      const results = await QuizEngine.completeQuizSession(sessionId);
+      const { LLMQuizEngine } = await import('./llmQuizEngine');
+      const results = await LLMQuizEngine.completeQuiz(sessionId);
       
       res.json(results);
     } catch (error) {
@@ -237,11 +232,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeLimit: 30
       };
 
-      const { QuizEngine } = await import('./quizEngine');
-      const sessionId = await QuizEngine.generateQuiz(params, userId, profileId);
+      const { LLMQuizEngine } = await import('./llmQuizEngine');
+      const sessionId = await LLMQuizEngine.generateQuiz(params, userId, profileId);
       
       // Get the session data to return in legacy format
-      const sessionData = await QuizEngine.getQuizSession(sessionId);
+      const sessionData = await LLMQuizEngine.getQuizSession(sessionId);
       
       // Transform to legacy format
       const legacyResponse = {
