@@ -210,7 +210,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           optionB: q.optionB,
           optionC: q.optionC,
           optionD: q.optionD,
-        }))
+        })),
+        totalQuestions: savedQuestions.length
       });
 
     } catch (error) {

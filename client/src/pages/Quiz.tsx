@@ -118,7 +118,13 @@ export default function Quiz() {
     },
     onSuccess: (response) => {
       console.log('Quiz started successfully:', response);
-      setQuizSession(response);
+      // Transform the response to match our QuizSession interface
+      const quizSessionData: QuizSession = {
+        sessionId: response.sessionId,
+        questions: response.questions,
+        totalQuestions: response.totalQuestions || response.questions.length
+      };
+      setQuizSession(quizSessionData);
       setCurrentQuestionIndex(0);
       setUserAnswers([]);
       setTimeSpent(0);
