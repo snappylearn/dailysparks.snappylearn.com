@@ -50,11 +50,11 @@ export class LLMQuizEngine {
       // 2. Generate questions using LLM with your exact prompt structure
       const generatedQuestions = await this.generateQuestionsWithLLM(contextData, params);
       
-      // 3. Create quiz session for admin review/editing
-      const sessionId = await this.createAdminQuizSession(userId, generatedQuestions, params);
+      // 3. Create quiz template (NOT session) for admin
+      const quizId = await this.createQuizTemplate(userId, generatedQuestions, params);
       
-      console.log('Admin LLM quiz generation completed. Session ID:', sessionId);
-      return sessionId;
+      console.log('Admin LLM quiz template generation completed. Quiz ID:', quizId);
+      return quizId;
       
     } catch (error: any) {
       console.error('Admin LLM quiz generation error:', error);
@@ -251,7 +251,60 @@ Generate exactly ${params.questionCount} questions following this format.`;
 
 
   /**
-   * Create quiz session with JSONB question snapshot
+   * Create quiz template for admin (stored in quizzes table, NOT quiz_sessions)
+   */
+  private static async createQuizTemplate(
+    adminUserId: string, 
+    generatedQuestions: GeneratedQuestion[],
+    params: QuizGenerationParams
+  ): Promise<string> {
+    // Transform generated questions to our format
+    const questionsSnapshot = generatedQuestions.map((q, index) => ({
+      id: `q_${index + 1}`,
+      content: q.question,
+      questionType: 'mcq',
+      marks: 1,
+      difficulty: 'medium',
+      explanation: q.explanation,
+      orderIndex: index + 1,
+      choices: q.options.map((option, choiceIndex) => ({
+        id: `q_${index + 1}_c_${choiceIndex + 1}`,
+        content: option,
+        isCorrect: option === q.correct_answer,
+        orderIndex: choiceIndex + 1
+      }))
+    }));
+
+    // Generate quiz title based on context
+    let title = `${params.quizType.charAt(0).toUpperCase() + params.quizType.slice(1)} Quiz`;
+    if (params.topicId) {
+      const [topic] = await db.select().from(topics).where(eq(topics.id, params.topicId));
+      title = `${topic?.title || 'Topic'} Quiz`;
+    }
+
+    const [quiz] = await db
+      .insert(quizzes)
+      .values({
+        title,
+        description: `AI-generated ${params.quizType} quiz with ${params.questionCount} questions`,
+        examinationSystemId: params.examinationSystemId,
+        levelId: params.levelId,
+        subjectId: params.subjectId,
+        quizType: params.quizType,
+        topicId: params.topicId,
+        termId: params.termId,
+        questions: questionsSnapshot, // JSONB snapshot
+        totalQuestions: params.questionCount,
+        timeLimit: params.timeLimit,
+        createdBy: adminUserId
+      })
+      .returning();
+
+    return quiz.id;
+  }
+
+  /**
+   * Create quiz session with JSONB question snapshot (for students taking quizzes)
    */
   private static async createQuizSession(
     userId: string, 

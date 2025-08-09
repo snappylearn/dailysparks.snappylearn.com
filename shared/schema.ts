@@ -143,6 +143,27 @@ export const quizSessions = pgTable("quiz_sessions", {
   completedAt: timestamp("completed_at"),
 });
 
+// Quizzes table - Admin-created quiz templates (NOT quiz sessions)
+export const quizzes = pgTable("quizzes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  examinationSystemId: varchar("examination_system_id").notNull().references(() => examinationSystems.id),
+  levelId: varchar("level_id").notNull().references(() => levels.id),
+  subjectId: varchar("subject_id").notNull().references(() => subjects.id),
+  quizType: varchar("quiz_type").notNull(), // random, topical, term
+  topicId: varchar("topic_id").references(() => topics.id), // for topical quizzes
+  termId: varchar("term_id").references(() => terms.id), // for term quizzes
+  questions: jsonb("questions").notNull(), // JSONB array of questions
+  totalQuestions: integer("total_questions").notNull(),
+  timeLimit: integer("time_limit").notNull(), // in minutes
+  difficulty: varchar("difficulty").default('medium'),
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").notNull().references(() => users.id), // Admin who created it
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // User answers table
 export const userAnswers = pgTable("user_answers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -196,21 +217,7 @@ export const questionTypes = pgTable("question_types", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Enhanced quizzes table
-export const quizzes = pgTable("quizzes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  title: varchar("title").notNull(),
-  examinationSystemId: varchar("examination_system_id").notNull().references(() => examinationSystems.id),
-  levelId: varchar("level_id").notNull().references(() => levels.id),
-  subjectId: varchar("subject_id").notNull().references(() => subjects.id),
-  quizTypeId: varchar("quiz_type_id").notNull().references(() => quizTypes.id),
-  termId: varchar("term_id").references(() => terms.id), // For termly quizzes
-  topicId: varchar("topic_id").references(() => topics.id), // For topical quizzes
-  questionCount: integer("question_count").notNull().default(15),
-  timeLimit: integer("time_limit"), // in minutes
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// Remove this duplicate definition - we already have the correct one above
 
 // Enhanced quiz questions table
 export const quizQuestions = pgTable("quiz_questions", {
@@ -463,6 +470,8 @@ export const insertUserChallengeProgressSchema = createInsertSchema(userChalleng
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type Quiz = typeof quizzes.$inferSelect;
+export type InsertQuiz = typeof quizzes.$inferInsert;
 export type ExaminationSystem = typeof examinationSystems.$inferSelect;
 export type Level = typeof levels.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;

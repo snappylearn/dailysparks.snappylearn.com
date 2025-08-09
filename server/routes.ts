@@ -251,8 +251,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionId = await LLMQuizEngine.generateQuizForAdmin(quizData, userId);
       
       res.json({ 
-        sessionId, 
-        message: "Quiz generated successfully by admin" 
+        quizId: sessionId, 
+        message: "Quiz template created successfully by admin" 
       });
     } catch (error: any) {
       console.error("Error generating admin quiz:", error);
