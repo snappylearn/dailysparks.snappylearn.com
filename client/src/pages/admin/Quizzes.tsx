@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, Edit, Eye, Users, BarChart3, Filter } from "lucide-react";
@@ -42,6 +43,7 @@ export default function AdminQuizzes() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   // Initialize form first
   const form = useForm<GenerateQuizFormData>({
@@ -518,7 +520,7 @@ export default function AdminQuizzes() {
                     <TableCell>{quiz.subject}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">
-                        {quiz.quizType}
+                        {quiz.type || 'topical'}
                       </Badge>
                     </TableCell>
                     <TableCell>{quiz.questionCount}</TableCell>
@@ -534,7 +536,9 @@ export default function AdminQuizzes() {
                         {quiz.usersCount || 0}
                       </div>
                     </TableCell>
-                    <TableCell>{new Date(quiz.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {quiz.created ? new Date(quiz.created).toLocaleDateString() : 'N/A'}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button 
@@ -547,7 +551,12 @@ export default function AdminQuizzes() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setLocation(`/quiz-preview/${quiz.id}`)}
+                          title="Preview quiz as student would see it"
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
                       </div>

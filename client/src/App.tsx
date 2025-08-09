@@ -18,6 +18,7 @@ import AdminQuizzes from "@/pages/admin/Quizzes";
 import AdminUsers from "@/pages/admin/Users";
 import AdminAnalytics from "@/pages/admin/Analytics";
 import AdminSettings from "@/pages/admin/Settings";
+import QuizPreview from "@/pages/QuizPreview";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -78,6 +79,10 @@ function Router() {
           <AdminSettings />
         </AdminLayout>
       </Route>
+      
+      {/* Quiz Preview Route (for admin) */}
+      <Route path="/quiz-preview/:quizId" component={QuizPreview} />
+      <Route path="/quiz-preview/:quizId" component={QuizPreview} />
       
       {/* Student Routes */}
       <Route path="/" component={SimpleHome} />
