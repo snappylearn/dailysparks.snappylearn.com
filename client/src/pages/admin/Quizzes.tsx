@@ -55,6 +55,19 @@ export default function AdminQuizzes() {
     }],
   });
 
+  const form = useForm<GenerateQuizFormData>({
+    resolver: zodResolver(generateQuizSchema),
+    defaultValues: {
+      questionCount: 15,
+      timeLimit: 30
+    }
+  });
+
+  // Watch form values for dynamic filtering
+  const selectedExamSystemId = form.watch("examinationSystemId");
+  const selectedLevelId = form.watch("levelId");
+  const selectedSubjectId = form.watch("subjectId");
+
   // Fetch dropdowns data
   const { data: examSystems } = useQuery({ queryKey: ["/api/examination-systems"] });
   const { data: allLevels } = useQuery({ queryKey: ["/api/levels"] });
@@ -65,11 +78,6 @@ export default function AdminQuizzes() {
   });
   const { data: terms } = useQuery({ queryKey: ["/api/terms"] });
 
-  // Watch form values for dynamic filtering
-  const selectedExamSystemId = form.watch("examinationSystemId");
-  const selectedLevelId = form.watch("levelId");
-  const selectedSubjectId = form.watch("subjectId");
-
   // Filter levels based on selected examination system
   const filteredLevels = allLevels?.filter((level: any) => 
     !selectedExamSystemId || level.examinationSystemId === selectedExamSystemId
@@ -79,14 +87,6 @@ export default function AdminQuizzes() {
   const filteredSubjects = allSubjects?.filter((subject: any) => 
     !selectedExamSystemId || subject.examinationSystemId === selectedExamSystemId
   ) || [];
-
-  const form = useForm<GenerateQuizFormData>({
-    resolver: zodResolver(generateQuizSchema),
-    defaultValues: {
-      questionCount: 15,
-      timeLimit: 30
-    }
-  });
 
   const generateQuizMutation = useMutation({
     mutationFn: async (data: GenerateQuizFormData) => {
