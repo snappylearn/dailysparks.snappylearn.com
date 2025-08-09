@@ -254,9 +254,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionId, 
         message: "Quiz generated successfully by admin" 
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating admin quiz:", error);
-      res.status(500).json({ message: "Failed to generate quiz: " + error.message });
+      res.status(500).json({ message: "Failed to generate quiz: " + (error?.message || 'Unknown error') });
     }
   });
 

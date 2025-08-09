@@ -149,7 +149,7 @@ The quiz should be tailored to the selected educational context, but adapt grace
 
     // Add optional variables only if they exist (as per your instructions)
     if (contextData.subject) {
-      prompt += `\n- subject: ${contextData.subject.title}`;
+      prompt += `\n- subject: ${contextData.subject.name}`;
     }
     if (contextData.term) {
       prompt += `\n- term: ${contextData.term.title}`;
@@ -207,6 +207,10 @@ Generate exactly ${params.questionCount} questions following this format.`;
 
     const content = response.choices[0].message.content;
     console.log('OpenAI raw response:', content);
+
+    if (!content) {
+      throw new Error('Empty response from OpenAI');
+    }
 
     try {
       // Parse response - expect {"questions": [...]} format
