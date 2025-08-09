@@ -523,17 +523,17 @@ export default function AdminQuizzes() {
                         {quiz.type || 'topical'}
                       </Badge>
                     </TableCell>
-                    <TableCell>{quiz.questionCount}</TableCell>
+                    <TableCell>{quiz.questions || 0}</TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
                         <BarChart3 className="h-4 w-4 text-blue-500" />
-                        {quiz.sessionsCount || 0}
+                        {quiz.sessions || 0}
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
                         <Users className="h-4 w-4 text-green-500" />
-                        {quiz.usersCount || 0}
+                        {quiz.users || 0}
                       </div>
                     </TableCell>
                     <TableCell>
