@@ -520,6 +520,105 @@ export class DatabaseStorage implements IStorage {
   async getQuestionTypes() {
     return await db.select().from(questionTypes);
   }
+
+  // Admin analytics methods
+  async getTotalUsersCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(users);
+    return result[0].count;
+  }
+
+  async getTotalQuizzesCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(quizSessions);
+    return result[0].count;
+  }
+
+  async getTotalSessionsCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(quizSessions);
+    return result[0].count;
+  }
+
+  async getAverageScore(): Promise<number> {
+    const completedSessions = await db
+      .select({
+        correctAnswers: quizSessions.correctAnswers,
+        totalQuestions: quizSessions.totalQuestions,
+      })
+      .from(quizSessions)
+      .where(eq(quizSessions.completed, true));
+    
+    if (completedSessions.length === 0) return 0;
+    
+    const totalScore = completedSessions.reduce((sum, session) => {
+      const accuracy = session.totalQuestions > 0 ? 
+        (session.correctAnswers / session.totalQuestions) * 100 : 0;
+      return sum + accuracy;
+    }, 0);
+    
+    return Math.round(totalScore / completedSessions.length);
+  }
+
+  async getAdminQuizList(filters: any): Promise<any[]> {
+    const sessions = await db
+      .select({
+        id: quizSessions.id,
+        subjectId: quizSessions.subjectId,
+        quizType: quizSessions.quizType,
+        totalQuestions: quizSessions.totalQuestions,
+        createdAt: quizSessions.startedAt,
+      })
+      .from(quizSessions)
+      .orderBy(desc(quizSessions.startedAt));
+
+    return sessions.map(session => ({
+      id: session.id,
+      title: `${session.quizType.charAt(0).toUpperCase() + session.quizType.slice(1)} Quiz`,
+      subject: session.subjectId || 'Unknown',
+      quizType: session.quizType,
+      questionCount: session.totalQuestions,
+      sessionsCount: 1,
+      usersCount: 1,
+      createdAt: session.createdAt
+    }));
+  }
+
+  async getRecentActivity(): Promise<any[]> {
+    const recentSessions = await db
+      .select({
+        userId: quizSessions.userId,
+        startedAt: quizSessions.startedAt,
+        quizType: quizSessions.quizType,
+      })
+      .from(quizSessions)
+      .orderBy(desc(quizSessions.startedAt))
+      .limit(10);
+
+    return recentSessions.map((session) => ({
+      action: `Started ${session.quizType} quiz`,
+      user: `User ${session.userId.slice(-6)}`,
+      time: this.getTimeAgo(session.startedAt),
+      type: 'Session'
+    }));
+  }
+
+  async getTopPerformers(): Promise<any[]> {
+    const leaderboard = await this.getLeaderboard();
+    return leaderboard.slice(0, 5).map(entry => ({
+      name: `${entry.firstName || 'Student'} ${entry.lastName || ''}`.trim(),
+      sparks: entry.sparks,
+      score: entry.averageScore
+    }));
+  }
+
+  private getTimeAgo(date: Date): string {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minutes ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
+    return `${Math.floor(diffMins / 1440)} days ago`;
+  }
 }
 
 export const storage = new DatabaseStorage();

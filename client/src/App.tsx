@@ -15,6 +15,9 @@ import Onboarding from "@/components/Onboarding";
 import AdminLayout from "@/layouts/AdminLayout";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminQuizzes from "@/pages/admin/Quizzes";
+import AdminUsers from "@/pages/admin/Users";
+import AdminAnalytics from "@/pages/admin/Analytics";
+import AdminSettings from "@/pages/admin/Settings";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -55,6 +58,9 @@ function Router() {
           <Switch>
             <Route path="/" component={AdminDashboard} />
             <Route path="/quizzes" component={AdminQuizzes} />
+            <Route path="/users" component={AdminUsers} />
+            <Route path="/analytics" component={AdminAnalytics} />
+            <Route path="/settings" component={AdminSettings} />
             <Route component={NotFound} />
           </Switch>
         </AdminLayout>
