@@ -38,6 +38,31 @@ interface GeneratedQuestion {
 export class LLMQuizEngine {
   
   /**
+   * Generate quiz for admin use (saves to quiz bank)
+   */
+  static async generateQuizForAdmin(params: QuizGenerationParams, userId: string): Promise<string> {
+    try {
+      console.log('Starting admin LLM quiz generation with params:', params);
+      
+      // 1. Fetch contextual data for LLM prompt
+      const contextData = await this.fetchContextData(params);
+      
+      // 2. Generate questions using LLM with your exact prompt structure
+      const generatedQuestions = await this.generateQuestionsWithLLM(contextData, params);
+      
+      // 3. Create quiz session for admin review/editing
+      const sessionId = await this.createAdminQuizSession(userId, generatedQuestions, params);
+      
+      console.log('Admin LLM quiz generation completed. Session ID:', sessionId);
+      return sessionId;
+      
+    } catch (error: any) {
+      console.error('Admin LLM quiz generation error:', error);
+      throw new Error(`Failed to generate admin quiz: ${error.message}`);
+    }
+  }
+
+  /**
    * Generate quiz using the exact LLM prompt structure provided by user
    */
   static async generateQuiz(params: QuizGenerationParams, userId: string, profileId: string): Promise<string> {
@@ -416,5 +441,50 @@ Generate exactly ${params.questionCount} questions following this format.`;
     };
     
     return difficultyMultipliers[difficulty as keyof typeof difficultyMultipliers] || 10;
+  }
+
+  /**
+   * Create admin quiz session for review and editing
+   */
+  private static async createAdminQuizSession(
+    userId: string,
+    generatedQuestions: GeneratedQuestion[],
+    params: QuizGenerationParams
+  ): Promise<string> {
+    
+    // Transform generated questions to our format with choice structure
+    const questionsSnapshot = generatedQuestions.map((q, index) => ({
+      id: `q_${index + 1}`,
+      content: q.question,
+      questionType: 'mcq',
+      marks: 1,
+      difficulty: 'medium',
+      explanation: q.explanation,
+      orderIndex: index + 1,
+      choices: q.options.map((option, choiceIndex) => ({
+        id: `q_${index + 1}_c_${choiceIndex + 1}`,
+        content: option,
+        isCorrect: option === q.correct_answer,
+        orderIndex: choiceIndex + 1
+      }))
+    }));
+
+    const [session] = await db
+      .insert(quizSessions)
+      .values({
+        userId,
+        subjectId: params.subjectId,
+        quizType: params.quizType,
+        topicId: params.topicId,
+        termId: params.termId,
+        quizQuestions: questionsSnapshot, // JSONB snapshot
+        totalQuestions: params.questionCount,
+        correctAnswers: 0,
+        sparksEarned: 0,
+        completed: false
+      })
+      .returning();
+
+    return session.id;
   }
 }

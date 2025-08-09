@@ -195,6 +195,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== ADMIN ROUTES =====
+  
+  // Admin analytics and metrics
+  app.get('/api/admin/metrics', isAuthenticated, async (req: any, res) => {
+    try {
+      // Basic metrics for admin dashboard
+      const totalUsers = await storage.getTotalUsersCount();
+      const totalQuizzes = await storage.getTotalQuizzesCount();
+      const totalSessions = await storage.getTotalSessionsCount();
+      const avgScore = await storage.getAverageScore();
+      
+      res.json({
+        totalUsers,
+        totalQuizzes, 
+        totalSessions,
+        avgScore
+      });
+    } catch (error) {
+      console.error("Error fetching admin metrics:", error);
+      res.status(500).json({ message: "Failed to fetch metrics" });
+    }
+  });
+
+  // Admin quiz list with filters and analytics
+  app.get('/api/admin/quizzes', isAuthenticated, async (req: any, res) => {
+    try {
+      const quizzes = await storage.getAdminQuizList(req.query);
+      res.json(quizzes);
+    } catch (error) {
+      console.error("Error fetching admin quizzes:", error);
+      res.status(500).json({ message: "Failed to fetch quizzes" });
+    }
+  });
+
+  // Admin generate quiz endpoint
+  app.post('/api/admin/generate-quiz', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const quizData = req.body;
+      
+      // Use LLM to generate quiz with admin privileges
+      const { LLMQuizEngine } = await import('./llmQuizEngine');
+      const sessionId = await LLMQuizEngine.generateQuizForAdmin(quizData, userId);
+      
+      res.json({ 
+        sessionId, 
+        message: "Quiz generated successfully by admin" 
+      });
+    } catch (error) {
+      console.error("Error generating admin quiz:", error);
+      res.status(500).json({ message: "Failed to generate quiz: " + error.message });
+    }
+  });
+
+  // Recent activity for admin dashboard
+  app.get('/api/admin/recent-activity', isAuthenticated, async (req: any, res) => {
+    try {
+      const activities = await storage.getRecentActivity();
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching recent activity:", error);
+      res.status(500).json({ message: "Failed to fetch activity" });
+    }
+  });
+
+  // Admin leaderboard
+  app.get('/api/admin/leaderboard', isAuthenticated, async (req: any, res) => {
+    try {
+      const leaderboard = await storage.getTopPerformers();
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Error fetching admin leaderboard:", error);
+      res.status(500).json({ message: "Failed to fetch leaderboard" });
+    }
+  });
+
+  // ===== END ADMIN ROUTES =====
+
   // Get quiz types
   app.get('/api/quiz-types', async (req, res) => {
     try {

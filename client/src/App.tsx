@@ -12,6 +12,9 @@ import Results from "@/pages/Results";
 import Leaderboard from "@/pages/Leaderboard";
 import NotFound from "@/pages/not-found";
 import Onboarding from "@/components/Onboarding";
+import AdminLayout from "@/layouts/AdminLayout";
+import AdminDashboard from "@/pages/admin/Dashboard";
+import AdminQuizzes from "@/pages/admin/Quizzes";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -46,6 +49,18 @@ function Router() {
   // Show main app
   return (
     <Switch>
+      {/* Admin Routes */}
+      <Route path="/admin" nest>
+        <AdminLayout>
+          <Switch>
+            <Route path="/" component={AdminDashboard} />
+            <Route path="/quizzes" component={AdminQuizzes} />
+            <Route component={NotFound} />
+          </Switch>
+        </AdminLayout>
+      </Route>
+      
+      {/* Student Routes */}
       <Route path="/" component={SimpleHome} />
       <Route path="/quiz/:sessionId?" component={Quiz} />
       <Route path="/results/:sessionId" component={Results} />
