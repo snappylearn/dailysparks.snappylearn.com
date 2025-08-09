@@ -594,7 +594,9 @@ export default function AdminQuizzes() {
 function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [questions, setQuestions] = useState(quiz.questions || [
+  
+  // Ensure questions is always an array
+  const initialQuestions = Array.isArray(quiz.questions) ? quiz.questions : [
     {
       id: "q_1",
       content: "What is the basic unit of life in all living organisms?",
@@ -607,7 +609,9 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
       ],
       explanation: "The cell is considered the basic unit of life because it is the smallest structure capable of performing all the processes necessary for life."
     }
-  ]);
+  ];
+  
+  const [questions, setQuestions] = useState(initialQuestions);
 
   const editQuizSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -622,7 +626,7 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
       title: quiz.title || "",
       description: quiz.description || "",
       timeLimit: quiz.timeLimit || 30,
-      totalQuestions: quiz.totalQuestions || questions.length
+      totalQuestions: quiz.totalQuestions || initialQuestions.length
     }
   });
 
@@ -660,7 +664,11 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
       ],
       explanation: ""
     };
-    setQuestions([...questions, newQuestion]);
+    const updatedQuestions = [...questions, newQuestion];
+    setQuestions(updatedQuestions);
+    
+    // Update the form totalQuestions to match the new count
+    form.setValue('totalQuestions', updatedQuestions.length);
   };
 
   const updateQuestion = (index: number, field: string, value: any) => {
@@ -687,7 +695,11 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
   };
 
   const removeQuestion = (index: number) => {
-    setQuestions(questions.filter((_: any, i: number) => i !== index));
+    const updatedQuestions = questions.filter((_: any, i: number) => i !== index);
+    setQuestions(updatedQuestions);
+    
+    // Update the form totalQuestions to match the new count
+    form.setValue('totalQuestions', updatedQuestions.length);
   };
 
   return (
