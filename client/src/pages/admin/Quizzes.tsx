@@ -80,14 +80,23 @@ export default function AdminQuizzes() {
   const { data: terms } = useQuery({ queryKey: ["/api/terms"] });
 
   // Filter levels based on selected examination system
-  const filteredLevels = allLevels?.filter((level: any) => 
-    !selectedExamSystemId || level.examinationSystemId === selectedExamSystemId
-  ) || [];
+  const filteredLevels = allLevels?.filter((level: any) => {
+    if (!selectedExamSystemId) return true; // Show all if none selected
+    return level.examinationSystemId === selectedExamSystemId;
+  }) || [];
 
   // Filter subjects based on selected examination system
-  const filteredSubjects = allSubjects?.filter((subject: any) => 
-    !selectedExamSystemId || subject.examinationSystemId === selectedExamSystemId
-  ) || [];
+  const filteredSubjects = allSubjects?.filter((subject: any) => {
+    if (!selectedExamSystemId) return true; // Show all if none selected
+    return subject.examinationSystemId === selectedExamSystemId;
+  }) || [];
+
+  // Debug logging
+  console.log('selectedExamSystemId:', selectedExamSystemId);
+  console.log('allLevels:', allLevels?.length);
+  console.log('filteredLevels:', filteredLevels?.length);
+  console.log('allSubjects:', allSubjects?.length);
+  console.log('filteredSubjects:', filteredSubjects?.length);
 
   const generateQuizMutation = useMutation({
     mutationFn: async (data: GenerateQuizFormData) => {
