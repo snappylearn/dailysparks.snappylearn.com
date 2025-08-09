@@ -104,7 +104,7 @@ export default function Quiz() {
     }
   }, [selectedQuizType, subjectId, currentProfile, topicsLoading, topicsError, topics]);
 
-  // Start quiz mutation
+  // Start quiz mutation (using legacy API for backward compatibility)
   const startQuizMutation = useMutation({
     mutationFn: async (data: { quizType: string; subjectId: string; topicId?: string; termId?: string }) => {
       console.log('Making API request to start quiz...');

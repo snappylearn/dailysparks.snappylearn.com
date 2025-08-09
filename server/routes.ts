@@ -211,6 +211,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Backward compatibility: Keep the old quiz API working alongside the new one
+  app.post('/api/quiz/start', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { profileId, quizType, subjectId, topicId, termId } = req.body;
+      
+      console.log('Legacy quiz start request:', req.body);
+      
+      // Get profile data
+      const profile = await storage.getProfile(profileId);
+      if (!profile) {
+        return res.status(400).json({ message: "Profile not found" });
+      }
+
+      // Use the enhanced quiz generation
+      const params = {
+        examinationSystemId: profile.examinationSystemId,
+        levelId: profile.levelId,
+        subjectId,
+        quizType,
+        topicId,
+        termId,
+        questionCount: 15,
+        timeLimit: 30
+      };
+
+      const { QuizEngine } = await import('./quizEngine');
+      const sessionId = await QuizEngine.generateQuiz(params, userId, profileId);
+      
+      // Get the session data to return in legacy format
+      const sessionData = await QuizEngine.getQuizSession(sessionId);
+      
+      // Transform to legacy format
+      const legacyResponse = {
+        sessionId: sessionData.id,
+        questions: sessionData.questions.map((q: any) => ({
+          id: q.id,
+          questionText: q.content,
+          optionA: q.choices?.[0]?.content || '',
+          optionB: q.choices?.[1]?.content || '',
+          optionC: q.choices?.[2]?.content || '',
+          optionD: q.choices?.[3]?.content || '',
+          correctAnswer: q.choices?.find((c: any) => c.isCorrect)?.orderIndex === 1 ? 'A' : 
+                        q.choices?.find((c: any) => c.isCorrect)?.orderIndex === 2 ? 'B' :
+                        q.choices?.find((c: any) => c.isCorrect)?.orderIndex === 3 ? 'C' : 'D',
+          explanation: q.explanation
+        })),
+        totalQuestions: sessionData.totalQuestions
+      };
+      
+      console.log('Returning legacy quiz response:', legacyResponse);
+      res.json(legacyResponse);
+    } catch (error) {
+      console.error("Error starting legacy quiz:", error);
+      res.status(500).json({ message: "Failed to start quiz: " + error.message });
+    }
+  });
+
   // Profile routes
   app.get('/api/profiles', isAuthenticated, async (req: any, res) => {
     try {
