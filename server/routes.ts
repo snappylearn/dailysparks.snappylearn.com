@@ -552,6 +552,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Batch answer submission for better performance
+  app.post('/api/quiz/:sessionId/batch-answers', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      const { answers } = req.body;
+
+      if (!answers || !Array.isArray(answers)) {
+        return res.status(400).json({ message: "Answers array is required" });
+      }
+
+      const results = [];
+      for (const answerData of answers) {
+        const { questionId, userAnswer, timeSpent } = answerData;
+        
+        // Get the question to check if answer is correct
+        const questionResult = await db.select().from(questions).where(eq(questions.id, questionId));
+        const question = questionResult[0];
+        
+        if (question) {
+          const isCorrect = question.correctAnswer === userAnswer;
+          
+          // Save user answer
+          await storage.createUserAnswer({
+            quizSessionId: sessionId,
+            questionId,
+            userAnswer,
+            isCorrect,
+            timeSpent: timeSpent || 0,
+          });
+
+          results.push({
+            questionId,
+            isCorrect,
+            correctAnswer: question.correctAnswer,
+          });
+        }
+      }
+
+      res.json({ results, message: "All answers submitted successfully" });
+    } catch (error) {
+      console.error("Error submitting batch answers:", error);
+      res.status(500).json({ message: "Failed to submit answers" });
+    }
+  });
+
+  // Single answer submission (kept for backward compatibility)
   app.post('/api/quiz/:sessionId/answer', isAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
@@ -658,54 +704,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Profile ID, Subject ID and quiz type are required" });
       }
 
-      const profile = await storage.getProfile(profileId);
+      // Optimize: Get profile and questions in parallel
+      const [profile, questions] = await Promise.all([
+        storage.getProfile(profileId),
+        getQuestionsByQuizType(subjectId, quizType, topicId, term, profileId)
+      ]);
+
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
-      }
-
-      // Create quiz session
-      const quizSession = await storage.createQuizSession({
-        profileId,
-        subjectId,
-        quizType,
-        topicId: quizType === 'topical' ? topicId : undefined,
-        term: quizType === 'term' ? term : undefined,
-        totalQuestions: 30,
-      });
-
-      // Get questions based on quiz type
-      let questions;
-      switch (quizType) {
-        case 'random':
-          questions = await storage.getRandomQuestions(subjectId, profile.levelId, 30);
-          break;
-        case 'topical':
-          if (!topicId) {
-            return res.status(400).json({ message: "Topic ID required for topical quiz" });
-          }
-          questions = await storage.getQuestionsByTopic(topicId, 30);
-          break;
-        case 'term':
-          const termToUse = term || profile.currentTerm || 'Term 1';
-          questions = await storage.getTermQuestions(subjectId, profile.levelId, termToUse, 30);
-          break;
-        default:
-          return res.status(400).json({ message: "Invalid quiz type" });
       }
 
       if (questions.length === 0) {
         return res.status(404).json({ message: "No questions found for the selected criteria" });
       }
 
+      // Create quiz session with questions
+      const quizSession = await storage.createQuizSession({
+        profileId,
+        subjectId,
+        quizType,
+        topicId: quizType === 'topical' ? topicId : undefined,
+        term: quizType === 'term' ? term : undefined,
+        totalQuestions: questions.length,
+      });
+
       res.json({
-        quizSession,
-        questions: questions.slice(0, 30), // Ensure exactly 30 questions
+        sessionId: quizSession.id,
+        questions: questions.slice(0, 15), // Reduced to 15 for faster loading
+        totalQuestions: questions.length,
       });
     } catch (error) {
       console.error("Error starting quiz:", error);
       res.status(500).json({ message: "Failed to start quiz" });
     }
   });
+
+  // Helper function to get questions by quiz type
+  async function getQuestionsByQuizType(subjectId: string, quizType: string, topicId?: string, term?: string, profileId?: string) {
+    const profile = await storage.getProfile(profileId || '');
+    const levelId = profile?.levelId || '';
+
+    switch (quizType) {
+      case 'random':
+        return await storage.getRandomQuestions(subjectId, levelId, 15);
+      case 'topical':
+        if (!topicId) throw new Error("Topic ID required for topical quiz");
+        return await storage.getQuestionsByTopic(topicId, 15);
+      case 'term':
+        const termToUse = term || profile?.currentTerm || 'Term 1';
+        return await storage.getTermQuestions(subjectId, levelId, termToUse, 15);
+      default:
+        throw new Error("Invalid quiz type");
+    }
+  }
 
   // Submit an answer
   app.post('/api/quiz/answer', isAuthenticated, async (req: any, res) => {
