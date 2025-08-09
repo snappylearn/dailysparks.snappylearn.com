@@ -59,14 +59,20 @@ export default function AdminQuizzes() {
 
   // Fetch quiz data with filters
   const { data: quizzes, isLoading: quizzesLoading } = useQuery({
-    queryKey: ["/api/admin/quizzes", { 
-      search: searchQuery,
-      examSystem: selectedExamSystem,
-      level: selectedLevel,
-      subject: selectedSubject,
-      topic: selectedTopic,
-      term: selectedTerm
-    }],
+    queryKey: ["/api/admin/quizzes"],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
+      if (selectedExamSystem !== 'all') params.append('examSystem', selectedExamSystem);
+      if (selectedLevel !== 'all') params.append('level', selectedLevel);
+      if (selectedSubject !== 'all') params.append('subject', selectedSubject);
+      if (selectedTopic !== 'all') params.append('topic', selectedTopic);
+      if (selectedTerm !== 'all') params.append('term', selectedTerm);
+      
+      const response = await fetch(`/api/admin/quizzes?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch quizzes');
+      return response.json();
+    },
   });
 
   // Fetch dropdowns data
