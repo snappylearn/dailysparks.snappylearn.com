@@ -74,8 +74,8 @@ export default function AdminQuizzes() {
   const { data: allLevels } = useQuery({ queryKey: ["/api/levels"] });
   const { data: allSubjects } = useQuery({ queryKey: ["/api/subjects"] });
   const { data: topics } = useQuery({ 
-    queryKey: ["/api/topics", selectedSubjectId, selectedLevelId, selectedExamSystemId],
-    enabled: !!selectedSubjectId && !!selectedLevelId && !!selectedExamSystemId
+    queryKey: [`/api/topics/${selectedSubjectId}/${selectedLevelId}`],
+    enabled: !!selectedSubjectId && !!selectedLevelId
   });
   const { data: terms } = useQuery({ queryKey: ["/api/terms"] });
 
