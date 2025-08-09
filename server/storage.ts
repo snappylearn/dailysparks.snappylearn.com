@@ -200,14 +200,15 @@ export class DatabaseStorage implements IStorage {
 
   // Topic operations
   async getTopicsBySubjectAndLevel(subjectId: string, levelId: string, termId?: string): Promise<Topic[]> {
-    let query = db.select().from(topics)
-      .where(and(eq(topics.subjectId, subjectId), eq(topics.levelId, levelId)));
+    let whereConditions = [eq(topics.subjectId, subjectId), eq(topics.levelId, levelId)];
     
     if (termId) {
-      query = query.where(eq(topics.termId, termId));
+      whereConditions.push(eq(topics.termId, termId));
     }
     
-    return await query.orderBy(topics.order);
+    return await db.select().from(topics)
+      .where(and(...whereConditions))
+      .orderBy(topics.order);
   }
 
   async getTopicsByTerm(termId: string): Promise<Topic[]> {
