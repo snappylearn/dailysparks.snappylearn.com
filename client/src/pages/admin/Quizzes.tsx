@@ -151,7 +151,7 @@ export default function AdminQuizzes() {
                           <SelectContent>
                             {examSystems?.map((system: any) => (
                               <SelectItem key={system.id} value={system.id}>
-                                {system.title}
+                                {system.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -201,7 +201,7 @@ export default function AdminQuizzes() {
                           <SelectContent>
                             {subjects?.map((subject: any) => (
                               <SelectItem key={subject.id} value={subject.id}>
-                                {subject.title}
+                                {subject.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
