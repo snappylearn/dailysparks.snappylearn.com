@@ -695,68 +695,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Start a quiz session
+  // Start a quiz session - simplified to use existing quizzes
   app.post('/api/quiz/start', isAuthenticated, async (req: any, res) => {
     try {
       const { profileId, subjectId, quizType, topicId, term } = req.body;
 
-      if (!profileId || !subjectId || !quizType) {
-        return res.status(400).json({ message: "Profile ID, Subject ID and quiz type are required" });
+      if (!profileId || !subjectId) {
+        return res.status(400).json({ message: "Profile ID and Subject ID are required" });
       }
 
-      // Optimize: Get profile and questions in parallel
-      const [profile, questions] = await Promise.all([
-        storage.getProfile(profileId),
-        getQuestionsByQuizType(subjectId, quizType, topicId, term, profileId)
-      ]);
-
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
+      // Get available quizzes for the subject
+      const availableQuizzes = await storage.getQuizzesBySubject(subjectId);
+      
+      if (availableQuizzes.length === 0) {
+        return res.status(404).json({ message: "No quizzes available for this subject" });
       }
 
-      if (questions.length === 0) {
-        return res.status(404).json({ message: "No questions found for the selected criteria" });
+      // Select a random quiz for now (can be enhanced with type filtering later)
+      const selectedQuiz = availableQuizzes[Math.floor(Math.random() * availableQuizzes.length)];
+
+      // Get quiz questions
+      const quizWithQuestions = await storage.getQuizWithQuestions(selectedQuiz.id);
+
+      if (!quizWithQuestions.questions || quizWithQuestions.questions.length === 0) {
+        return res.status(404).json({ message: "No questions found in selected quiz" });
       }
 
-      // Create quiz session with questions
+      // Create quiz session
       const quizSession = await storage.createQuizSession({
         profileId,
         subjectId,
-        quizType,
-        topicId: quizType === 'topical' ? topicId : undefined,
-        term: quizType === 'term' ? term : undefined,
-        totalQuestions: questions.length,
+        quizType: 'random', // Using random for now
+        totalQuestions: quizWithQuestions.questions.length,
       });
+
+      // Transform questions to expected format
+      const questions = quizWithQuestions.questions.map((q: any) => ({
+        id: q.id,
+        questionText: q.content,
+        optionA: q.choices[0]?.content || 'Option A',
+        optionB: q.choices[1]?.content || 'Option B', 
+        optionC: q.choices[2]?.content || 'Option C',
+        optionD: q.choices[3]?.content || 'Option D',
+        correctAnswer: q.choices.find((c: any) => c.isCorrect)?.content.charAt(0) || 'A',
+        explanation: q.explanation
+      }));
 
       res.json({
         sessionId: quizSession.id,
-        questions: questions.slice(0, 15), // Reduced to 15 for faster loading
+        questions: questions,
         totalQuestions: questions.length,
       });
     } catch (error) {
       console.error("Error starting quiz:", error);
-      res.status(500).json({ message: "Failed to start quiz" });
+      res.status(500).json({ message: "Failed to start quiz: " + error.message });
     }
   });
-
-  // Helper function to get questions by quiz type
-  async function getQuestionsByQuizType(subjectId: string, quizType: string, topicId?: string, term?: string, profileId?: string) {
-    const profile = await storage.getProfile(profileId || '');
-    const levelId = profile?.levelId || '';
-
-    switch (quizType) {
-      case 'random':
-        return await storage.getRandomQuestions(subjectId, levelId, 15);
-      case 'topical':
-        if (!topicId) throw new Error("Topic ID required for topical quiz");
-        return await storage.getQuestionsByTopic(topicId, 15);
-      case 'term':
-        const termToUse = term || profile?.currentTerm || 'Term 1';
-        return await storage.getTermQuestions(subjectId, levelId, termToUse, 15);
-      default:
-        throw new Error("Invalid quiz type");
-    }
-  }
 
   // Submit an answer
   app.post('/api/quiz/answer', isAuthenticated, async (req: any, res) => {

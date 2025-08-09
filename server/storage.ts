@@ -669,6 +669,29 @@ export class DatabaseStorage implements IStorage {
     return `${Math.floor(diffMins / 1440)} days ago`;
   }
 
+  // Get quizzes by subject
+  async getQuizzesBySubject(subjectId: string): Promise<any[]> {
+    try {
+      const subjectQuizzes = await db
+        .select({
+          id: quizzes.id,
+          title: quizzes.title,
+          subjectId: quizzes.subjectId,
+          totalQuestions: quizzes.totalQuestions,
+          timeLimit: quizzes.timeLimit,
+          createdAt: quizzes.createdAt
+        })
+        .from(quizzes)
+        .where(eq(quizzes.subjectId, subjectId))
+        .orderBy(desc(quizzes.createdAt));
+      
+      return subjectQuizzes;
+    } catch (error) {
+      console.error("Error fetching quizzes by subject:", error);
+      return [];
+    }
+  }
+
   // Get quiz with questions and choices
   async getQuizWithQuestions(quizId: string): Promise<any> {
     try {
