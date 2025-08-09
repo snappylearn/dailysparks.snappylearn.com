@@ -43,18 +43,7 @@ export default function AdminQuizzes() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch quiz data with filters
-  const { data: quizzes, isLoading: quizzesLoading } = useQuery({
-    queryKey: ["/api/admin/quizzes", { 
-      search: searchQuery,
-      examSystem: selectedExamSystem,
-      level: selectedLevel,
-      subject: selectedSubject,
-      topic: selectedTopic,
-      term: selectedTerm
-    }],
-  });
-
+  // Initialize form first
   const form = useForm<GenerateQuizFormData>({
     resolver: zodResolver(generateQuizSchema),
     defaultValues: {
@@ -67,6 +56,18 @@ export default function AdminQuizzes() {
   const selectedExamSystemId = form.watch("examinationSystemId");
   const selectedLevelId = form.watch("levelId");
   const selectedSubjectId = form.watch("subjectId");
+
+  // Fetch quiz data with filters
+  const { data: quizzes, isLoading: quizzesLoading } = useQuery({
+    queryKey: ["/api/admin/quizzes", { 
+      search: searchQuery,
+      examSystem: selectedExamSystem,
+      level: selectedLevel,
+      subject: selectedSubject,
+      topic: selectedTopic,
+      term: selectedTerm
+    }],
+  });
 
   // Fetch dropdowns data
   const { data: examSystems } = useQuery({ queryKey: ["/api/examination-systems"] });
