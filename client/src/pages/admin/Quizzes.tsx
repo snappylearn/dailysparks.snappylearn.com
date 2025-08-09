@@ -57,13 +57,28 @@ export default function AdminQuizzes() {
 
   // Fetch dropdowns data
   const { data: examSystems } = useQuery({ queryKey: ["/api/examination-systems"] });
-  const { data: levels } = useQuery({ queryKey: ["/api/levels"] });
-  const { data: subjects } = useQuery({ queryKey: ["/api/subjects"] });
+  const { data: allLevels } = useQuery({ queryKey: ["/api/levels"] });
+  const { data: allSubjects } = useQuery({ queryKey: ["/api/subjects"] });
   const { data: topics } = useQuery({ 
-    queryKey: ["/api/topics", selectedSubject],
-    enabled: !!selectedSubject && selectedSubject !== "all"
+    queryKey: ["/api/topics", selectedSubjectId, selectedLevelId, selectedExamSystemId],
+    enabled: !!selectedSubjectId && !!selectedLevelId && !!selectedExamSystemId
   });
   const { data: terms } = useQuery({ queryKey: ["/api/terms"] });
+
+  // Watch form values for dynamic filtering
+  const selectedExamSystemId = form.watch("examinationSystemId");
+  const selectedLevelId = form.watch("levelId");
+  const selectedSubjectId = form.watch("subjectId");
+
+  // Filter levels based on selected examination system
+  const filteredLevels = allLevels?.filter((level: any) => 
+    !selectedExamSystemId || level.examinationSystemId === selectedExamSystemId
+  ) || [];
+
+  // Filter subjects based on selected examination system
+  const filteredSubjects = allSubjects?.filter((subject: any) => 
+    !selectedExamSystemId || subject.examinationSystemId === selectedExamSystemId
+  ) || [];
 
   const form = useForm<GenerateQuizFormData>({
     resolver: zodResolver(generateQuizSchema),
@@ -142,7 +157,12 @@ export default function AdminQuizzes() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Examination System *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={(value) => {
+                          field.onChange(value);
+                          // Reset dependent fields when exam system changes
+                          form.setValue("levelId", "");
+                          form.setValue("subjectId", "");
+                        }} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select exam system" />
@@ -167,14 +187,19 @@ export default function AdminQuizzes() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Level *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={(value) => {
+                          field.onChange(value);
+                          // Reset subject and topic when level changes
+                          form.setValue("subjectId", "");
+                          form.setValue("topicId", "");
+                        }} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select level" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {levels?.map((level: any) => (
+                            {filteredLevels?.map((level: any) => (
                               <SelectItem key={level.id} value={level.id}>
                                 {level.title}
                               </SelectItem>
@@ -192,14 +217,18 @@ export default function AdminQuizzes() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Subject *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={(value) => {
+                          field.onChange(value);
+                          // Reset topic when subject changes
+                          form.setValue("topicId", "");
+                        }} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select subject" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {subjects?.map((subject: any) => (
+                            {filteredSubjects?.map((subject: any) => (
                               <SelectItem key={subject.id} value={subject.id}>
                                 {subject.name}
                               </SelectItem>
