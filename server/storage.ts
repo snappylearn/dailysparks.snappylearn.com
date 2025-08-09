@@ -42,7 +42,7 @@ import {
   type InsertDailyChallenge,
   type InsertUserChallengeProgress,
 } from "@shared/schema";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, and, desc, sql, count, avg, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
@@ -682,43 +682,43 @@ export class DatabaseStorage implements IStorage {
         throw new Error("Quiz not found");
       }
 
-      // Get questions with choices
-      const quizQuestionsWithChoices = await db
-        .select({
-          id: quizQuestions.id,
-          content: quizQuestions.content,
-          explanation: quizQuestions.explanation,
-          orderIndex: quizQuestions.orderIndex,
-          choiceId: quizQuestionChoices.id,
-          choiceContent: quizQuestionChoices.content,
-          isCorrect: quizQuestionChoices.isCorrect,
-          choiceOrderIndex: quizQuestionChoices.orderIndex,
-        })
-        .from(quizQuestions)
-        .leftJoin(quizQuestionChoices, eq(quizQuestions.id, quizQuestionChoices.quizQuestionId))
-        .where(eq(quizQuestions.quizId, quizId))
-        .orderBy(quizQuestions.orderIndex, quizQuestionChoices.orderIndex);
+      // Use raw SQL query since column names don't match ORM exactly
+      const result = await pool.query(`
+        SELECT 
+            qq.id,
+            qq.content,
+            qq.explanation,
+            qq.order_index,
+            qc.id as choice_id,
+            qc.content as choice_content,
+            qc.is_correct,
+            qc.order_index as choice_order_index
+        FROM quiz_questions qq
+        LEFT JOIN quiz_question_choices qc ON qq.id = qc.quiz_question_id
+        WHERE qq.quiz_id = $1
+        ORDER BY qq.order_index, qc.order_index
+      `, [quizId]);
 
       // Group choices by question
       const questionsMap = new Map();
       
-      quizQuestionsWithChoices.forEach((row) => {
+      result.rows.forEach((row: any) => {
         if (!questionsMap.has(row.id)) {
           questionsMap.set(row.id, {
             id: row.id,
             content: row.content,
             explanation: row.explanation,
-            orderIndex: row.orderIndex,
+            orderIndex: row.order_index,
             choices: []
           });
         }
         
-        if (row.choiceId) {
+        if (row.choice_id) {
           questionsMap.get(row.id).choices.push({
-            id: row.choiceId,
-            content: row.choiceContent,
-            isCorrect: row.isCorrect,
-            orderIndex: row.choiceOrderIndex
+            id: row.choice_id,
+            content: row.choice_content,
+            isCorrect: row.is_correct,
+            orderIndex: row.choice_order_index
           });
         }
       });
