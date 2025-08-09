@@ -576,6 +576,251 @@ export default function AdminQuizzes() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Quiz Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Quiz</DialogTitle>
+          </DialogHeader>
+          {selectedQuiz && <EditQuizForm quiz={selectedQuiz} onClose={() => setEditDialogOpen(false)} />}
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+// Edit Quiz Form Component
+function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [questions, setQuestions] = useState(quiz.questions || [
+    {
+      id: "q_1",
+      content: "What is the basic unit of life in all living organisms?",
+      type: "mcq",
+      choices: [
+        { id: "c_1", content: "Cell", isCorrect: true },
+        { id: "c_2", content: "Tissue", isCorrect: false },
+        { id: "c_3", content: "Organ", isCorrect: false },
+        { id: "c_4", content: "Organ system", isCorrect: false }
+      ],
+      explanation: "The cell is considered the basic unit of life because it is the smallest structure capable of performing all the processes necessary for life."
+    }
+  ]);
+
+  const editQuizSchema = z.object({
+    title: z.string().min(1, "Title is required"),
+    description: z.string().optional(),
+    timeLimit: z.number().min(5).max(120),
+    totalQuestions: z.number().min(1).max(50)
+  });
+
+  const form = useForm({
+    resolver: zodResolver(editQuizSchema),
+    defaultValues: {
+      title: quiz.title || "",
+      description: quiz.description || "",
+      timeLimit: quiz.timeLimit || 30,
+      totalQuestions: quiz.totalQuestions || questions.length
+    }
+  });
+
+  const updateQuizMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("PUT", `/api/admin/quizzes/${quiz.id}`, { ...data, questions });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Quiz updated successfully"
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/quizzes"] });
+      onClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update quiz",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const addQuestion = () => {
+    const newQuestion = {
+      id: `q_${Date.now()}`,
+      content: "",
+      type: "mcq",
+      choices: [
+        { id: `c_${Date.now()}_1`, content: "", isCorrect: false },
+        { id: `c_${Date.now()}_2`, content: "", isCorrect: false },
+        { id: `c_${Date.now()}_3`, content: "", isCorrect: false },
+        { id: `c_${Date.now()}_4`, content: "", isCorrect: false }
+      ],
+      explanation: ""
+    };
+    setQuestions([...questions, newQuestion]);
+  };
+
+  const updateQuestion = (index: number, field: string, value: any) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[index] = { ...updatedQuestions[index], [field]: value };
+    setQuestions(updatedQuestions);
+  };
+
+  const updateChoice = (questionIndex: number, choiceIndex: number, field: string, value: any) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[questionIndex].choices[choiceIndex] = {
+      ...updatedQuestions[questionIndex].choices[choiceIndex],
+      [field]: value
+    };
+    setQuestions(updatedQuestions);
+  };
+
+  const setCorrectAnswer = (questionIndex: number, choiceIndex: number) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[questionIndex].choices.forEach((choice: any, idx: number) => {
+      choice.isCorrect = idx === choiceIndex;
+    });
+    setQuestions(updatedQuestions);
+  };
+
+  const removeQuestion = (index: number) => {
+    setQuestions(questions.filter((_: any, i: number) => i !== index));
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit((data) => updateQuizMutation.mutate(data))} className="space-y-6">
+        {/* Basic Quiz Info */}
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Quiz Title</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Enter quiz title" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="timeLimit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Time Limit (minutes)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    {...field} 
+                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea {...field} placeholder="Enter quiz description" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Questions Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Questions ({questions.length})</h3>
+            <Button type="button" onClick={addQuestion} variant="outline" size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Question
+            </Button>
+          </div>
+
+          {questions.map((question: any, questionIndex: number) => (
+            <Card key={question.id} className="p-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Question {questionIndex + 1}</h4>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => removeQuestion(questionIndex)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+
+                <Input
+                  value={question.content}
+                  onChange={(e) => updateQuestion(questionIndex, 'content', e.target.value)}
+                  placeholder="Enter question content"
+                />
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Answer Choices</label>
+                  {question.choices.map((choice: any, choiceIndex: number) => (
+                    <div key={choice.id} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name={`correct_${questionIndex}`}
+                        checked={choice.isCorrect}
+                        onChange={() => setCorrectAnswer(questionIndex, choiceIndex)}
+                        className="w-4 h-4"
+                      />
+                      <span className="w-6 text-sm font-medium">
+                        {String.fromCharCode(65 + choiceIndex)}
+                      </span>
+                      <Input
+                        value={choice.content}
+                        onChange={(e) => updateChoice(questionIndex, choiceIndex, 'content', e.target.value)}
+                        placeholder={`Choice ${String.fromCharCode(65 + choiceIndex)}`}
+                        className="flex-1"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Explanation</label>
+                  <Textarea
+                    value={question.explanation}
+                    onChange={(e) => updateQuestion(questionIndex, 'explanation', e.target.value)}
+                    placeholder="Enter explanation for the correct answer"
+                    rows={2}
+                  />
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={updateQuizMutation.isPending}>
+            {updateQuizMutation.isPending ? "Updating..." : "Update Quiz"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

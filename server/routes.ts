@@ -240,6 +240,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update quiz
+  app.put('/api/admin/quizzes/:quizId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { quizId } = req.params;
+      const updateData = req.body;
+      
+      const updatedQuiz = await storage.updateQuiz(quizId, updateData);
+      res.json(updatedQuiz);
+    } catch (error) {
+      console.error("Error updating quiz:", error);
+      res.status(500).json({ message: "Failed to update quiz" });
+    }
+  });
+
   // Admin generate quiz endpoint
   app.post('/api/admin/generate-quiz', isAuthenticated, async (req: any, res) => {
     try {

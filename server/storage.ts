@@ -661,6 +661,29 @@ export class DatabaseStorage implements IStorage {
     if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
     return `${Math.floor(diffMins / 1440)} days ago`;
   }
+
+  // Update quiz
+  async updateQuiz(quizId: string, updateData: any): Promise<any> {
+    try {
+      // Update the quiz in the database
+      const [updatedQuiz] = await db
+        .update(quizzes)
+        .set({
+          title: updateData.title,
+          description: updateData.description,
+          timeLimit: updateData.timeLimit,
+          totalQuestions: updateData.totalQuestions,
+          updatedAt: new Date()
+        })
+        .where(eq(quizzes.id, quizId))
+        .returning();
+      
+      return updatedQuiz;
+    } catch (error) {
+      console.error("Error updating quiz:", error);
+      throw new Error("Failed to update quiz");
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
