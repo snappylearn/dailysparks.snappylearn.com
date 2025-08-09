@@ -93,13 +93,13 @@ export default function AdminQuizzes() {
     return subject.examinationSystemId === selectedExamSystemId || subject.examination_system_id === selectedExamSystemId;
   }) || [];
 
-  // Debug logging
-  console.log('selectedExamSystemId:', selectedExamSystemId);
-  console.log('allLevels:', allLevels);
-  console.log('filteredLevels:', filteredLevels);
-  console.log('allSubjects:', allSubjects);
-  console.log('filteredSubjects:', filteredSubjects);
-  console.log('examSystems:', examSystems);
+  // Debug logging - Remove after testing
+  // console.log('selectedExamSystemId:', selectedExamSystemId);
+  // console.log('allLevels:', allLevels);
+  // console.log('filteredLevels:', filteredLevels);
+  // console.log('allSubjects:', allSubjects);
+  // console.log('filteredSubjects:', filteredSubjects);
+  // console.log('examSystems:', examSystems);
 
   const generateQuizMutation = useMutation({
     mutationFn: async (data: GenerateQuizFormData) => {

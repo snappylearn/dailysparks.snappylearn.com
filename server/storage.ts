@@ -202,7 +202,6 @@ export class DatabaseStorage implements IStorage {
   // Subject operations
   async getAllSubjects(): Promise<Subject[]> {
     return await db.select().from(subjects)
-      .where(eq(subjects.isActive, true))
       .orderBy(subjects.name);
   }
 

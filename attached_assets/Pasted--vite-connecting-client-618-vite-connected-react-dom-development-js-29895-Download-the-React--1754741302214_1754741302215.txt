@@ -1,0 +1,161 @@
+[vite] connecting...
+client:618 [vite] connected.
+react-dom.development.js:29895 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+Quizzes.tsx:97 selectedExamSystemId: undefined
+Quizzes.tsx:98 allLevels: undefined
+Quizzes.tsx:99 filteredLevels: []
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: []
+Quizzes.tsx:102 examSystems: undefined
+react-dom.development.js:25682 [Violation] 'setTimeout' handler took 157ms
+Quizzes.tsx:97 selectedExamSystemId: undefined
+Quizzes.tsx:98 allLevels: undefined
+Quizzes.tsx:99 filteredLevels: []
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: []
+Quizzes.tsx:102 examSystems: (3) [{…}, {…}, {…}]
+queryClient.ts:32   GET https://3b58e6f3-8d54-4de8-8cf9-292ccfba09ad-00-3297kln5ox2h.riker.replit.dev/api/subjects 500 (Internal Server Error)
+(anonymous) @ queryClient.ts:32
+fetchFn @ query.ts:429
+run @ retryer.ts:153
+start @ retryer.ts:218
+fetch @ query.ts:540
+executeFetch_fn @ queryObserver.ts:346
+onSubscribe @ queryObserver.ts:108
+subscribe @ subscribable.ts:11
+(anonymous) @ useBaseQuery.ts:92
+subscribeToStore @ react-dom.development.js:16139
+commitHookEffectListMount @ react-dom.development.js:23189
+commitPassiveMountOnFiber @ react-dom.development.js:24965
+commitPassiveMountEffects_complete @ react-dom.development.js:24930
+commitPassiveMountEffects_begin @ react-dom.development.js:24917
+commitPassiveMountEffects @ react-dom.development.js:24905
+flushPassiveEffectsImpl @ react-dom.development.js:27078
+flushPassiveEffects @ react-dom.development.js:27023
+commitRootImpl @ react-dom.development.js:26974
+commitRoot @ react-dom.development.js:26721
+performSyncWorkOnRoot @ react-dom.development.js:26156
+flushSyncCallbacks @ react-dom.development.js:12042
+(anonymous) @ react-dom.development.js:25690
+setTimeout
+scheduleFn @ notifyManager.ts:22
+flush @ notifyManager.ts:37
+batch @ notifyManager.ts:56
+dispatch_fn @ query.ts:617
+setData @ query.ts:218
+onSuccess @ query.ts:507
+resolve @ retryer.ts:107
+Promise.then
+run @ retryer.ts:159
+start @ retryer.ts:218
+fetch @ query.ts:540
+executeFetch_fn @ queryObserver.ts:346
+setOptions @ queryObserver.ts:199
+(anonymous) @ useBaseQuery.ts:109
+commitHookEffectListMount @ react-dom.development.js:23189
+commitPassiveMountOnFiber @ react-dom.development.js:24965
+commitPassiveMountEffects_complete @ react-dom.development.js:24930
+commitPassiveMountEffects_begin @ react-dom.development.js:24917
+commitPassiveMountEffects @ react-dom.development.js:24905
+flushPassiveEffectsImpl @ react-dom.development.js:27078
+flushPassiveEffects @ react-dom.development.js:27023
+commitRootImpl @ react-dom.development.js:26974
+commitRoot @ react-dom.development.js:26721
+performSyncWorkOnRoot @ react-dom.development.js:26156
+flushSyncCallbacks @ react-dom.development.js:12042
+(anonymous) @ react-dom.development.js:25690
+setTimeout
+scheduleFn @ notifyManager.ts:22
+flush @ notifyManager.ts:37
+batch @ notifyManager.ts:56
+dispatch_fn @ query.ts:617
+setData @ query.ts:218
+onSuccess @ query.ts:507
+resolve @ retryer.ts:107
+Promise.then
+run @ retryer.ts:159
+start @ retryer.ts:218
+fetch @ query.ts:540
+executeFetch_fn @ queryObserver.ts:346
+onSubscribe @ queryObserver.ts:108
+subscribe @ subscribable.ts:11
+(anonymous) @ useBaseQuery.ts:92
+subscribeToStore @ react-dom.development.js:16139
+commitHookEffectListMount @ react-dom.development.js:23189
+commitPassiveMountOnFiber @ react-dom.development.js:24965
+commitPassiveMountEffects_complete @ react-dom.development.js:24930
+commitPassiveMountEffects_begin @ react-dom.development.js:24917
+commitPassiveMountEffects @ react-dom.development.js:24905
+flushPassiveEffectsImpl @ react-dom.development.js:27078
+flushPassiveEffects @ react-dom.development.js:27023
+performSyncWorkOnRoot @ react-dom.development.js:26115
+flushSyncCallbacks @ react-dom.development.js:12042
+commitRootImpl @ react-dom.development.js:26998
+commitRoot @ react-dom.development.js:26721
+finishConcurrentRender @ react-dom.development.js:26020
+performConcurrentWorkOnRoot @ react-dom.development.js:25848
+workLoop @ scheduler.development.js:266
+flushWork @ scheduler.development.js:239
+performWorkUntilDeadline @ scheduler.development.js:533
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
+        Don't show again
+Quizzes.tsx:97 selectedExamSystemId: undefined
+Quizzes.tsx:98 allLevels: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Quizzes.tsx:99 filteredLevels: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: []
+Quizzes.tsx:102 examSystems: (3) [{…}, {…}, {…}]
+react-dom.development.js:25682 [Violation] 'setTimeout' handler took 70ms
+Quizzes.tsx:97 selectedExamSystemId: undefined
+Quizzes.tsx:98 allLevels: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Quizzes.tsx:99 filteredLevels: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: []
+Quizzes.tsx:102 examSystems: (3) [{…}, {…}, {…}]
+Quizzes.tsx:97 selectedExamSystemId: undefined
+Quizzes.tsx:98 allLevels: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Quizzes.tsx:99 filteredLevels: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: []
+Quizzes.tsx:102 examSystems: (3) [{…}, {…}, {…}]
+Quizzes.tsx:97 selectedExamSystemId: undefined
+Quizzes.tsx:98 allLevels: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Quizzes.tsx:99 filteredLevels: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: []
+Quizzes.tsx:102 examSystems: (3) [{…}, {…}, {…}]
+dialog.tsx:542  Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ dialog.tsx:542
+commitHookEffectListMount @ react-dom.development.js:23189
+commitPassiveMountOnFiber @ react-dom.development.js:24965
+commitPassiveMountEffects_complete @ react-dom.development.js:24930
+commitPassiveMountEffects_begin @ react-dom.development.js:24917
+commitPassiveMountEffects @ react-dom.development.js:24905
+flushPassiveEffectsImpl @ react-dom.development.js:27078
+flushPassiveEffects @ react-dom.development.js:27023
+commitRootImpl @ react-dom.development.js:26974
+commitRoot @ react-dom.development.js:26721
+performSyncWorkOnRoot @ react-dom.development.js:26156
+flushSyncCallbacks @ react-dom.development.js:12042
+(anonymous) @ react-dom.development.js:25690
+Quizzes.tsx:97 selectedExamSystemId: bde2015e-8e30-4460-ad2b-c79837d9438b
+Quizzes.tsx:98 allLevels: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Quizzes.tsx:99 filteredLevels: (4) [{…}, {…}, {…}, {…}]
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: []
+Quizzes.tsx:102 examSystems: (3) [{…}, {…}, {…}]
+Quizzes.tsx:97 selectedExamSystemId: bde2015e-8e30-4460-ad2b-c79837d9438b
+Quizzes.tsx:98 allLevels: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Quizzes.tsx:99 filteredLevels: (4) [{…}, {…}, {…}, {…}]
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: []
+Quizzes.tsx:102 examSystems: (3) [{…}, {…}, {…}]
+Quizzes.tsx:97 selectedExamSystemId: bde2015e-8e30-4460-ad2b-c79837d9438b
+Quizzes.tsx:98 allLevels: (15) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Quizzes.tsx:99 filteredLevels: (4) [{…}, {…}, {…}, {…}]
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: []
+Quizzes.tsx:102 examSystems: (3) [{…}, {…}, {…}]
