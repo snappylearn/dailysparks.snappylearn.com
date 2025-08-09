@@ -694,10 +694,11 @@ export class DatabaseStorage implements IStorage {
           subjectId: quizzes.subjectId,
           totalQuestions: quizzes.totalQuestions,
           timeLimit: quizzes.timeLimit,
-          createdAt: quizzes.createdAt
+          createdAt: quizzes.createdAt,
+          isActive: quizzes.isActive
         })
         .from(quizzes)
-        .where(eq(quizzes.subjectId, subjectId))
+        .where(and(eq(quizzes.subjectId, subjectId), eq(quizzes.isActive, true)))
         .orderBy(desc(quizzes.createdAt));
       
       return subjectQuizzes;
@@ -710,7 +711,7 @@ export class DatabaseStorage implements IStorage {
   // Get quiz with questions and choices
   async getQuizWithQuestions(quizId: string): Promise<any> {
     try {
-      // Get quiz details
+      // Get quiz details with JSONB questions
       const [quiz] = await db
         .select()
         .from(quizzes)
@@ -720,48 +721,8 @@ export class DatabaseStorage implements IStorage {
         throw new Error("Quiz not found");
       }
 
-      // Use raw SQL query since column names don't match ORM exactly
-      const result = await pool.query(`
-        SELECT 
-            qq.id,
-            qq.content,
-            qq.explanation,
-            qq.order_index,
-            qc.id as choice_id,
-            qc.content as choice_content,
-            qc.is_correct,
-            qc.order_index as choice_order_index
-        FROM quiz_questions qq
-        LEFT JOIN quiz_question_choices qc ON qq.id = qc.quiz_question_id
-        WHERE qq.quiz_id = $1
-        ORDER BY qq.order_index, qc.order_index
-      `, [quizId]);
-
-      // Group choices by question
-      const questionsMap = new Map();
-      
-      result.rows.forEach((row: any) => {
-        if (!questionsMap.has(row.id)) {
-          questionsMap.set(row.id, {
-            id: row.id,
-            content: row.content,
-            explanation: row.explanation,
-            orderIndex: row.order_index,
-            choices: []
-          });
-        }
-        
-        if (row.choice_id) {
-          questionsMap.get(row.id).choices.push({
-            id: row.choice_id,
-            content: row.choice_content,
-            isCorrect: row.is_correct,
-            orderIndex: row.choice_order_index
-          });
-        }
-      });
-
-      const questions = Array.from(questionsMap.values());
+      // The questions are stored as JSONB in the questions column
+      const questions = quiz.questions || [];
       
       return {
         ...quiz,
