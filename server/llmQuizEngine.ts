@@ -3,7 +3,7 @@ import { db } from "./db";
 import { 
   quizTypes, 
   quizzes, 
-  enhancedQuizSessions,
+  quizSessions,
   quizQuestionAnswers,
   examinationSystems,
   levels,
@@ -277,18 +277,19 @@ Generate exactly ${params.questionCount} questions following this format.`;
     }));
 
     const [session] = await db
-      .insert(enhancedQuizSessions)
+      .insert(quizSessions)
       .values({
         quizId,
         userId,
         profileId,
+        subjectId: params.subjectId,
+        quizType: params.quizType,
+        topicId: params.topicId,
+        termId: params.termId,
         quizQuestions: questionsSnapshot, // JSONB snapshot
         totalQuestions: params.questionCount,
         correctAnswers: 0,
-        totalMarks: params.questionCount,
-        marksObtained: 0,
         sparksEarned: 0,
-        accuracyPercentage: 0,
         completed: false
       })
       .returning();
@@ -302,8 +303,8 @@ Generate exactly ${params.questionCount} questions following this format.`;
   static async getQuizSession(sessionId: string) {
     const [session] = await db
       .select()
-      .from(enhancedQuizSessions)
-      .where(eq(enhancedQuizSessions.id, sessionId));
+      .from(quizSessions)
+      .where(eq(quizSessions.id, sessionId));
 
     if (!session) {
       throw new Error('Quiz session not found');
@@ -314,7 +315,7 @@ Generate exactly ${params.questionCount} questions following this format.`;
       questions: session.quizQuestions,
       totalQuestions: session.totalQuestions,
       completed: session.completed,
-      startTime: session.startTime,
+      startTime: session.startedAt,
       timeLimit: 30 // From quiz record
     };
   }
@@ -326,8 +327,8 @@ Generate exactly ${params.questionCount} questions following this format.`;
     // Get session to check answer against snapshot
     const [session] = await db
       .select()
-      .from(enhancedQuizSessions)
-      .where(eq(enhancedQuizSessions.id, sessionId));
+      .from(quizSessions)
+      .where(eq(quizSessions.id, sessionId));
 
     if (!session) {
       throw new Error('Quiz session not found');
@@ -345,63 +346,64 @@ Generate exactly ${params.questionCount} questions following this format.`;
     const selectedChoice = question.choices.find((c: any) => c.content === answer);
     const isCorrect = selectedChoice?.isCorrect || false;
     
-    // Calculate marks and sparks
-    const marks = isCorrect ? question.marks : 0;
+    // Calculate sparks
     const sparks = this.calculateSparks(question.difficulty, isCorrect);
 
-    // Record answer
-    await db
-      .insert(quizQuestionAnswers)
-      .values({
-        quizSessionId: sessionId,
-        quizQuestionId: questionId,
-        quizQuestionChoiceId: choiceId,
-        answer,
-        isCorrect,
-        marks,
-        sparks,
-        timeSpent
-      });
+    // For now, store answer info in a simple way (we can create answers table later if needed)
+    // Update session progress
+    const currentCorrect = session.correctAnswers || 0;
+    const currentSparks = session.sparksEarned || 0;
+    
+    if (isCorrect) {
+      await db
+        .update(quizSessions)
+        .set({
+          correctAnswers: currentCorrect + 1,
+          sparksEarned: currentSparks + sparks
+        })
+        .where(eq(quizSessions.id, sessionId));
+    }
 
-    return { isCorrect, marks, sparks };
+    return { isCorrect, sparks };
   }
 
   /**
    * Complete quiz and calculate final results
    */
   static async completeQuiz(sessionId: string) {
-    // Get all answers for this session
-    const answers = await db
+    // Get session data
+    const [session] = await db
       .select()
-      .from(quizQuestionAnswers)
-      .where(eq(quizQuestionAnswers.quizSessionId, sessionId));
+      .from(quizSessions)
+      .where(eq(quizSessions.id, sessionId));
 
-    const correctAnswers = answers.filter(a => a.isCorrect).length;
-    const totalMarks = answers.reduce((sum, a) => sum + (a.marks || 0), 0);
-    const totalSparks = answers.reduce((sum, a) => sum + (a.sparks || 0), 0);
-    const accuracy = answers.length > 0 ? (correctAnswers / answers.length) * 100 : 0;
+    if (!session) {
+      throw new Error('Quiz session not found');
+    }
+
+    const correctAnswers = session.correctAnswers || 0;
+    const totalQuestions = session.totalQuestions || 0;
+    const currentSparks = session.sparksEarned || 0;
+    const accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
 
     // Add completion bonus
     const completionBonus = 20;
     const perfectScoreBonus = accuracy === 100 ? 50 : 0;
-    const finalSparks = totalSparks + completionBonus + perfectScoreBonus;
+    const finalSparks = currentSparks + completionBonus + perfectScoreBonus;
 
     // Update session
     await db
-      .update(enhancedQuizSessions)
+      .update(quizSessions)
       .set({
-        endTime: new Date(),
-        correctAnswers,
-        marksObtained: totalMarks,
         sparksEarned: finalSparks,
-        accuracyPercentage: accuracy,
-        completed: true
+        completed: true,
+        completedAt: new Date()
       })
-      .where(eq(enhancedQuizSessions.id, sessionId));
+      .where(eq(quizSessions.id, sessionId));
 
     return {
       sessionId,
-      totalQuestions: answers.length,
+      totalQuestions,
       correctAnswers,
       sparksEarned: finalSparks,
       accuracy,
