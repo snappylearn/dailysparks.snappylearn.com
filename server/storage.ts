@@ -12,6 +12,8 @@ import {
   dailyChallenges,
   userChallengeProgress,
   userPreferenceChanges,
+  quizTypes,
+  questionTypes,
   type User,
   type UpsertUser,
   type ExaminationSystem,
@@ -508,6 +510,15 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return updatedProfile;
+  }
+
+  // Quiz types operations
+  async getQuizTypes() {
+    return await db.select().from(quizTypes);
+  }
+
+  async getQuestionTypes() {
+    return await db.select().from(questionTypes);
   }
 }
 

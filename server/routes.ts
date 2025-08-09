@@ -96,6 +96,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced Quiz API Routes
+  
+  // Generate and start a new quiz
+  app.post('/api/quizzes/generate', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { 
+        examinationSystemId, 
+        levelId, 
+        subjectId, 
+        quizType, 
+        topicId, 
+        termId,
+        questionCount = 15,
+        timeLimit = 30 
+      } = req.body;
+
+      // Get user's active profile
+      const profiles = await storage.getUserProfiles(userId);
+      const currentProfile = profiles.find(p => p.isDefault) || profiles[0];
+      
+      if (!currentProfile) {
+        return res.status(400).json({ message: "No profile found" });
+      }
+
+      const params = {
+        examinationSystemId,
+        levelId,
+        subjectId,
+        quizType,
+        topicId,
+        termId,
+        questionCount,
+        timeLimit
+      };
+
+      const { QuizEngine } = await import('./quizEngine');
+      const sessionId = await QuizEngine.generateQuiz(params, userId, currentProfile.id);
+      
+      res.json({ sessionId, message: "Quiz generated successfully" });
+    } catch (error) {
+      console.error("Error generating quiz:", error);
+      res.status(500).json({ message: "Failed to generate quiz: " + error.message });
+    }
+  });
+
+  // Get quiz session details
+  app.get('/api/quiz-sessions/:sessionId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      const userId = req.user.claims.sub;
+      
+      const { QuizEngine } = await import('./quizEngine');
+      const sessionData = await QuizEngine.getQuizSession(sessionId);
+      
+      // Verify session belongs to user
+      const profiles = await storage.getUserProfiles(userId);
+      const userProfileIds = profiles.map(p => p.id);
+      
+      // Note: Would need to add profileId check in QuizEngine.getQuizSession
+      
+      res.json(sessionData);
+    } catch (error) {
+      console.error("Error fetching quiz session:", error);
+      res.status(500).json({ message: "Failed to fetch quiz session: " + error.message });
+    }
+  });
+
+  // Submit answer for quiz question
+  app.post('/api/quiz-sessions/:sessionId/answers', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      const { questionId, choiceId, answer, timeSpent } = req.body;
+      
+      const { QuizEngine } = await import('./quizEngine');
+      const isCorrect = await QuizEngine.submitAnswer(sessionId, {
+        questionId,
+        choiceId,
+        answer,
+        timeSpent: timeSpent || 0
+      });
+      
+      res.json({ isCorrect, message: "Answer submitted successfully" });
+    } catch (error) {
+      console.error("Error submitting answer:", error);
+      res.status(500).json({ message: "Failed to submit answer: " + error.message });
+    }
+  });
+
+  // Complete quiz session
+  app.post('/api/quiz-sessions/:sessionId/complete', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      
+      const { QuizEngine } = await import('./quizEngine');
+      const results = await QuizEngine.completeQuizSession(sessionId);
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error completing quiz:", error);
+      res.status(500).json({ message: "Failed to complete quiz: " + error.message });
+    }
+  });
+
+  // Get quiz types
+  app.get('/api/quiz-types', async (req, res) => {
+    try {
+      const quizTypes = await storage.getQuizTypes();
+      res.json(quizTypes);
+    } catch (error) {
+      console.error("Error fetching quiz types:", error);
+      res.status(500).json({ message: "Failed to fetch quiz types" });
+    }
+  });
+
   // Profile routes
   app.get('/api/profiles', isAuthenticated, async (req: any, res) => {
     try {

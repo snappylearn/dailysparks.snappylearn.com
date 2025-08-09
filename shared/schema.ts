@@ -175,6 +175,103 @@ export const userChallengeProgress = pgTable("user_challenge_progress", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Enhanced LMS Tables following best practices
+
+// Quiz types table
+export const quizTypes = pgTable("quiz_types", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  code: varchar("code").notNull().unique(), // "random", "topical", "termly"
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Question types table  
+export const questionTypes = pgTable("question_types", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  code: varchar("code").notNull().unique(), // "mcq", "short_answer", "true_false"
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Enhanced quizzes table
+export const quizzes = pgTable("quizzes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  examinationSystemId: varchar("examination_system_id").notNull().references(() => examinationSystems.id),
+  levelId: varchar("level_id").notNull().references(() => levels.id),
+  subjectId: varchar("subject_id").notNull().references(() => subjects.id),
+  quizTypeId: varchar("quiz_type_id").notNull().references(() => quizTypes.id),
+  termId: varchar("term_id").references(() => terms.id), // For termly quizzes
+  topicId: varchar("topic_id").references(() => topics.id), // For topical quizzes
+  questionCount: integer("question_count").notNull().default(15),
+  timeLimit: integer("time_limit"), // in minutes
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Enhanced quiz questions table
+export const quizQuestions = pgTable("quiz_questions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  quizId: varchar("quiz_id").notNull().references(() => quizzes.id),
+  content: text("content").notNull(),
+  questionTypeId: varchar("question_type_id").notNull().references(() => questionTypes.id),
+  marks: integer("marks").notNull().default(1),
+  difficulty: varchar("difficulty").notNull().default("medium"), // easy, medium, hard
+  explanation: text("explanation"),
+  orderIndex: integer("order_index").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Quiz question choices table (for MCQs)
+export const quizQuestionChoices = pgTable("quiz_question_choices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  quizQuestionId: varchar("quiz_question_id").notNull().references(() => quizQuestions.id),
+  content: text("content").notNull(),
+  isCorrect: boolean("is_correct").notNull().default(false),
+  orderIndex: integer("order_index").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Enhanced quiz sessions with question snapshots
+export const enhancedQuizSessions = pgTable("enhanced_quiz_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  quizId: varchar("quiz_id").notNull().references(() => quizzes.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  profileId: varchar("profile_id").notNull().references(() => profiles.id),
+  examinationSystemId: varchar("examination_system_id").notNull().references(() => examinationSystems.id),
+  levelId: varchar("level_id").notNull().references(() => levels.id),
+  subjectId: varchar("subject_id").notNull().references(() => subjects.id),
+  quizQuestions: jsonb("quiz_questions").notNull(), // JSON snapshot of questions at start
+  startTime: timestamp("start_time").defaultNow(),
+  endTime: timestamp("end_time"),
+  totalQuestions: integer("total_questions").notNull(),
+  correctAnswers: integer("correct_answers").default(0),
+  totalMarks: integer("total_marks").default(0),
+  marksObtained: integer("marks_obtained").default(0),
+  sparksEarned: integer("sparks_earned").default(0),
+  accuracyPercentage: integer("accuracy_percentage").default(0),
+  timeSpent: integer("time_spent"), // in seconds
+  completed: boolean("completed").default(false),
+  canRetake: boolean("can_retake").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Enhanced quiz question answers
+export const quizQuestionAnswers = pgTable("quiz_question_answers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  quizSessionId: varchar("quiz_session_id").notNull().references(() => enhancedQuizSessions.id),
+  quizQuestionId: varchar("quiz_question_id").notNull(), // Reference to question in snapshot
+  quizQuestionChoiceId: varchar("quiz_question_choice_id"), // For MCQ answers
+  answer: text("answer"), // For open-ended answers
+  isCorrect: boolean("is_correct").notNull(),
+  marks: integer("marks").default(0),
+  sparks: integer("sparks").default(0),
+  timeSpent: integer("time_spent"), // in seconds
+  answeredAt: timestamp("answered_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   profiles: many(profiles),

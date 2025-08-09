@@ -1,0 +1,106 @@
+Quiz Session Initialization
+
+Create a new record in quiz_sessions with:
+
+quiz_id
+
+examination_system_id
+
+level_id
+
+subject_id
+
+user_id
+
+start_time
+
+quiz_questions → JSON snapshot of the exact questions (with choices) at quiz start.
+
+Why snapshot questions?
+Prevents issues if the question bank changes later — ensures the user answers what they were given at session start.
+
+3. Data Model
+
+Core Tables
+
+quizzes
+
+id, title, examination_system_id, level_id, subject_id, quiz_type_id we need quiz types table with Random Quiz, Topical Quiz, Termly Quiz 
+
+quiz_questions
+
+id, quiz*id, content``, question_type_id , marks￼we need question*types table with title amnd description (MCQ / short answer)
+
+quiz_question_choices
+
+id, quiz_question_id, content, is_correct
+
+Needed for MCQs (Tutor LMS and LearnDash both store these separately for flexibility).
+
+quiz_sessions
+
+id, quiz*id, user_id, examination*system_id, level_id, subject_id, quiz_questions (JSON), start_time, end_time
+
+quiz_question_answers
+
+quiz_session_id, quiz_question_id, quiz_question_choice_id (if MCQ), answer (if open-ended), is_correct, sparks
+
+4. Question Selection Logic
+
+For Random Quizzes: Generate
+
+questions based on:
+
+Examination System
+
+Level
+
+Subject
+
+Optional: difficulty weighting\Generate the Quiz of 15 <we can goive user the option to change this> questions
+
+Add a corresponding entry in quizzes so the session has a quiz_id.
+
+Store generated questions in quiz_questions table.
+
+Start the quiz_session
+
+6. Answer Tracking
+
+When user submits an answer:
+
+Insert into quiz_question_answers:
+
+If MCQ → store quiz_question_choice_id & answer which will both have the same value
+
+If open-ended → store actual answer string
+
+Calculate is_correct on submission.
+
+Award sparks based on correctness and difficulty.
+
+7. End of Quiz
+
+Mark quiz_sessions.end_time
+
+Calculate:
+
+Score
+
+Sparks earned
+
+Accuracy %
+
+Store results for dashboard stats.User can decide to retake quiz so we start a new quiz*session for them based of the parameters that had been selected.￼￼Incase of topical quize and termly quizes the system will use the same workflow to generate quiz so you really need good system prompts for quiz generateion
+
+8. Best Practices from Tutor LMS / LearnDash
+
+Always snapshot questions & choices at session start.
+
+Separate question choices into their own table for scalability.
+
+Allow multiple quiz attempts — store each in quiz_sessions.
+
+Keep answer tracking separate from quiz definitions to allow analytics.
+
+Add difficulty levels to questions for adaptive quizzes.

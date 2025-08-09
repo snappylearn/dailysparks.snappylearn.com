@@ -33,20 +33,23 @@ The backend follows a RESTful API design using Node.js and Express:
 - **Session-based authentication** integrated with Replit's OIDC system
 - **Middleware pattern** for request logging, error handling, and authentication checks
 - **Storage abstraction layer** that separates business logic from database operations
+- **Enhanced Quiz Engine** implementing LMS best practices with question snapshots and session management
 
 ### Database Design
 The application uses PostgreSQL with Drizzle ORM for type-safe database operations:
 - **Drizzle ORM** provides compile-time type safety and excellent TypeScript integration
 - **Neon serverless PostgreSQL** for cloud-hosted database with connection pooling
-- **Relational schema** supporting users, subjects, topics, questions, quiz sessions, and user progress tracking
-- **Session storage** table for Express session management
+- **Enhanced quiz schema** following Tutor LMS/LearnDash best practices
+- **Question snapshots** using JSONB for session integrity
 - **Migration system** using Drizzle Kit for schema version control
 
 Key entities include:
 - Users with onboarding status, exam type, form level, and gamification metrics
 - Hierarchical content structure (subjects → topics → questions)
+- **Enhanced quiz system** with proper question snapshots, multiple quiz types, and comprehensive analytics
 - Quiz sessions with detailed answer tracking and performance analytics
 - Daily challenges and user progress tracking
+- **Quiz workflow engine** supporting Random, Topical, and Termly quiz generation
 
 ### Authentication System
 Authentication is handled through Replit's integrated OIDC system:
