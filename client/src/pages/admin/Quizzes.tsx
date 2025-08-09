@@ -628,18 +628,6 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
     }
   }, [fullQuizData]);
 
-  // Show loading state
-  if (quizLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Loading quiz details...</p>
-        </div>
-      </div>
-    );
-  }
-
   const editQuizSchema = z.object({
     title: z.string().min(1, "Title is required"),
     description: z.string().optional(),
@@ -656,6 +644,18 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
       totalQuestions: (fullQuizData?.totalQuestions || quiz.totalQuestions) || questions.length
     }
   });
+
+  // Show loading state
+  if (quizLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading quiz details...</p>
+        </div>
+      </div>
+    );
+  }
 
   const updateQuizMutation = useMutation({
     mutationFn: async (data: any) => {
