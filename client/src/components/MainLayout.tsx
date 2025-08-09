@@ -72,8 +72,10 @@ export function MainLayout({ children }: MainLayoutProps) {
       if (!currentProfile) throw new Error('No profile found');
       
       const updateData: any = {};
-      if (examinationSystemId) updateData.examinationSystemId = examinationSystemId;
-      if (levelId) updateData.levelId = levelId;
+      if (examinationSystemId !== undefined) updateData.examinationSystemId = examinationSystemId;
+      if (levelId !== undefined) updateData.levelId = levelId;
+      
+      console.log('Updating profile with data:', updateData);
       
       return apiRequest(`/api/profiles/${currentProfile.id}`, {
         method: 'PATCH',
@@ -81,13 +83,18 @@ export function MainLayout({ children }: MainLayoutProps) {
       });
     },
     onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Preferences updated successfully",
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
       queryClient.invalidateQueries({ queryKey: ['/api/subjects'] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Update profile error:', error);
       toast({
         title: "Error",
-        description: "Failed to update preferences",
+        description: `Failed to update preferences: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -96,14 +103,14 @@ export function MainLayout({ children }: MainLayoutProps) {
   const handleExaminationSystemChange = (examSystemId: string) => {
     if (!currentProfile) return;
     
-    const oldSystemId = currentProfile.examinationSystemId;
     setSelectedExamSystemId(examSystemId);
     
-    // Auto-select first level when exam system changes
+    // Get levels for the new exam system
     const examSystemLevels = levels.filter(level => level.examinationSystemId === examSystemId);
     const firstLevelId = examSystemLevels[0]?.id || '';
     setSelectedLevelId(firstLevelId);
     
+    // Update with both exam system and level
     updateProfileMutation.mutate({ 
       examinationSystemId: examSystemId,
       levelId: firstLevelId 

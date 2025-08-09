@@ -497,38 +497,11 @@ export class DatabaseStorage implements IStorage {
     return leaderboard;
   }
 
-  // Profile update operations
-  async updateProfile(profileId: string, updateData: any, userId: string): Promise<Profile> {
-    // First get the current profile to track changes
-    const currentProfile = await this.getProfile(profileId);
-    if (!currentProfile) throw new Error('Profile not found');
-
-    // Track preference changes
-    if (updateData.examinationSystemId && updateData.examinationSystemId !== currentProfile.examinationSystemId) {
-      await db.insert(userPreferenceChanges).values({
-        userId,
-        profileId,
-        changeType: 'examination_system',
-        previousValue: currentProfile.examinationSystemId,
-        newValue: updateData.examinationSystemId,
-      });
-    }
-
-    if (updateData.levelId && updateData.levelId !== currentProfile.levelId) {
-      await db.insert(userPreferenceChanges).values({
-        userId,
-        profileId,
-        changeType: 'level',
-        previousValue: currentProfile.levelId,
-        newValue: updateData.levelId,
-      });
-    }
-
-    // Update the profile
+  async updateProfile(profileId: string, data: Partial<Profile>): Promise<Profile> {
     const [updatedProfile] = await db
       .update(profiles)
       .set({
-        ...updateData,
+        ...data,
         updatedAt: new Date(),
       })
       .where(eq(profiles.id, profileId))

@@ -76,11 +76,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateData = req.body;
       const userId = req.user.claims.sub;
       
-      const updatedProfile = await storage.updateProfile(id, updateData, userId);
+      console.log('Updating profile:', id, 'with data:', updateData);
+      
+      // First verify the profile belongs to the user
+      const currentProfile = await storage.getProfile(id);
+      if (!currentProfile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      if (currentProfile.userId !== userId) {
+        return res.status(403).json({ message: "Unauthorized to update this profile" });
+      }
+      
+      const updatedProfile = await storage.updateProfile(id, updateData);
       res.json(updatedProfile);
     } catch (error) {
       console.error("Error updating profile:", error);
-      res.status(500).json({ message: "Failed to update profile" });
+      res.status(500).json({ message: "Failed to update profile: " + error.message });
     }
   });
 
