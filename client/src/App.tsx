@@ -9,6 +9,7 @@ import Landing from "@/pages/Landing";
 import SimpleHome from "@/pages/SimpleHome";
 import Quiz from "@/pages/Quiz";
 import Results from "@/pages/Results";
+import Leaderboard from "@/pages/Leaderboard";
 import NotFound from "@/pages/not-found";
 import Onboarding from "@/components/Onboarding";
 
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/" component={SimpleHome} />
       <Route path="/quiz/:sessionId?" component={Quiz} />
       <Route path="/results/:sessionId" component={Results} />
+      <Route path="/leaderboard" component={Leaderboard} />
       <Route component={NotFound} />
     </Switch>
   );

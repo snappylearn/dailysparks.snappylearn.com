@@ -11,6 +11,7 @@ import {
   userAnswers,
   dailyChallenges,
   userChallengeProgress,
+  userPreferenceChanges,
   type User,
   type UpsertUser,
   type ExaminationSystem,
@@ -439,6 +440,95 @@ export class DatabaseStorage implements IStorage {
       .set({
         streak: newStreak,
         lastActivity: today,
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, profileId))
+      .returning();
+
+    return updatedProfile;
+  }
+
+  // Leaderboard operations
+  async getLeaderboard(): Promise<any[]> {
+    const leaderboardData = await db.select({
+      userId: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      profileImageUrl: users.profileImageUrl,
+      sparks: profiles.sparks,
+      streak: profiles.streak,
+      profileId: profiles.id,
+    })
+    .from(profiles)
+    .innerJoin(users, eq(profiles.userId, users.id))
+    .where(eq(profiles.isActive, true))
+    .orderBy(desc(profiles.sparks), desc(profiles.streak));
+
+    // Get quiz stats for each profile
+    const leaderboard = await Promise.all(
+      leaderboardData.map(async (entry, index) => {
+        const [quizStats] = await db.select({
+          totalQuizzes: count(quizSessions.id),
+          correctAnswers: sql<number>`SUM(CASE WHEN ${quizSessions.completed} = true THEN ${quizSessions.correctAnswers} ELSE 0 END)`,
+          totalQuestions: sql<number>`SUM(CASE WHEN ${quizSessions.completed} = true THEN ${quizSessions.totalQuestions} ELSE 0 END)`,
+        })
+        .from(quizSessions)
+        .where(eq(quizSessions.profileId, entry.profileId));
+
+        const avgScore = quizStats.totalQuestions > 0 
+          ? Math.round((quizStats.correctAnswers / quizStats.totalQuestions) * 100)
+          : 0;
+
+        return {
+          rank: index + 1,
+          userId: entry.userId,
+          firstName: entry.firstName || 'Student',
+          lastName: entry.lastName || '',
+          profileImageUrl: entry.profileImageUrl,
+          sparks: entry.sparks || 0,
+          streak: entry.streak || 0,
+          quizzesCompleted: quizStats.totalQuizzes || 0,
+          averageScore: avgScore,
+          lastActive: new Date().toISOString(),
+        };
+      })
+    );
+
+    return leaderboard;
+  }
+
+  // Profile update operations
+  async updateProfile(profileId: string, updateData: any, userId: string): Promise<Profile> {
+    // First get the current profile to track changes
+    const currentProfile = await this.getProfile(profileId);
+    if (!currentProfile) throw new Error('Profile not found');
+
+    // Track preference changes
+    if (updateData.examinationSystemId && updateData.examinationSystemId !== currentProfile.examinationSystemId) {
+      await db.insert(userPreferenceChanges).values({
+        userId,
+        profileId,
+        changeType: 'examination_system',
+        previousValue: currentProfile.examinationSystemId,
+        newValue: updateData.examinationSystemId,
+      });
+    }
+
+    if (updateData.levelId && updateData.levelId !== currentProfile.levelId) {
+      await db.insert(userPreferenceChanges).values({
+        userId,
+        profileId,
+        changeType: 'level',
+        previousValue: currentProfile.levelId,
+        newValue: updateData.levelId,
+      });
+    }
+
+    // Update the profile
+    const [updatedProfile] = await db
+      .update(profiles)
+      .set({
+        ...updateData,
         updatedAt: new Date(),
       })
       .where(eq(profiles.id, profileId))

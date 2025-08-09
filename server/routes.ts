@@ -58,6 +58,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Leaderboard routes
+  app.get('/api/leaderboard', async (req, res) => {
+    try {
+      const leaderboard = await storage.getLeaderboard();
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Error fetching leaderboard:", error);
+      res.status(500).json({ message: "Failed to fetch leaderboard" });
+    }
+  });
+
+  // Profile update routes
+  app.patch('/api/profiles/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const userId = req.user.claims.sub;
+      
+      const updatedProfile = await storage.updateProfile(id, updateData, userId);
+      res.json(updatedProfile);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   // Profile routes
   app.get('/api/profiles', isAuthenticated, async (req: any, res) => {
     try {

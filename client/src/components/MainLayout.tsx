@@ -1,11 +1,13 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { 
   Home, 
   Target, 
@@ -15,25 +17,24 @@ import {
   Crown,
   Star,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Zap
 } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { Profile, ExaminationSystem, Level } from '@shared/schema';
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
-interface Profile {
-  id: string;
-  name: string;
-  totalSparks: number;
-  currentStreak: number;
-  examinationSystem: string;
-  level: string;
-}
+// Use Profile type from shared schema
 
 export function MainLayout({ children }: MainLayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Get user profile data
   const { data: profiles } = useQuery<Profile[]>({
@@ -41,7 +42,80 @@ export function MainLayout({ children }: MainLayoutProps) {
     enabled: !!user,
   });
 
+  // Get examination systems and levels
+  const { data: examinationSystems = [] } = useQuery<ExaminationSystem[]>({
+    queryKey: ['/api/examination-systems'],
+    enabled: !!user,
+  });
+
   const currentProfile = profiles?.[0];
+  const [selectedExamSystemId, setSelectedExamSystemId] = useState<string>('');
+  const [selectedLevelId, setSelectedLevelId] = useState<string>('');
+
+  // Update selected values when profile loads
+  useEffect(() => {
+    if (currentProfile) {
+      setSelectedExamSystemId(currentProfile.examinationSystemId || '');
+      setSelectedLevelId(currentProfile.levelId || '');
+    }
+  }, [currentProfile]);
+
+  // Get levels for selected examination system
+  const { data: levels = [] } = useQuery<Level[]>({
+    queryKey: ['/api/levels', selectedExamSystemId],
+    enabled: !!selectedExamSystemId,
+  });
+
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async ({ examinationSystemId, levelId }: { examinationSystemId?: string; levelId?: string }) => {
+      if (!currentProfile) throw new Error('No profile found');
+      
+      const updateData: any = {};
+      if (examinationSystemId) updateData.examinationSystemId = examinationSystemId;
+      if (levelId) updateData.levelId = levelId;
+      
+      return apiRequest(`/api/profiles/${currentProfile.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updateData),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/subjects'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update preferences",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleExaminationSystemChange = (examSystemId: string) => {
+    if (!currentProfile) return;
+    
+    const oldSystemId = currentProfile.examinationSystemId;
+    setSelectedExamSystemId(examSystemId);
+    
+    // Auto-select first level when exam system changes
+    const examSystemLevels = levels.filter(level => level.examinationSystemId === examSystemId);
+    const firstLevelId = examSystemLevels[0]?.id || '';
+    setSelectedLevelId(firstLevelId);
+    
+    updateProfileMutation.mutate({ 
+      examinationSystemId: examSystemId,
+      levelId: firstLevelId 
+    });
+  };
+
+  const handleLevelChange = (levelId: string) => {
+    if (!currentProfile) return;
+    
+    setSelectedLevelId(levelId);
+    updateProfileMutation.mutate({ levelId });
+  };
 
   const navigationItems = [
     { icon: Home, label: 'Dashboard', path: '/', active: location === '/' },
@@ -71,9 +145,9 @@ export function MainLayout({ children }: MainLayoutProps) {
               <span className="text-xl font-bold text-gray-900">Daily Sparks</span>
             </div>
 
-            {/* Center: Navigation Actions */}
+            {/* Center: Navigation Actions & System Selectors */}
             <div className="flex items-center gap-4">
-              <Link href="/quiz">
+              <Link href="/">
                 <Button variant="default" className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
                   <Target className="h-4 w-4 mr-2" />
                   Start A Quiz
@@ -86,6 +160,37 @@ export function MainLayout({ children }: MainLayoutProps) {
                   Leaderboard
                 </Button>
               </Link>
+              
+              {/* Examination System & Level Selectors */}
+              {currentProfile && (
+                <div className="flex items-center gap-2 ml-4">
+                  <Select value={selectedExamSystemId} onValueChange={handleExaminationSystemChange}>
+                    <SelectTrigger className="w-28 h-9 text-xs">
+                      <SelectValue placeholder="System" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {examinationSystems.map((system) => (
+                        <SelectItem key={system.id} value={system.id}>
+                          {system.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={selectedLevelId} onValueChange={handleLevelChange}>
+                    <SelectTrigger className="w-24 h-9 text-xs">
+                      <SelectValue placeholder="Level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {levels.filter(level => level.examinationSystemId === selectedExamSystemId).map((level) => (
+                        <SelectItem key={level.id} value={level.id}>
+                          {level.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             {/* Right: Stats and User Avatar */}
@@ -98,13 +203,13 @@ export function MainLayout({ children }: MainLayoutProps) {
                 </div>
                 
                 <div className="flex items-center gap-1 text-orange-500">
-                  <Star className="h-4 w-4" />
-                  <span className="font-semibold">{currentProfile?.totalSparks || 0}</span>
+                  <Zap className="h-4 w-4" />
+                  <span className="font-semibold">{currentProfile?.sparks || 0}</span>
                 </div>
                 
                 <div className="flex items-center gap-1 text-orange-600">
                   <Flame className="h-4 w-4" />
-                  <span className="font-semibold">{currentProfile?.currentStreak || 0}</span>
+                  <span className="font-semibold">{currentProfile?.streak || 0}</span>
                 </div>
               </div>
 
