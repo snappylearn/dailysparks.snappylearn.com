@@ -53,16 +53,29 @@ function Router() {
   return (
     <Switch>
       {/* Admin Routes */}
-      <Route path="/admin" nest>
+      <Route path="/admin">
         <AdminLayout>
-          <Switch>
-            <Route path="/" component={AdminDashboard} />
-            <Route path="/quizzes" component={AdminQuizzes} />
-            <Route path="/users" component={AdminUsers} />
-            <Route path="/analytics" component={AdminAnalytics} />
-            <Route path="/settings" component={AdminSettings} />
-            <Route component={NotFound} />
-          </Switch>
+          <AdminDashboard />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/quizzes">
+        <AdminLayout>
+          <AdminQuizzes />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/users">
+        <AdminLayout>
+          <AdminUsers />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/analytics">
+        <AdminLayout>
+          <AdminAnalytics />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/settings">
+        <AdminLayout>
+          <AdminSettings />
         </AdminLayout>
       </Route>
       
