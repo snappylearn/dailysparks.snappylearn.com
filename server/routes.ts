@@ -3,9 +3,9 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateQuestions } from "./aiService";
-import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions } from "@shared/schema";
+import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -321,60 +321,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Backward compatibility: Keep the old quiz API working alongside the new one
+  // Primary quiz start endpoint - uses existing admin-created quizzes
   app.post('/api/quiz/start', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { profileId, quizType, subjectId, topicId, termId } = req.body;
+      const { profileId, subjectId, quizType, topicId, termId } = req.body;
       
-      console.log('Legacy quiz start request:', req.body);
-      
-      // Get profile data
+      // Get profile to access examination system and level
       const profile = await storage.getProfile(profileId);
       if (!profile) {
-        return res.status(400).json({ message: "Profile not found" });
+        return res.status(404).json({ message: "Profile not found" });
       }
 
-      // Use the enhanced quiz generation
-      const params = {
-        examinationSystemId: profile.examinationSystemId,
-        levelId: profile.levelId,
-        subjectId,
-        quizType,
-        topicId,
-        termId,
-        questionCount: 15,
-        timeLimit: 30
-      };
+      // Get available quizzes based on filters  
+      const availableQuizzes = await storage.getQuizzesBySubject(subjectId);
 
-      const { LLMQuizEngine } = await import('./llmQuizEngine');
-      const sessionId = await LLMQuizEngine.generateQuiz(params, userId, profileId);
+      if (!availableQuizzes || availableQuizzes.length === 0) {
+        return res.status(404).json({ message: "No quizzes available for this subject" });
+      }
+
+      // Select a random quiz from available quizzes
+      const selectedQuiz = availableQuizzes[Math.floor(Math.random() * availableQuizzes.length)];
+
+      // Get quiz questions
+      const quizWithQuestions = await storage.getQuizWithQuestions(selectedQuiz.id);
+
+      if (!quizWithQuestions.questions || quizWithQuestions.questions.length === 0) {
+        return res.status(404).json({ message: "No questions found in selected quiz" });
+      }
+
+      // Check if user has an incomplete quiz session for this subject
+      const incompleteSession = await storage.getIncompleteQuizSession(profileId, subjectId);
       
-      // Get the session data to return in legacy format
-      const sessionData = await LLMQuizEngine.getQuizSession(sessionId);
+      let quizSession;
+      if (incompleteSession) {
+        // Return existing incomplete session
+        quizSession = incompleteSession;
+      } else {
+        // Create new quiz session with questions snapshot
+        quizSession = await storage.createQuizSession({
+          userId,
+          profileId,
+          subjectId,
+          quizType: 'random',
+          totalQuestions: quizWithQuestions.questions.length,
+          currentQuestionIndex: 0,
+          quizQuestions: quizWithQuestions.questions, // Save questions snapshot
+        });
+      }
+
+      // Get questions - use session questions if resuming, otherwise use new ones
+      let questionsToUse;
+      if (incompleteSession && quizSession.quizQuestions) {
+        questionsToUse = quizSession.quizQuestions;
+      } else {
+        questionsToUse = quizWithQuestions.questions;
+        // If this is a new session, save questions snapshot
+        if (!incompleteSession) {
+          await db.update(quizSessions)
+            .set({ quizQuestions: quizWithQuestions.questions })
+            .where(eq(quizSessions.id, quizSession.id));
+        }
+      }
       
-      // Transform to legacy format
-      const legacyResponse = {
-        sessionId: sessionData.id,
-        questions: sessionData.questions.map((q: any) => ({
-          id: q.id,
-          questionText: q.content,
-          optionA: q.choices?.[0]?.content || '',
-          optionB: q.choices?.[1]?.content || '',
-          optionC: q.choices?.[2]?.content || '',
-          optionD: q.choices?.[3]?.content || '',
-          correctAnswer: q.choices?.find((c: any) => c.isCorrect)?.orderIndex === 1 ? 'A' : 
-                        q.choices?.find((c: any) => c.isCorrect)?.orderIndex === 2 ? 'B' :
-                        q.choices?.find((c: any) => c.isCorrect)?.orderIndex === 3 ? 'C' : 'D',
-          explanation: q.explanation
-        })),
-        totalQuestions: sessionData.totalQuestions
-      };
-      
-      console.log('Returning legacy quiz response:', legacyResponse);
-      res.json(legacyResponse);
+      // Transform questions to expected format
+      const questions = questionsToUse.map((q: any) => ({
+        id: q.id,
+        questionText: q.content,
+        optionA: q.choices[0]?.content || 'Option A',
+        optionB: q.choices[1]?.content || 'Option B', 
+        optionC: q.choices[2]?.content || 'Option C',
+        optionD: q.choices[3]?.content || 'Option D',
+        correctAnswer: q.choices.find((c: any) => c.isCorrect)?.content.charAt(0) || 'A',
+        explanation: q.explanation
+      }));
+
+      res.json({
+        sessionId: quizSession.id,
+        questions: questions,
+        totalQuestions: questions.length,
+        currentQuestionIndex: quizSession.currentQuestionIndex || 0,
+        isResuming: !!incompleteSession
+      });
     } catch (error) {
-      console.error("Error starting legacy quiz:", error);
+      console.error("Error starting quiz:", error);
       res.status(500).json({ message: "Failed to start quiz: " + error.message });
     }
   });
@@ -464,93 +494,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Quiz session routes
-  app.post('/api/quiz/start', isAuthenticated, async (req: any, res) => {
-    try {
-      const { profileId, subjectId, quizType, topicId, term } = req.body;
-      
-      // Get profile to access level information
-      const profile = await storage.getProfile(profileId);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-
-      // Get subject information  
-      const subjects = await storage.getSubjectsBySystem(profile.examinationSystemId);
-      const subject = subjects.find(s => s.id === subjectId);
-      if (!subject) {
-        return res.status(404).json({ message: "Subject not found" });
-      }
-
-      // Get level information
-      const levels = await storage.getLevelsBySystem(profile.examinationSystemId);
-      const level = levels.find(l => l.id === profile.levelId);
-      if (!level) {
-        return res.status(404).json({ message: "Level not found" });
-      }
-
-      // Generate questions using AI
-      let topicNames: string[] = [];
-      if (quizType === 'topical' && topicId) {
-        const topic = await db.select({ title: topics.title }).from(topics).where(eq(topics.id, topicId));
-        if (topic[0]) topicNames = [topic[0].title];
-      }
-
-      console.log(`Generating questions for ${subject.name} ${level.title} (${quizType})`);
-      
-      const aiQuestions = await generateQuestions({
-        subject: subject.name,
-        level: level.title,
-        topics: topicNames,
-        term,
-        quizType: quizType as 'random' | 'topical' | 'term',
-        questionCount: 30
-      });
-
-      // Create quiz session
-      const quizSession = await storage.createQuizSession({
-        userId: req.user?.claims?.sub,
-        profileId,
-        subjectId,
-        quizType,
-        topicId: topicId || null,
-        termId: term || null,
-        totalQuestions: aiQuestions.length,
-      });
-
-      // Save generated questions to database
-      const questionsToInsert = aiQuestions.map(q => ({
-        topicId: topicId || null, // For random quizzes, topicId might be null
-        questionText: q.questionText,
-        optionA: q.optionA,
-        optionB: q.optionB,
-        optionC: q.optionC,
-        optionD: q.optionD,
-        correctAnswer: q.correctAnswer,
-        explanation: q.explanation,
-        difficulty: q.difficulty,
-      }));
-
-      const savedQuestions = await storage.createQuestions(questionsToInsert);
-
-      res.json({
-        sessionId: quizSession.id,
-        questions: savedQuestions.map(q => ({
-          id: q.id,
-          questionText: q.questionText,
-          optionA: q.optionA,
-          optionB: q.optionB,
-          optionC: q.optionC,
-          optionD: q.optionD,
-        })),
-        totalQuestions: savedQuestions.length
-      });
-
-    } catch (error) {
-      console.error("Error starting quiz:", error);
-      res.status(500).json({ message: "Failed to start quiz", error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
+  // Quiz session routes are now handled by the primary quiz start endpoint above
 
   // Batch answer submission for better performance
   app.post('/api/quiz/:sessionId/batch-answers', isAuthenticated, async (req: any, res) => {
