@@ -578,21 +578,17 @@ export class DatabaseStorage implements IStorage {
 
   async getAdminQuizList(filters: any): Promise<any[]> {
     // Fetch from the correct quizzes table (admin-created templates)
+    // Note: Using actual column names from database
     const quizTemplates = await db
       .select({
         id: quizzes.id,
         title: quizzes.title,
-        description: quizzes.description,
         subjectId: quizzes.subjectId,
-        quizType: quizzes.quizType,
-        totalQuestions: quizzes.totalQuestions,
+        questionCount: quizzes.questionCount, // actual column name
         timeLimit: quizzes.timeLimit,
-        isActive: quizzes.isActive,
-        createdBy: quizzes.createdBy,
         createdAt: quizzes.createdAt,
       })
       .from(quizzes)
-      .where(eq(quizzes.isActive, true))
       .orderBy(desc(quizzes.createdAt));
 
     // Get subject names and session counts
@@ -614,8 +610,8 @@ export class DatabaseStorage implements IStorage {
           id: quiz.id,
           title: quiz.title,
           subject: subject?.name || 'Unknown',
-          type: quiz.quizType,
-          questions: quiz.totalQuestions,
+          type: 'topical', // Default for now
+          questions: quiz.questionCount,
           sessions: sessionCount?.count || 0,
           users: sessionCount?.count || 0, // For now, assume 1 user per session
           created: quiz.createdAt,
