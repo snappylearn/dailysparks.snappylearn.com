@@ -408,7 +408,7 @@ export default function AdminQuizzes() {
                 <SelectItem value="all">All Systems</SelectItem>
                 {examSystems?.map((system: any) => (
                   <SelectItem key={system.id} value={system.id}>
-                    {system.title}
+                    {system.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -420,7 +420,7 @@ export default function AdminQuizzes() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Levels</SelectItem>
-                {levels?.map((level: any) => (
+                {allLevels?.map((level: any) => (
                   <SelectItem key={level.id} value={level.id}>
                     {level.title}
                   </SelectItem>
@@ -434,9 +434,9 @@ export default function AdminQuizzes() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Subjects</SelectItem>
-                {subjects?.map((subject: any) => (
+                {allSubjects?.map((subject: any) => (
                   <SelectItem key={subject.id} value={subject.id}>
-                    {subject.title}
+                    {subject.name}
                   </SelectItem>
                 ))}
               </SelectContent>
