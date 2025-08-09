@@ -82,21 +82,24 @@ export default function AdminQuizzes() {
   // Filter levels based on selected examination system
   const filteredLevels = allLevels?.filter((level: any) => {
     if (!selectedExamSystemId) return true; // Show all if none selected
-    return level.examinationSystemId === selectedExamSystemId;
+    // Check both camelCase and snake_case field names
+    return level.examinationSystemId === selectedExamSystemId || level.examination_system_id === selectedExamSystemId;
   }) || [];
 
   // Filter subjects based on selected examination system
   const filteredSubjects = allSubjects?.filter((subject: any) => {
     if (!selectedExamSystemId) return true; // Show all if none selected
-    return subject.examinationSystemId === selectedExamSystemId;
+    // Check both camelCase and snake_case field names
+    return subject.examinationSystemId === selectedExamSystemId || subject.examination_system_id === selectedExamSystemId;
   }) || [];
 
   // Debug logging
   console.log('selectedExamSystemId:', selectedExamSystemId);
-  console.log('allLevels:', allLevels?.length);
-  console.log('filteredLevels:', filteredLevels?.length);
-  console.log('allSubjects:', allSubjects?.length);
-  console.log('filteredSubjects:', filteredSubjects?.length);
+  console.log('allLevels:', allLevels);
+  console.log('filteredLevels:', filteredLevels);
+  console.log('allSubjects:', allSubjects);
+  console.log('filteredSubjects:', filteredSubjects);
+  console.log('examSystems:', examSystems);
 
   const generateQuizMutation = useMutation({
     mutationFn: async (data: GenerateQuizFormData) => {
