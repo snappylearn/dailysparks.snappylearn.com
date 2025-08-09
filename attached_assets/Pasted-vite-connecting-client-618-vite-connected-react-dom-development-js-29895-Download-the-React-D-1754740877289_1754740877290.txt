@@ -1,0 +1,64 @@
+vite] connecting...
+client:618 [vite] connected.
+react-dom.development.js:29895 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+Quizzes.tsx:97 selectedExamSystemId: undefined
+Quizzes.tsx:98 allLevels: undefined
+Quizzes.tsx:99 filteredLevels: Array(0)
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: Array(0)
+Quizzes.tsx:102 examSystems: undefined
+Quizzes.tsx:97 selectedExamSystemId: undefined
+Quizzes.tsx:98 allLevels: undefined
+Quizzes.tsx:99 filteredLevels: Array(0)
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: Array(0)
+Quizzes.tsx:102 examSystems: undefined
+Quizzes.tsx:97 selectedExamSystemId: undefined
+Quizzes.tsx:98 allLevels: undefined
+Quizzes.tsx:99 filteredLevels: Array(0)
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: Array(0)
+Quizzes.tsx:102 examSystems: Array(3)
+Quizzes.tsx:97 selectedExamSystemId: undefined
+Quizzes.tsx:98 allLevels: undefined
+Quizzes.tsx:99 filteredLevels: Array(0)
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: Array(0)
+Quizzes.tsx:102 examSystems: Array(3)
+Quizzes.tsx:97 selectedExamSystemId: undefined
+Quizzes.tsx:98 allLevels: undefined
+Quizzes.tsx:99 filteredLevels: []
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: []
+Quizzes.tsx:102 examSystems: (3) [{…}, {…}, {…}]
+dialog.tsx:542  Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ dialog.tsx:542
+commitHookEffectListMount @ react-dom.development.js:23189
+commitPassiveMountOnFiber @ react-dom.development.js:24965
+commitPassiveMountEffects_complete @ react-dom.development.js:24930
+commitPassiveMountEffects_begin @ react-dom.development.js:24917
+commitPassiveMountEffects @ react-dom.development.js:24905
+flushPassiveEffectsImpl @ react-dom.development.js:27078
+flushPassiveEffects @ react-dom.development.js:27023
+commitRootImpl @ react-dom.development.js:26974
+commitRoot @ react-dom.development.js:26721
+performSyncWorkOnRoot @ react-dom.development.js:26156
+flushSyncCallbacks @ react-dom.development.js:12042
+(anonymous) @ react-dom.development.js:25690
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
+        Don't show again
+Quizzes.tsx:97 selectedExamSystemId: 3c091257-02e2-4f0c-9adf-4233db6c7f1f
+Quizzes.tsx:98 allLevels: undefined
+Quizzes.tsx:99 filteredLevels: []
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: []
+Quizzes.tsx:102 examSystems: (3) [{…}, {…}, {…}]
+Quizzes.tsx:97 selectedExamSystemId: bde2015e-8e30-4460-ad2b-c79837d9438b
+Quizzes.tsx:98 allLevels: undefined
+Quizzes.tsx:99 filteredLevels: []
+Quizzes.tsx:100 allSubjects: undefined
+Quizzes.tsx:101 filteredSubjects: []
+Quizzes.tsx:102 examSystems: (3) [{…}, {…}, {…}]

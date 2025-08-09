@@ -52,6 +52,7 @@ export interface IStorage {
   createExaminationSystem(system: InsertExaminationSystem): Promise<ExaminationSystem>;
   
   // Level operations
+  getAllLevels(): Promise<Level[]>;
   getLevelsBySystem(examinationSystemId: string): Promise<Level[]>;
   createLevel(level: InsertLevel): Promise<Level>;
   
@@ -66,6 +67,7 @@ export interface IStorage {
   updateProfile(profileId: string, data: Partial<Profile>): Promise<Profile>;
   
   // Subject operations
+  getAllSubjects(): Promise<Subject[]>;
   getSubjectsBySystem(examinationSystemId: string): Promise<Subject[]>;
   createSubject(subject: InsertSubject): Promise<Subject>;
   
@@ -137,6 +139,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Level operations
+  async getAllLevels(): Promise<Level[]> {
+    return await db.select().from(levels)
+      .where(eq(levels.isActive, true))
+      .orderBy(levels.order);
+  }
+
   async getLevelsBySystem(examinationSystemId: string): Promise<Level[]> {
     return await db.select().from(levels)
       .where(and(eq(levels.examinationSystemId, examinationSystemId), eq(levels.isActive, true)))
@@ -192,6 +200,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Subject operations
+  async getAllSubjects(): Promise<Subject[]> {
+    return await db.select().from(subjects)
+      .where(eq(subjects.isActive, true))
+      .orderBy(subjects.name);
+  }
+
   async getSubjectsBySystem(examinationSystemId: string): Promise<Subject[]> {
     return await db.select().from(subjects).where(eq(subjects.examinationSystemId, examinationSystemId));
   }

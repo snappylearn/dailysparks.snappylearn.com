@@ -35,7 +35,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Level routes
+  // Level routes - All levels for admin filtering
+  app.get('/api/levels', async (req, res) => {
+    try {
+      const levels = await storage.getAllLevels();
+      res.json(levels);
+    } catch (error) {
+      console.error("Error fetching levels:", error);
+      res.status(500).json({ message: "Failed to fetch levels" });
+    }
+  });
+
+  // Level routes - By system
   app.get('/api/levels/:systemId', async (req, res) => {
     try {
       const { systemId } = req.params;
@@ -391,7 +402,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Subject routes
+  // Subject routes - All subjects for admin filtering
+  app.get('/api/subjects', async (req, res) => {
+    try {
+      const subjects = await storage.getAllSubjects();
+      res.json(subjects);
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+      res.status(500).json({ message: "Failed to fetch subjects" });
+    }
+  });
+
+  // Subject routes - By system
   app.get('/api/subjects/:systemId', async (req, res) => {
     try {
       const { systemId } = req.params;
