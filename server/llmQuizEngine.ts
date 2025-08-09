@@ -50,11 +50,8 @@ export class LLMQuizEngine {
       // 2. Generate questions using LLM with your exact prompt structure
       const generatedQuestions = await this.generateQuestionsWithLLM(contextData, params);
       
-      // 3. Create quiz record
-      const quiz = await this.createQuizRecord(params, contextData);
-      
-      // 4. Create enhanced quiz session with JSONB snapshot
-      const sessionId = await this.createQuizSession(quiz.id, userId, profileId, generatedQuestions, params);
+      // 3. Create quiz session directly with JSONB snapshot (simpler approach)
+      const sessionId = await this.createQuizSession(userId, profileId, generatedQuestions, params);
       
       console.log('LLM quiz generation completed. Session ID:', sessionId);
       return sessionId;
@@ -219,40 +216,12 @@ Generate exactly ${params.questionCount} questions following this format.`;
     }
   }
 
-  /**
-   * Create quiz record in database
-   */
-  private static async createQuizRecord(params: QuizGenerationParams, contextData: any) {
-    const [quizType] = await db
-      .select()
-      .from(quizTypes)
-      .where(eq(quizTypes.code, params.quizType));
 
-    const title = this.generateQuizTitle(params.quizType, contextData);
-
-    const [quiz] = await db
-      .insert(quizzes)
-      .values({
-        title,
-        examinationSystemId: params.examinationSystemId,
-        levelId: params.levelId,
-        subjectId: params.subjectId,
-        quizTypeId: quizType.id,
-        termId: params.termId,
-        topicId: params.topicId,
-        questionCount: params.questionCount,
-        timeLimit: params.timeLimit
-      })
-      .returning();
-
-    return quiz;
-  }
 
   /**
-   * Create enhanced quiz session with JSONB question snapshot
+   * Create quiz session with JSONB question snapshot
    */
   private static async createQuizSession(
-    quizId: string, 
     userId: string, 
     profileId: string, 
     generatedQuestions: GeneratedQuestion[],
@@ -279,7 +248,6 @@ Generate exactly ${params.questionCount} questions following this format.`;
     const [session] = await db
       .insert(quizSessions)
       .values({
-        quizId,
         userId,
         profileId,
         subjectId: params.subjectId,
