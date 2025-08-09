@@ -14,6 +14,7 @@ import {
   userPreferenceChanges,
   quizTypes,
   questionTypes,
+  quizzes,
   type User,
   type UpsertUser,
   type ExaminationSystem,
@@ -104,6 +105,11 @@ export interface IStorage {
   getSubjectPerformance(profileId: string, subjectId: string): Promise<any>;
   updateProfileSparks(profileId: string, sparks: number): Promise<Profile>;
   updateProfileStreak(profileId: string): Promise<Profile>;
+  
+  // Admin quiz operations
+  getAdminQuizList(filters?: any): Promise<any[]>;
+  getRecentActivity(): Promise<any[]>;
+  getTopPerformers(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -571,27 +577,54 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAdminQuizList(filters: any): Promise<any[]> {
-    const sessions = await db
+    // Fetch from the correct quizzes table (admin-created templates)
+    const quizTemplates = await db
       .select({
-        id: quizSessions.id,
-        subjectId: quizSessions.subjectId,
-        quizType: quizSessions.quizType,
-        totalQuestions: quizSessions.totalQuestions,
-        createdAt: quizSessions.startedAt,
+        id: quizzes.id,
+        title: quizzes.title,
+        description: quizzes.description,
+        subjectId: quizzes.subjectId,
+        quizType: quizzes.quizType,
+        totalQuestions: quizzes.totalQuestions,
+        timeLimit: quizzes.timeLimit,
+        isActive: quizzes.isActive,
+        createdBy: quizzes.createdBy,
+        createdAt: quizzes.createdAt,
       })
-      .from(quizSessions)
-      .orderBy(desc(quizSessions.startedAt));
+      .from(quizzes)
+      .where(eq(quizzes.isActive, true))
+      .orderBy(desc(quizzes.createdAt));
 
-    return sessions.map(session => ({
-      id: session.id,
-      title: `${session.quizType.charAt(0).toUpperCase() + session.quizType.slice(1)} Quiz`,
-      subject: session.subjectId || 'Unknown',
-      quizType: session.quizType,
-      questionCount: session.totalQuestions,
-      sessionsCount: 1,
-      usersCount: 1,
-      createdAt: session.createdAt
-    }));
+    // Get subject names and session counts
+    const quizList = await Promise.all(
+      quizTemplates.map(async (quiz) => {
+        // Get subject name
+        const [subject] = await db
+          .select({ name: subjects.name })
+          .from(subjects)
+          .where(eq(subjects.id, quiz.subjectId));
+
+        // Count sessions using this quiz template
+        const [sessionCount] = await db
+          .select({ count: count() })
+          .from(quizSessions)
+          .where(eq(quizSessions.subjectId, quiz.subjectId));
+
+        return {
+          id: quiz.id,
+          title: quiz.title,
+          subject: subject?.name || 'Unknown',
+          type: quiz.quizType,
+          questions: quiz.totalQuestions,
+          sessions: sessionCount?.count || 0,
+          users: sessionCount?.count || 0, // For now, assume 1 user per session
+          created: quiz.createdAt,
+          actions: 'View | Edit | Delete'
+        };
+      })
+    );
+
+    return quizList;
   }
 
   async getRecentActivity(): Promise<any[]> {

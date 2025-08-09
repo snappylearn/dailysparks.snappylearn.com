@@ -501,7 +501,7 @@ Generate exactly ${params.questionCount} questions following this format.`;
   }
 
   /**
-   * Create admin quiz session for review and editing
+   * Create admin quiz session for review and editing (DEPRECATED - use createQuizTemplate)
    */
   private static async createAdminQuizSession(
     userId: string,
