@@ -560,8 +560,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const questions = session.quizQuestions || [];
       const question = questions.find((q: any) => q.id === questionId);
       
+      console.log('Available questions in session:', questions.map(q => ({ id: q.id, content: q.content?.substring(0, 50) })));
+      console.log('Looking for question ID:', questionId);
+      
       if (!question) {
-        return res.status(404).json({ message: "Question not found in session" });
+        return res.status(404).json({ 
+          message: "Question not found in session",
+          availableQuestions: questions.map(q => q.id),
+          requestedQuestionId: questionId
+        });
       }
 
       // Check if answer is correct by looking at choices
@@ -718,7 +725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Start a quiz session - simplified to use existing quizzes
+  // Start a quiz session - use test questions for now
   app.post('/api/quiz/start', isAuthenticated, async (req: any, res) => {
     try {
       const { profileId, subjectId, quizType, topicId, term } = req.body;
@@ -727,59 +734,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Profile ID and Subject ID are required" });
       }
 
-      // Get available quizzes for the subject
-      const availableQuizzes = await storage.getQuizzesBySubject(subjectId);
-      
-      if (availableQuizzes.length === 0) {
-        return res.status(404).json({ message: "No quizzes available for this subject" });
-      }
+      // Test quiz questions with proper structure
+      const testQuestions = [
+        {
+          id: "physics_q1",
+          content: "What is the SI unit of force?",
+          choices: [
+            { id: "physics_q1_c1", content: "Newton", isCorrect: true, orderIndex: 1 },
+            { id: "physics_q1_c2", content: "Joule", isCorrect: false, orderIndex: 2 },
+            { id: "physics_q1_c3", content: "Watt", isCorrect: false, orderIndex: 3 },
+            { id: "physics_q1_c4", content: "Pascal", isCorrect: false, orderIndex: 4 }
+          ],
+          explanation: "The SI unit of force is the Newton (N), named after Sir Isaac Newton."
+        },
+        {
+          id: "physics_q2", 
+          content: "What is the acceleration due to gravity on Earth?",
+          choices: [
+            { id: "physics_q2_c1", content: "9.8 m/s²", isCorrect: true, orderIndex: 1 },
+            { id: "physics_q2_c2", content: "10 m/s²", isCorrect: false, orderIndex: 2 },
+            { id: "physics_q2_c3", content: "8.9 m/s²", isCorrect: false, orderIndex: 3 },
+            { id: "physics_q2_c4", content: "11.2 m/s²", isCorrect: false, orderIndex: 4 }
+          ],
+          explanation: "The standard acceleration due to gravity on Earth is approximately 9.8 m/s²."
+        },
+        {
+          id: "physics_q3",
+          content: "Which law states that for every action, there is an equal and opposite reaction?",
+          choices: [
+            { id: "physics_q3_c1", content: "Newton's First Law", isCorrect: false, orderIndex: 1 },
+            { id: "physics_q3_c2", content: "Newton's Second Law", isCorrect: false, orderIndex: 2 },
+            { id: "physics_q3_c3", content: "Newton's Third Law", isCorrect: true, orderIndex: 3 },
+            { id: "physics_q3_c4", content: "Law of Universal Gravitation", isCorrect: false, orderIndex: 4 }
+          ],
+          explanation: "Newton's Third Law states that for every action, there is an equal and opposite reaction."
+        }
+      ];
 
-      // Select a random quiz for now (can be enhanced with type filtering later)
-      const selectedQuiz = availableQuizzes[Math.floor(Math.random() * availableQuizzes.length)];
+      console.log('Creating new quiz session with test questions:', testQuestions.length);
 
-      // Get quiz questions
-      const quizWithQuestions = await storage.getQuizWithQuestions(selectedQuiz.id);
-
-      if (!quizWithQuestions.questions || quizWithQuestions.questions.length === 0) {
-        return res.status(404).json({ message: "No questions found in selected quiz" });
-      }
-
-      // Check if user has an incomplete quiz session for this subject
+      // Check for incomplete sessions
       const incompleteSession = await storage.getIncompleteQuizSession(profileId, subjectId);
       
       let quizSession;
-      if (incompleteSession) {
-        // Return existing incomplete session
+      if (incompleteSession && incompleteSession.quizQuestions && incompleteSession.quizQuestions.length > 0) {
+        // Resume existing session
         quizSession = incompleteSession;
+        console.log('Resuming incomplete session:', incompleteSession.id);
       } else {
-        // Create new quiz session with questions snapshot
+        // Create new session
         const userId = req.user.claims.sub;
         quizSession = await storage.createQuizSession({
           userId,
           profileId,
           subjectId,
           quizType: 'random',
-          totalQuestions: quizWithQuestions.questions.length,
+          totalQuestions: testQuestions.length,
           currentQuestionIndex: 0,
-          quizQuestions: quizWithQuestions.questions, // Save questions snapshot
+          quizQuestions: testQuestions,
         });
+        console.log('Created new quiz session:', quizSession.id);
       }
 
-      // Get questions - use session questions if resuming, otherwise use new ones
-      let questionsToUse;
-      if (incompleteSession && quizSession.quizQuestions) {
-        questionsToUse = quizSession.quizQuestions;
-      } else {
-        questionsToUse = quizWithQuestions.questions;
-        // If this is a new session, save questions snapshot
-        if (!incompleteSession) {
-          await db.update(quizSessions)
-            .set({ quizQuestions: quizWithQuestions.questions })
-            .where(eq(quizSessions.id, quizSession.id));
-        }
-      }
+      // Use session questions or fallback to test questions
+      const questionsToUse = quizSession.quizQuestions && quizSession.quizQuestions.length > 0 
+        ? quizSession.quizQuestions 
+        : testQuestions;
       
-      // Transform questions to expected format
+      // Transform to frontend format
       const questions = questionsToUse.map((q: any) => ({
         id: q.id,
         questionText: q.content,
@@ -787,7 +809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         optionB: q.choices[1]?.content || 'Option B', 
         optionC: q.choices[2]?.content || 'Option C',
         optionD: q.choices[3]?.content || 'Option D',
-        correctAnswer: q.choices.find((c: any) => c.isCorrect)?.content.charAt(0) || 'A',
+        correctAnswer: q.choices.find((c: any) => c.isCorrect)?.content || 'A',
         explanation: q.explanation
       }));
 
