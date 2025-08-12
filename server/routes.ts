@@ -650,7 +650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profile = await storage.getProfile(updatedSession.profileId);
       if (profile) {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        const lastQuizDate = profile.lastQuizDate?.toISOString().split('T')[0];
+        const lastQuizDate = profile.lastQuizDate ? new Date(profile.lastQuizDate).toISOString().split('T')[0] : null;
         
         // Calculate streak
         let newCurrentStreak = profile.currentStreak || 0;
@@ -683,7 +683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sparks: (profile.sparks || 0) + sparksEarned,
           currentStreak: newCurrentStreak,
           longestStreak: newLongestStreak,
-          lastQuizDate: new Date(today),
+          lastQuizDate: new Date(),
           lastActivity: new Date(),
         });
         
