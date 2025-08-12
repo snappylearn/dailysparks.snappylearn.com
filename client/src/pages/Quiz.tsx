@@ -64,6 +64,8 @@ export default function Quiz() {
   const [timeSpent, setTimeSpent] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [quizResults, setQuizResults] = useState<QuizResults | null>(null);
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [incompleteSession, setIncompleteSession] = useState<any>(null);
   
   // Get URL parameters
   const urlParams = new URLSearchParams(window.location.search);
@@ -118,7 +120,38 @@ export default function Quiz() {
     },
     onSuccess: (response) => {
       console.log('Quiz started successfully:', response);
-      // Transform the response to match our QuizSession interface
+      
+      if (response.hasIncompleteSession) {
+        // Show resume modal
+        setIncompleteSession(response.incompleteSession);
+        setShowResumeModal(true);
+      } else {
+        // Start new quiz directly
+        const quizSessionData: QuizSession = {
+          sessionId: response.sessionId,
+          questions: response.questions,
+          totalQuestions: response.totalQuestions || response.questions.length
+        };
+        setQuizSession(quizSessionData);
+        setCurrentQuestionIndex(response.currentQuestionIndex || 0);
+        setUserAnswers([]);
+        setTimeSpent(0);
+        setSelectedAnswer("");
+      }
+    },
+    onError: (error) => {
+      console.error('Quiz start failed:', error);
+      alert('Failed to start quiz: ' + error.message);
+    },
+  });
+
+  // Resume existing quiz session
+  const resumeQuizMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      const response = await apiRequest("POST", `/api/quiz/resume/${sessionId}`, {});
+      return await response.json();
+    },
+    onSuccess: (response) => {
       const quizSessionData: QuizSession = {
         sessionId: response.sessionId,
         questions: response.questions,
@@ -129,15 +162,40 @@ export default function Quiz() {
       setUserAnswers([]);
       setTimeSpent(0);
       setSelectedAnswer("");
-      
-      // Show resumption message if applicable
-      if (response.isResuming) {
-        alert(`Resuming your ${subjectName} quiz from question ${(response.currentQuestionIndex || 0) + 1}`);
-      }
+      setShowResumeModal(false);
     },
     onError: (error) => {
-      console.error('Quiz start failed:', error);
-      alert('Failed to start quiz: ' + error.message);
+      console.error('Resume quiz failed:', error);
+      alert('Failed to resume quiz: ' + error.message);
+    },
+  });
+
+  // Start fresh quiz session
+  const startFreshQuizMutation = useMutation({
+    mutationFn: async (data: { subjectId: string; quizType: string }) => {
+      const response = await apiRequest("POST", "/api/quiz/start-fresh", {
+        profileId: currentProfile?.id,
+        subjectId: data.subjectId,
+        quizType: data.quizType
+      });
+      return await response.json();
+    },
+    onSuccess: (response) => {
+      const quizSessionData: QuizSession = {
+        sessionId: response.sessionId,
+        questions: response.questions,
+        totalQuestions: response.totalQuestions || response.questions.length
+      };
+      setQuizSession(quizSessionData);
+      setCurrentQuestionIndex(0);
+      setUserAnswers([]);
+      setTimeSpent(0);
+      setSelectedAnswer("");
+      setShowResumeModal(false);
+    },
+    onError: (error) => {
+      console.error('Start fresh quiz failed:', error);
+      alert('Failed to start fresh quiz: ' + error.message);
     },
   });
 
@@ -374,22 +432,48 @@ export default function Quiz() {
                 </div>
               </RadioGroup>
 
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setLocation("/")}
-                  className="flex-1"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Exit Quiz
-                </Button>
-                <Button 
-                  onClick={handleAnswerSubmit}
-                  disabled={!selectedAnswer}
-                  className="flex-1"
-                >
-                  {currentQuestionIndex === quizSession.questions.length - 1 ? "Finish Quiz" : "Next Question"}
-                </Button>
+              {/* Navigation and Submit Buttons */}
+              <div className="space-y-3 pt-4">
+                {/* Question Navigation */}
+                <div className="flex gap-2 justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
+                    disabled={currentQuestionIndex === 0}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentQuestionIndex(Math.min(quizSession.questions.length - 1, currentQuestionIndex + 1))}
+                    disabled={currentQuestionIndex === quizSession.questions.length - 1}
+                  >
+                    Next
+                    <ArrowLeft className="h-4 w-4 ml-1 rotate-180" />
+                  </Button>
+                </div>
+
+                {/* Submit Answer and Exit */}
+                <div className="flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setLocation("/")}
+                    className="flex-1"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Exit Quiz
+                  </Button>
+                  <Button 
+                    onClick={handleAnswerSubmit}
+                    disabled={!selectedAnswer}
+                    className="flex-1"
+                  >
+                    {currentQuestionIndex === quizSession.questions.length - 1 ? "Finish Quiz" : "Submit Answer"}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -449,6 +533,72 @@ export default function Quiz() {
           ) : "Start Quiz"}
         </Button>
       </div>
+
+      {/* Resume Quiz Modal */}
+      <Dialog open={showResumeModal} onOpenChange={setShowResumeModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-orange-500" />
+              Continue Your Quiz?
+            </DialogTitle>
+            <DialogDescription>
+              You have an incomplete {subjectName} quiz from{' '}
+              {incompleteSession?.startedAt ? 
+                new Date(incompleteSession.startedAt).toLocaleDateString() : 
+                'recently'
+              }.
+              <br />
+              <span className="font-medium">
+                Progress: {(incompleteSession?.currentQuestionIndex || 0) + 1} of {incompleteSession?.totalQuestions || 0} questions
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 pt-4">
+            <Button
+              onClick={() => resumeQuizMutation.mutate(incompleteSession?.sessionId)}
+              disabled={resumeQuizMutation.isPending}
+              className="w-full"
+            >
+              {resumeQuizMutation.isPending ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Loading...
+                </div>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Continue Quiz
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!subjectId) return;
+                startFreshQuizMutation.mutate({ 
+                  subjectId, 
+                  quizType: 'random' 
+                });
+              }}
+              disabled={startFreshQuizMutation.isPending}
+              className="w-full"
+            >
+              {startFreshQuizMutation.isPending ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                  Starting...
+                </div>
+              ) : (
+                <>
+                  <Shuffle className="h-4 w-4 mr-2" />
+                  Start New Quiz
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

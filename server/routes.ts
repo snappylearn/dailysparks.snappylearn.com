@@ -773,36 +773,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Creating new quiz session with test questions:', testQuestions.length);
 
-      // Check for incomplete sessions
+      // Check for incomplete sessions first
       const incompleteSession = await storage.getIncompleteQuizSession(profileId, subjectId);
       
-      let quizSession;
+      // If there's an incomplete session, return it for user to decide
       if (incompleteSession && incompleteSession.quizQuestions && incompleteSession.quizQuestions.length > 0) {
-        // Resume existing session
-        quizSession = incompleteSession;
-        console.log('Resuming incomplete session:', incompleteSession.id);
-      } else {
-        // Create new session
-        const userId = req.user.claims.sub;
-        quizSession = await storage.createQuizSession({
-          userId,
-          profileId,
-          subjectId,
-          quizType: 'random',
-          totalQuestions: testQuestions.length,
-          currentQuestionIndex: 0,
-          quizQuestions: testQuestions,
+        const sessionQuestions = incompleteSession.quizQuestions.map((q: any) => ({
+          id: q.id,
+          questionText: q.content,
+          optionA: q.choices[0]?.content || 'Option A',
+          optionB: q.choices[1]?.content || 'Option B', 
+          optionC: q.choices[2]?.content || 'Option C',
+          optionD: q.choices[3]?.content || 'Option D',
+          correctAnswer: q.choices.find((c: any) => c.isCorrect)?.content || 'A',
+          explanation: q.explanation
+        }));
+
+        return res.json({
+          hasIncompleteSession: true,
+          incompleteSession: {
+            sessionId: incompleteSession.id,
+            questions: sessionQuestions,
+            totalQuestions: sessionQuestions.length,
+            currentQuestionIndex: incompleteSession.currentQuestionIndex || 0,
+            startedAt: incompleteSession.startedAt
+          }
         });
-        console.log('Created new quiz session:', quizSession.id);
       }
 
-      // Use session questions or fallback to test questions
-      const questionsToUse = quizSession.quizQuestions && quizSession.quizQuestions.length > 0 
-        ? quizSession.quizQuestions 
-        : testQuestions;
+      // No incomplete session, create new one
+      const userId = req.user.claims.sub;
+      const quizSession = await storage.createQuizSession({
+        userId,
+        profileId,
+        subjectId,
+        quizType: 'random',
+        totalQuestions: testQuestions.length,
+        currentQuestionIndex: 0,
+        quizQuestions: testQuestions,
+      });
+      console.log('Created new quiz session:', quizSession.id);
+
+      // Transform questions to frontend format
+      const questions = testQuestions.map((q: any) => ({
+        id: q.id,
+        questionText: q.content,
+        optionA: q.choices[0]?.content || 'Option A',
+        optionB: q.choices[1]?.content || 'Option B', 
+        optionC: q.choices[2]?.content || 'Option C',
+        optionD: q.choices[3]?.content || 'Option D',
+        correctAnswer: q.choices.find((c: any) => c.isCorrect)?.content || 'A',
+        explanation: q.explanation
+      }));
+
+      res.json({
+        hasIncompleteSession: false,
+        sessionId: quizSession.id,
+        questions: questions,
+        totalQuestions: questions.length,
+        currentQuestionIndex: 0,
+        isResuming: false
+      });
+    } catch (error) {
+      console.error("Error starting quiz:", error);
+      res.status(500).json({ message: "Failed to start quiz: " + error.message });
+    }
+  });
+
+  // Resume an existing quiz session
+  app.post('/api/quiz/resume/:sessionId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      const session = await storage.getQuizSession(sessionId);
       
-      // Transform to frontend format
-      const questions = questionsToUse.map((q: any) => ({
+      if (!session || !session.quizQuestions) {
+        return res.status(404).json({ message: "Quiz session not found" });
+      }
+
+      // Transform questions to frontend format
+      const questions = session.quizQuestions.map((q: any) => ({
+        id: q.id,
+        questionText: q.content,
+        optionA: q.choices[0]?.content || 'Option A',
+        optionB: q.choices[1]?.content || 'Option B', 
+        optionC: q.choices[2]?.content || 'Option C',
+        optionD: q.choices[3]?.content || 'Option D',
+        correctAnswer: q.choices.find((c: any) => c.isCorrect)?.content || 'A',
+        explanation: q.explanation
+      }));
+
+      res.json({
+        sessionId: session.id,
+        questions: questions,
+        totalQuestions: questions.length,
+        currentQuestionIndex: session.currentQuestionIndex || 0,
+        isResuming: true
+      });
+    } catch (error) {
+      console.error("Error resuming quiz:", error);
+      res.status(500).json({ message: "Failed to resume quiz" });
+    }
+  });
+
+  // Start a completely new quiz session (ignoring incomplete ones)
+  app.post('/api/quiz/start-fresh', isAuthenticated, async (req: any, res) => {
+    try {
+      const { profileId, subjectId, quizType } = req.body;
+
+      if (!profileId || !subjectId) {
+        return res.status(400).json({ message: "Profile ID and Subject ID are required" });
+      }
+
+      // Delete any incomplete sessions for this subject
+      await storage.deleteIncompleteQuizSessions(profileId, subjectId);
+
+      // Test quiz questions
+      const testQuestions = [
+        {
+          id: "physics_q1",
+          content: "What is the SI unit of force?",
+          choices: [
+            { id: "physics_q1_c1", content: "Newton", isCorrect: true, orderIndex: 1 },
+            { id: "physics_q1_c2", content: "Joule", isCorrect: false, orderIndex: 2 },
+            { id: "physics_q1_c3", content: "Watt", isCorrect: false, orderIndex: 3 },
+            { id: "physics_q1_c4", content: "Pascal", isCorrect: false, orderIndex: 4 }
+          ],
+          explanation: "The SI unit of force is the Newton (N), named after Sir Isaac Newton."
+        },
+        {
+          id: "physics_q2", 
+          content: "What is the acceleration due to gravity on Earth?",
+          choices: [
+            { id: "physics_q2_c1", content: "9.8 m/s²", isCorrect: true, orderIndex: 1 },
+            { id: "physics_q2_c2", content: "10 m/s²", isCorrect: false, orderIndex: 2 },
+            { id: "physics_q2_c3", content: "8.9 m/s²", isCorrect: false, orderIndex: 3 },
+            { id: "physics_q2_c4", content: "11.2 m/s²", isCorrect: false, orderIndex: 4 }
+          ],
+          explanation: "The standard acceleration due to gravity on Earth is approximately 9.8 m/s²."
+        },
+        {
+          id: "physics_q3",
+          content: "Which law states that for every action, there is an equal and opposite reaction?",
+          choices: [
+            { id: "physics_q3_c1", content: "Newton's First Law", isCorrect: false, orderIndex: 1 },
+            { id: "physics_q3_c2", content: "Newton's Second Law", isCorrect: false, orderIndex: 2 },
+            { id: "physics_q3_c3", content: "Newton's Third Law", isCorrect: true, orderIndex: 3 },
+            { id: "physics_q3_c4", content: "Law of Universal Gravitation", isCorrect: false, orderIndex: 4 }
+          ],
+          explanation: "Newton's Third Law states that for every action, there is an equal and opposite reaction."
+        }
+      ];
+
+      // Create new session
+      const userId = req.user.claims.sub;
+      const quizSession = await storage.createQuizSession({
+        userId,
+        profileId,
+        subjectId,
+        quizType: 'random',
+        totalQuestions: testQuestions.length,
+        currentQuestionIndex: 0,
+        quizQuestions: testQuestions,
+      });
+
+      // Transform questions to frontend format
+      const questions = testQuestions.map((q: any) => ({
         id: q.id,
         questionText: q.content,
         optionA: q.choices[0]?.content || 'Option A',
@@ -817,12 +952,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionId: quizSession.id,
         questions: questions,
         totalQuestions: questions.length,
-        currentQuestionIndex: quizSession.currentQuestionIndex || 0,
-        isResuming: !!incompleteSession
+        currentQuestionIndex: 0,
+        isResuming: false
       });
     } catch (error) {
-      console.error("Error starting quiz:", error);
-      res.status(500).json({ message: "Failed to start quiz: " + error.message });
+      console.error("Error starting fresh quiz:", error);
+      res.status(500).json({ message: "Failed to start fresh quiz" });
     }
   });
 
