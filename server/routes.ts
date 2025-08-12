@@ -646,13 +646,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         completedAt: new Date(),
       });
 
-      // Update profile sparks
+      // Update profile sparks and streak
       const profile = await storage.getProfile(updatedSession.profileId);
       if (profile) {
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        const lastQuizDate = profile.lastQuizDate?.toISOString().split('T')[0];
+        
+        // Calculate streak
+        let newCurrentStreak = profile.currentStreak || 0;
+        let newLongestStreak = profile.longestStreak || 0;
+        
+        if (lastQuizDate) {
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          
+          if (lastQuizDate === yesterdayStr) {
+            // Consecutive day - increment streak
+            newCurrentStreak = (profile.currentStreak || 0) + 1;
+          } else if (lastQuizDate === today) {
+            // Same day - keep current streak
+            newCurrentStreak = profile.currentStreak || 1;
+          } else {
+            // Gap in days - reset streak
+            newCurrentStreak = 1;
+          }
+        } else {
+          // First quiz ever
+          newCurrentStreak = 1;
+        }
+        
+        // Update longest streak if current is longer
+        newLongestStreak = Math.max(newLongestStreak, newCurrentStreak);
+        
         await storage.updateProfile(profile.id, {
           sparks: (profile.sparks || 0) + sparksEarned,
+          currentStreak: newCurrentStreak,
+          longestStreak: newLongestStreak,
+          lastQuizDate: new Date(today),
           lastActivity: new Date(),
         });
+        
+        console.log(`Profile updated: sparks +${sparksEarned} (total: ${(profile.sparks || 0) + sparksEarned}), streak: ${newCurrentStreak}`);
       }
 
       res.json({

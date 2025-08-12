@@ -216,7 +216,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                 
                 <div className="flex items-center gap-1 text-orange-600">
                   <Flame className="h-4 w-4" />
-                  <span className="font-semibold">{currentProfile?.streak || 0}</span>
+                  <span className="font-semibold">{currentProfile?.currentStreak || currentProfile?.streak || 0}</span>
                 </div>
               </div>
 
@@ -292,7 +292,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                       <Star className="h-4 w-4 text-yellow-500" />
                       Total Sparks
                     </span>
-                    <span className="font-semibold text-lg">{currentProfile?.totalSparks || 0}</span>
+                    <span className="font-semibold text-lg">{currentProfile?.sparks || 0}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-gray-600">
