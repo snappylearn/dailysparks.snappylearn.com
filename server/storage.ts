@@ -311,7 +311,10 @@ export class DatabaseStorage implements IStorage {
 
   // Quiz session operations
   async createQuizSession(session: InsertQuizSession): Promise<QuizSession> {
+    console.log('Creating quiz session with data:', JSON.stringify(session, null, 2));
+    console.log('Quiz questions being stored:', JSON.stringify(session.quizQuestions, null, 2));
     const [newSession] = await db.insert(quizSessions).values(session).returning();
+    console.log('Created session with ID:', newSession.id, 'questions stored:', !!newSession.quizQuestions);
     return newSession;
   }
 
