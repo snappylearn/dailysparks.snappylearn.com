@@ -657,7 +657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profile = await storage.getProfile(updatedSession.profileId);
       if (profile) {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        const lastQuizDate = profile.lastQuizDate ? new Date(profile.lastQuizDate).toISOString().split('T')[0] : null;
+        const lastQuizDate = profile.lastQuizDate ? (profile.lastQuizDate instanceof Date ? profile.lastQuizDate : new Date(profile.lastQuizDate)).toISOString().split('T')[0] : null;
         
         // Calculate streak
         let newCurrentStreak = profile.currentStreak || 0;
@@ -773,6 +773,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Creating new quiz session with test questions:', testQuestions.length);
       console.log('Test questions structure:', testQuestions.map(q => ({ id: q.id, content: q.content, choicesCount: q.choices.length })));
+      console.log('Full test questions array:', JSON.stringify(testQuestions, null, 2));
 
       // Check for incomplete sessions first
       const incompleteSession = await storage.getIncompleteQuizSession(profileId, subjectId);
