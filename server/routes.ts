@@ -546,35 +546,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sessionId } = req.params;
       const { questionId, userAnswer, timeSpent } = req.body;
+      const userId = req.user.claims.sub;
 
-      // Get the question to check if answer is correct
-      const questionResult = await db.select().from(questions).where(eq(questions.id, questionId));
-      const question = questionResult[0];
-      
-      if (!question) {
-        return res.status(404).json({ message: "Question not found" });
+      console.log('Submitting answer for session:', sessionId, 'question:', questionId, 'answer:', userAnswer);
+
+      // Get the quiz session to access JSONB questions
+      const session = await storage.getQuizSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Quiz session not found" });
       }
 
-      const isCorrect = question.correctAnswer === userAnswer;
+      // Find the question in the session's JSONB questions
+      const questions = session.quizQuestions || [];
+      const question = questions.find((q: any) => q.id === questionId);
+      
+      if (!question) {
+        return res.status(404).json({ message: "Question not found in session" });
+      }
+
+      // Check if answer is correct by looking at choices
+      const correctChoice = question.choices?.find((choice: any) => choice.isCorrect);
+      const userChoice = question.choices?.find((choice: any) => choice.content === userAnswer);
+      const isCorrect = correctChoice && userChoice && correctChoice.content === userAnswer;
+
+      console.log('Question found:', question.content);
+      console.log('Correct choice:', correctChoice?.content);
+      console.log('User answer:', userAnswer);
+      console.log('Is correct:', isCorrect);
 
       // Save user answer
       const answer = await storage.createUserAnswer({
         quizSessionId: sessionId,
         questionId,
         userAnswer,
-        isCorrect,
+        isCorrect: !!isCorrect,
         timeSpent,
       });
 
+      // Update quiz session progress
+      const currentIndex = session.currentQuestionIndex || 0;
+      const newIndex = currentIndex + 1;
+      const totalQuestions = questions.length;
+      const completed = newIndex >= totalQuestions;
+
+      await storage.updateQuizSession(sessionId, {
+        currentQuestionIndex: newIndex,
+        completed,
+        correctAnswers: (session.correctAnswers || 0) + (isCorrect ? 1 : 0),
+        ...(completed && { completedAt: new Date() })
+      });
+
       res.json({
-        isCorrect,
-        correctAnswer: question.correctAnswer,
+        isCorrect: !!isCorrect,
+        correctAnswer: correctChoice?.content,
         explanation: question.explanation,
+        currentIndex: newIndex,
+        totalQuestions,
+        completed
       });
 
     } catch (error) {
       console.error("Error submitting answer:", error);
-      res.status(500).json({ message: "Failed to submit answer" });
+      res.status(500).json({ message: "Failed to submit answer: " + error.message });
     }
   });
 
