@@ -674,7 +674,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quizSession = incompleteSession;
       } else {
         // Create new quiz session with questions snapshot
+        const userId = req.user.claims.sub;
         quizSession = await storage.createQuizSession({
+          userId,
           profileId,
           subjectId,
           quizType: 'random',
