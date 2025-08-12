@@ -772,6 +772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       console.log('Creating new quiz session with test questions:', testQuestions.length);
+      console.log('Test questions structure:', testQuestions.map(q => ({ id: q.id, content: q.content, choicesCount: q.choices.length })));
 
       // Check for incomplete sessions first
       const incompleteSession = await storage.getIncompleteQuizSession(profileId, subjectId);
