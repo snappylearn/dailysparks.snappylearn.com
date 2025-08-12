@@ -566,13 +566,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if answer is correct by looking at choices
       const correctChoice = question.choices?.find((choice: any) => choice.isCorrect);
-      const userChoice = question.choices?.find((choice: any) => choice.content === userAnswer);
-      const isCorrect = correctChoice && userChoice && correctChoice.content === userAnswer;
+      // Handle both letter answers (A, B, C, D) and full text answers
+      let isCorrect = false;
+      if (userAnswer === 'A' || userAnswer === 'B' || userAnswer === 'C' || userAnswer === 'D') {
+        // Letter-based answer - find by orderIndex
+        const letterToIndex = { 'A': 1, 'B': 2, 'C': 3, 'D': 4 };
+        const selectedChoice = question.choices?.find((choice: any) => choice.orderIndex === letterToIndex[userAnswer]);
+        isCorrect = selectedChoice && selectedChoice.isCorrect;
+      } else {
+        // Full text answer
+        const userChoice = question.choices?.find((choice: any) => choice.content === userAnswer);
+        isCorrect = correctChoice && userChoice && correctChoice.content === userAnswer;
+      }
 
       console.log('Question found:', question.content);
       console.log('Correct choice:', correctChoice?.content);
       console.log('User answer:', userAnswer);
       console.log('Is correct:', isCorrect);
+      console.log('Question choices:', question.choices);
 
       // Save user answer
       const answer = await storage.createUserAnswer({

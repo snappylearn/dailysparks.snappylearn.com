@@ -169,7 +169,7 @@ export const quizzes = pgTable("quizzes", {
 export const userAnswers = pgTable("user_answers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   quizSessionId: varchar("quiz_session_id").notNull().references(() => quizSessions.id),
-  questionId: varchar("question_id").notNull().references(() => questions.id),
+  questionId: varchar("question_id").notNull(), // No foreign key - questions are stored as JSONB
   userAnswer: varchar("user_answer").notNull(), // A, B, C, or D
   isCorrect: boolean("is_correct").notNull(),
   timeSpent: integer("time_spent"), // in seconds
