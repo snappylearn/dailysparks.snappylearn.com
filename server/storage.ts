@@ -43,7 +43,7 @@ import {
   type InsertUserChallengeProgress,
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, desc, sql, count, avg, gte, lte } from "drizzle-orm";
+import { eq, and, desc, sql, count, avg, gte, lte, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -728,7 +728,7 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(subjects, eq(quizSessions.subjectId, subjects.id))
         .where(
           and(
-            sql`${quizSessions.profileId} = ANY(${profileIds})`,
+            inArray(quizSessions.profileId, profileIds),
             eq(quizSessions.completed, true)
           )
         )
