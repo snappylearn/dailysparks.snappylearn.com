@@ -698,13 +698,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update longest streak if current is longer
         newLongestStreak = Math.max(newLongestStreak, newCurrentStreak);
         
-        await storage.updateProfile(profile.id, {
+        const updatedProfile = await storage.updateProfile(profile.id, {
           sparks: (profile.sparks || 0) + sparksEarned,
           currentStreak: newCurrentStreak,
           longestStreak: newLongestStreak,
           lastQuizDate: new Date(),
           lastActivity: new Date(),
         });
+        
+        // Update rankings after profile update
+        await updateUserRankings();
+        
+        console.log(`Profile updated: sparks +${sparksEarned} (total: ${(profile.sparks || 0) + sparksEarned}), streak: ${newCurrentStreak}`);
         
         console.log(`Profile updated: sparks +${sparksEarned} (total: ${(profile.sparks || 0) + sparksEarned}), streak: ${newCurrentStreak}`);
       }
@@ -785,7 +790,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Creating new quiz session with test questions:', testQuestions.length);
       console.log('Test questions structure:', testQuestions.map(q => ({ id: q.id, content: q.content, choicesCount: q.choices.length })));
-      console.log('Full test questions array:', JSON.stringify(testQuestions, null, 2));
+      console.log('Full test questions array being passed to storage:', JSON.stringify(testQuestions, null, 2));
+      console.log('totalQuestions being set to:', testQuestions.length);
 
       // Check for incomplete sessions first
       const incompleteSession = await storage.getIncompleteQuizSession(profileId, subjectId);
@@ -817,6 +823,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // No incomplete session, create new one
       const userId = req.user.claims.sub;
+      
+      console.log('=== BEFORE CALLING STORAGE ===');
+      console.log('Input to createQuizSession - quizQuestions length:', testQuestions.length);
+      console.log('Input to createQuizSession - totalQuestions:', testQuestions.length);
+      console.log('First question in array:', JSON.stringify(testQuestions[0], null, 2));
+      console.log('Second question in array:', JSON.stringify(testQuestions[1], null, 2));
+      console.log('Third question in array:', JSON.stringify(testQuestions[2], null, 2));
+      
       const quizSession = await storage.createQuizSession({
         userId,
         profileId,
@@ -826,7 +840,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentQuestionIndex: 0,
         quizQuestions: testQuestions,
       });
+      console.log('=== AFTER STORAGE RETURNS ===');
       console.log('Created new quiz session:', quizSession.id);
+      console.log('Returned quizQuestions length:', quizSession.quizQuestions ? quizSession.quizQuestions.length : 'undefined');
+      console.log('Returned totalQuestions:', quizSession.totalQuestions);
 
       // Transform questions to frontend format
       const questions = testQuestions.map((q: any) => ({

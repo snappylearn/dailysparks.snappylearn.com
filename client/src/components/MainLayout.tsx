@@ -206,7 +206,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1 text-purple-600">
                   <Crown className="h-4 w-4" />
-                  <span className="font-semibold">#47</span>
+                  <span className="font-semibold">#{currentProfile?.rank || '-'}</span>
                 </div>
                 
                 <div className="flex items-center gap-1 text-orange-500">

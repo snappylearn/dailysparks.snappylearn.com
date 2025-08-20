@@ -155,7 +155,7 @@ export default function Home() {
               <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                 <i className="fas fa-fire text-sm"></i>
               </div>
-              <span className="font-bold text-lg font-poppins">Daily Spark #{user?.id?.slice(-2) || '47'}</span>
+              <span className="font-bold text-lg font-poppins">Daily Spark</span>
             </div>
             <button 
               onClick={() => setShowProfile(true)}

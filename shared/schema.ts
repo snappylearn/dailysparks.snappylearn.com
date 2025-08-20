@@ -71,6 +71,7 @@ export const profiles = pgTable("profiles", {
   streak: integer("streak").default(0),
   currentStreak: integer("current_streak").default(0),
   longestStreak: integer("longest_streak").default(0),
+  rank: integer("rank"),
   lastQuizDate: timestamp("last_quiz_date", { mode: 'date' }),
   lastActivity: timestamp("last_activity").defaultNow(),
   isActive: boolean("is_active").default(true),
