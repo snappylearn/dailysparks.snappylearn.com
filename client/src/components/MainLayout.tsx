@@ -124,10 +124,10 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   const navigationItems = [
     { icon: Home, label: 'Dashboard', path: '/', active: location === '/' },
-    { icon: Target, label: 'Quiz History', path: '/quiz-history', active: location === '/quiz-history' },
+    { icon: Zap, label: 'Challenges', path: '/challenges', active: location === '/challenges' },
     { icon: Trophy, label: 'Leaderboard', path: '/leaderboard', active: location === '/leaderboard' },
     { icon: Award, label: 'Badges & Trophies', path: '/badges-trophies', active: location === '/badges-trophies' },
-    { icon: Zap, label: 'Challenges', path: '/challenges', active: location === '/challenges' },
+    { icon: Target, label: 'Quiz History', path: '/quiz-history', active: location === '/quiz-history' },
     { icon: User, label: 'Profile', path: '/profile', active: location === '/profile' },
   ];
 
