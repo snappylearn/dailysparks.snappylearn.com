@@ -97,7 +97,7 @@ export interface IStorage {
   
   // Subject operations
   getAllSubjects(): Promise<Subject[]>;
-  getSubjectsBySystem(examinationSystemId: string): Promise<Subject[]>;
+  getSubjectsBySystem(examinationSystemId: string, levelId?: string): Promise<Subject[]>;
   createSubject(subject: InsertSubject): Promise<Subject>;
   
   // Topic operations
@@ -261,14 +261,33 @@ export class DatabaseStorage implements IStorage {
       .orderBy(subjects.name);
   }
 
-  async getSubjectsBySystem(examinationSystemId: string): Promise<Subject[]> {
+  async getSubjectsBySystem(examinationSystemId: string, levelId?: string): Promise<Subject[]> {
     const subjectList = await db.select().from(subjects).where(eq(subjects.examinationSystemId, examinationSystemId));
     
-    // Get quiz counts for each subject using raw SQL to avoid Drizzle count issues
+    // Get quiz counts for each subject, filtered by examination system and level
     const subjectsWithCounts = await Promise.all(
       subjectList.map(async (subject) => {
         try {
-          const countQuery = sql`SELECT COUNT(*) as count FROM questions WHERE subject_id = ${subject.id}`;
+          let countQuery;
+          if (levelId) {
+            // Count questions filtered by subject, examination system, and level
+            countQuery = sql`
+              SELECT COUNT(*) as count 
+              FROM questions q
+              JOIN topics t ON q.topic_id = t.id
+              WHERE t.subject_id = ${subject.id} 
+                AND t.level_id = ${levelId}
+            `;
+          } else {
+            // Count all questions for the subject
+            countQuery = sql`
+              SELECT COUNT(*) as count 
+              FROM questions q
+              JOIN topics t ON q.topic_id = t.id
+              WHERE t.subject_id = ${subject.id}
+            `;
+          }
+          
           const countResult = await db.execute(countQuery);
           const questionCount = countResult.rows[0]?.count || 0;
           

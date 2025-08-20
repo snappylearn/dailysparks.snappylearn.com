@@ -497,10 +497,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Subject routes - By system
-  app.get('/api/subjects/:systemId', async (req, res) => {
+  app.get('/api/subjects/:systemId', isAuthenticated, async (req: any, res) => {
     try {
       const { systemId } = req.params;
-      const subjects = await storage.getSubjectsBySystem(systemId);
+      const userId = req.user.claims.sub;
+      
+      // Get user's current profile to filter questions by their level
+      const profiles = await storage.getUserProfiles(userId);
+      const currentProfile = profiles.find(p => p.examinationSystemId === systemId) || profiles[0];
+      
+      const subjects = await storage.getSubjectsBySystem(systemId, currentProfile?.levelId);
       res.json(subjects);
     } catch (error) {
       console.error("Error fetching subjects:", error);
