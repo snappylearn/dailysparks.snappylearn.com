@@ -93,47 +93,30 @@ export default function Home() {
           <p className="text-gray-600">Choose a subject to start your learning journey</p>
         </div>
 
-        {/* User Badges Section */}
-        {userBadges && userBadges.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Award className="h-5 w-5 text-yellow-500" />
-              <h3 className="font-semibold text-lg">Your Badges</h3>
+        {/* Dashboard Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Zap className="h-6 w-6 text-orange-500" />
             </div>
-            <div className="flex gap-3 overflow-x-auto">
-              {userBadges.slice(0, 5).map((badge: any) => (
-                <div key={badge.id} className="flex-shrink-0 text-center">
-                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mb-1">
-                    <span className="text-2xl">{badge.icon || '🏆'}</span>
-                  </div>
-                  <p className="text-xs font-medium text-gray-700">{badge.title}</p>
-                </div>
-              ))}
-            </div>
+            <h3 className="text-2xl font-bold text-gray-900">{user?.sparks || 0}</h3>
+            <p className="text-sm text-gray-600">Total Sparks</p>
           </div>
-        )}
-
-        {/* Active Challenges Section */}
-        {challenges && challenges.length > 0 && (
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-6 text-white">
-            <div className="flex items-center gap-2 mb-4">
-              <Trophy className="h-5 w-5" />
-              <h3 className="font-semibold text-lg">Active Challenges</h3>
+          <div className="bg-white rounded-lg shadow-md p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Trophy className="h-6 w-6 text-yellow-500" />
             </div>
-            <div className="space-y-3">
-              {challenges.slice(0, 2).map((challenge: any) => (
-                <div key={challenge.id} className="bg-white/10 rounded-lg p-3">
-                  <h4 className="font-medium mb-1">{challenge.title}</h4>
-                  <p className="text-sm opacity-90 mb-2">{challenge.description}</p>
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Reward: {challenge.sparks} sparks</span>
-                    <Zap className="h-4 w-4" />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h3 className="text-2xl font-bold text-gray-900">{userBadges?.length || 0}</h3>
+            <p className="text-sm text-gray-600">Badges Earned</p>
           </div>
-        )}
+          <div className="bg-white rounded-lg shadow-md p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Award className="h-6 w-6 text-blue-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900">{user?.currentStreak || 0}</h3>
+            <p className="text-sm text-gray-600">Day Streak</p>
+          </div>
+        </div>
 
         {/* Subjects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -158,6 +141,31 @@ export default function Home() {
             </div>
           ))}
         </div>
+
+        {/* Active Challenges Section - Below Dashboard */}
+        {challenges && challenges.length > 0 && (
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-6 text-white">
+            <div className="flex items-center gap-2 mb-4">
+              <Trophy className="h-5 w-5" />
+              <h3 className="font-semibold text-lg">Active Challenges</h3>
+            </div>
+            <div className="space-y-3">
+              {challenges.slice(0, 3).map((challenge: any) => (
+                <div key={challenge.id} className="bg-white/10 rounded-lg p-3">
+                  <h4 className="font-medium mb-1">{challenge.title}</h4>
+                  <p className="text-sm opacity-90 mb-2">{challenge.description}</p>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Reward: {challenge.sparks} sparks</span>
+                    <div className="flex items-center gap-1">
+                      <Zap className="h-4 w-4" />
+                      <span>+{challenge.streaks || 0} streak</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Today's Challenge */}
         {challengeData && (

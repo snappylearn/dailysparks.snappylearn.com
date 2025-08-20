@@ -320,64 +320,56 @@ export default function Leaderboard() {
           </Card>
         )}
 
-        {/* Gamification Section */}
-        <div className="mt-8 space-y-6">
-          {/* Badges Section */}
-          {badges.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-yellow-500" />
-                  Available Badges
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {/* Inline Badges and Trophies below leaderboard */}
+        {(badges.length > 0 || trophies.length > 0) && (
+          <div className="mt-6 space-y-4">
+            {/* Badges Row */}
+            {badges.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Award className="h-4 w-4 text-yellow-500" />
+                  <h4 className="font-medium text-gray-900">Available Badges</h4>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-2">
                   {badges.map((badge: any) => (
-                    <div key={badge.id} className="bg-gray-50 rounded-lg p-4 text-center hover:bg-gray-100 transition-colors">
-                      <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <span className="text-2xl">{badge.icon || '🏆'}</span>
+                    <div key={badge.id} className="flex-shrink-0 bg-white rounded-lg border p-3 text-center min-w-[100px]">
+                      <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-1">
+                        <span className="text-lg">{badge.icon || '🏆'}</span>
                       </div>
-                      <h4 className="font-medium text-sm text-gray-900 mb-1">{badge.title}</h4>
-                      <p className="text-xs text-gray-600 mb-2">{badge.description}</p>
+                      <h5 className="font-medium text-xs text-gray-900 mb-1">{badge.title}</h5>
                       {badge.sparks && (
                         <div className="flex items-center justify-center gap-1">
                           <Zap className="h-3 w-3 text-orange-500" />
-                          <span className="text-xs font-medium text-orange-600">{badge.sparks} sparks</span>
+                          <span className="text-xs font-medium text-orange-600">{badge.sparks}</span>
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            )}
 
-          {/* Trophies Section */}
-          {trophies.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-amber-500" />
-                  Achievement Trophies
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Trophies Row */}
+            {trophies.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Trophy className="h-4 w-4 text-amber-500" />
+                  <h4 className="font-medium text-gray-900">Achievement Trophies</h4>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-2">
                   {trophies.map((trophy: any) => (
-                    <div key={trophy.id} className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg p-4 text-center border border-amber-200">
-                      <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <span className="text-3xl">{trophy.icon || '🏆'}</span>
+                    <div key={trophy.id} className="flex-shrink-0 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg border border-amber-200 p-3 text-center min-w-[100px]">
+                      <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-1">
+                        <span className="text-lg">{trophy.icon || '🏆'}</span>
                       </div>
-                      <h4 className="font-semibold text-amber-900 mb-1">{trophy.title}</h4>
-                      <p className="text-sm text-amber-700">{trophy.description}</p>
+                      <h5 className="font-medium text-xs text-amber-900">{trophy.title}</h5>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </MainLayout>
   );

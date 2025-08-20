@@ -13,6 +13,7 @@ Landing page design: SaaS-friendly landing page with "Start Your Journey" CTA pr
 Onboarding design: Examination systems as buttons in a grid, when selected shows levels as buttons underneath. Clean, button-based interface preferred over dropdowns.
 Layout preferences: Sidebar navigation should only appear on the dashboard page, not on other pages like Quiz, Leaderboard, or Profile.
 Top navigation design: Consistent navbar across all pages with Daily Sparks logo on left, "Start A Quiz" and "Leaderboard" buttons in center, stats (position, sparks, streak) with icons and user avatar dropdown on right. No greeting text for cleaner design.
+Gamification layout: Badges and trophies should appear below leaderboard rankings as compact rows, not separate sections. Challenges should appear below dashboard stats, not above subjects.
 
 ## System Architecture
 
