@@ -18,7 +18,8 @@ import {
   Star,
   LogOut,
   ChevronDown,
-  Zap
+  Zap,
+  Award
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -77,10 +78,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       
       console.log('Updating profile with data:', updateData);
       
-      return apiRequest(`/api/profiles/${currentProfile.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(updateData),
-      });
+      return apiRequest(`/api/profiles/${currentProfile.id}`, 'PATCH', updateData);
     },
     onSuccess: () => {
       toast({
@@ -133,6 +131,17 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   // Check if we should show sidebar (dashboard, leaderboard, and quiz history)
   const showSidebar = location === '/' || location === '/leaderboard' || location === '/quiz-history';
+
+  // Fetch badges and trophies for sidebar
+  const { data: badges = [] } = useQuery<any[]>({
+    queryKey: ['/api/badges'],
+    enabled: showSidebar,
+  });
+
+  const { data: trophies = [] } = useQuery<any[]>({
+    queryKey: ['/api/trophies'], 
+    enabled: showSidebar,
+  });
 
   if (!isAuthenticated) {
     return <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50">{children}</div>;
@@ -226,7 +235,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={(user as any)?.profileImageUrl} />
                     <AvatarFallback className="bg-gradient-to-br from-orange-500 to-yellow-400 text-white">
-                      {currentProfile?.name?.substring(0, 2).toUpperCase() || (user as any)?.firstName?.substring(0, 2).toUpperCase() || 'DS'}
+                      {(user as any)?.firstName?.substring(0, 2).toUpperCase() || 'DS'}
                     </AvatarFallback>
                   </Avatar>
                   <ChevronDown className="h-4 w-4 text-gray-500" />
@@ -235,7 +244,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                 {/* Dropdown Menu */}
                 <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                   <div className="p-3 border-b border-gray-100">
-                    <div className="font-medium text-sm">{currentProfile?.name || (user as any)?.firstName || 'Student'}</div>
+                    <div className="font-medium text-sm">{(user as any)?.firstName || 'Student'}</div>
                     <div className="text-xs text-gray-500">{(user as any)?.email}</div>
                   </div>
                   <div className="p-1">
@@ -311,6 +320,58 @@ export function MainLayout({ children }: MainLayoutProps) {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Badges Section */}
+            {badges.length > 0 && (
+              <Card className="mt-4">
+                <CardContent className="p-6">
+                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <Award className="h-4 w-4 text-yellow-500" />
+                    Available Badges
+                  </h4>
+                  <div className="space-y-2">
+                    {badges.slice(0, 3).map((badge: any) => (
+                      <div key={badge.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                        <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                          <span className="text-lg">{badge.icon || '🏆'}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{badge.title}</p>
+                          {badge.sparks && (
+                            <p className="text-xs text-orange-600">+{badge.sparks} sparks</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Trophies Section */}
+            {trophies.length > 0 && (
+              <Card className="mt-4">
+                <CardContent className="p-6">
+                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-amber-500" />
+                    Achievement Trophies
+                  </h4>
+                  <div className="space-y-2">
+                    {trophies.slice(0, 3).map((trophy: any) => (
+                      <div key={trophy.id} className="flex items-center gap-3 p-2 bg-amber-50 rounded-lg border border-amber-200">
+                        <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                          <span className="text-lg">{trophy.icon || '🏆'}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-amber-900 truncate">{trophy.title}</p>
+                          <p className="text-xs text-amber-700 truncate">{trophy.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 
