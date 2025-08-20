@@ -268,7 +268,7 @@ export class DatabaseStorage implements IStorage {
     const subjectsWithCounts = await Promise.all(
       subjectList.map(async (subject) => {
         const [questionCount] = await db
-          .select({ count: count() })
+          .select({ count: count(questions.id) })
           .from(questions)
           .where(eq(questions.subjectId, subject.id));
         
@@ -787,8 +787,7 @@ export class DatabaseStorage implements IStorage {
           s.code as subject_code,
           es.code as examination_system_code,
           es.name as examination_system_name,
-          l.title as level_title,
-          l.name as level_name
+          l.title as level_title
         FROM quiz_sessions qs
         LEFT JOIN subjects s ON qs.subject_id = s.id
         LEFT JOIN profiles p ON qs.profile_id = p.id
@@ -815,7 +814,7 @@ export class DatabaseStorage implements IStorage {
         sparksEarned: session.sparks_earned || 0,
         isCompleted: session.completed || false,
         examinationSystem: session.examination_system_code || session.examination_system_name || 'Unknown',
-        level: session.level_title || session.level_name || 'Unknown',
+        level: session.level_title || 'Unknown',
       }));
     } catch (error) {
       console.error('Error fetching quiz history:', error);
