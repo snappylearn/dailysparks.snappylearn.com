@@ -72,11 +72,82 @@ export const profiles = pgTable("profiles", {
   currentStreak: integer("current_streak").default(0),
   longestStreak: integer("longest_streak").default(0),
   rank: integer("rank"),
-  lastQuizDate: timestamp("last_quiz_date", { mode: 'date' }),
+  lastQuizDate: timestamp("last_quiz_date"),
   lastActivity: timestamp("last_activity").defaultNow(),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Badge types table
+export const badgeTypes = pgTable("badge_types", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Badges table
+export const badges = pgTable("badges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  sparks: integer("sparks"), // Optional reward amount
+  icon: varchar("icon"), // URL or asset reference
+  badgeTypeId: varchar("badge_type_id").notNull().references(() => badgeTypes.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User badges (earned badges)
+export const userBadges = pgTable("user_badges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  badgeId: varchar("badge_id").notNull().references(() => badges.id),
+  streaks: integer("streaks").default(0), // Optional streaks earned when badge unlocked
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Trophies table
+export const trophies = pgTable("trophies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(), // Gold, Silver, Bronze
+  description: text("description"),
+  icon: varchar("icon"), // URL or asset reference
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Challenges table
+export const challenges = pgTable("challenges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  sparks: integer("sparks").default(0), // Reward amount
+  streaks: integer("streaks").default(0), // Reward streaks
+  badgeId: varchar("badge_id").references(() => badges.id), // Optional badge award upon completion
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User challenges (progress tracking)
+export const userChallenges = pgTable("user_challenges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  challengeId: varchar("challenge_id").notNull().references(() => challenges.id),
+  completed: boolean("completed").default(false),
+  progress: integer("progress").default(0), // For tracking partial progress
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User spark boost table
+export const userSparkBoost = pgTable("user_spark_boost", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  fromUserId: varchar("from_user_id").notNull().references(() => users.id),
+  toUserId: varchar("to_user_id").notNull().references(() => users.id),
+  sparks: integer("sparks").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Subjects table
@@ -452,6 +523,100 @@ export const insertQuestionSchema = createInsertSchema(questions).omit({
   createdAt: true,
 });
 
+// Gamification table relations
+export const badgeTypesRelations = relations(badgeTypes, ({ many }) => ({
+  badges: many(badges),
+}));
+
+export const badgesRelations = relations(badges, ({ one, many }) => ({
+  badgeType: one(badgeTypes, {
+    fields: [badges.badgeTypeId],
+    references: [badgeTypes.id],
+  }),
+  userBadges: many(userBadges),
+  challenges: many(challenges),
+}));
+
+export const userBadgesRelations = relations(userBadges, ({ one }) => ({
+  user: one(users, {
+    fields: [userBadges.userId],
+    references: [users.id],
+  }),
+  badge: one(badges, {
+    fields: [userBadges.badgeId],
+    references: [badges.id],
+  }),
+}));
+
+export const challengesRelations = relations(challenges, ({ one, many }) => ({
+  badge: one(badges, {
+    fields: [challenges.badgeId],
+    references: [badges.id],
+  }),
+  userChallenges: many(userChallenges),
+}));
+
+export const userChallengesRelations = relations(userChallenges, ({ one }) => ({
+  user: one(users, {
+    fields: [userChallenges.userId],
+    references: [users.id],
+  }),
+  challenge: one(challenges, {
+    fields: [userChallenges.challengeId],
+    references: [challenges.id],
+  }),
+}));
+
+export const userSparkBoostRelations = relations(userSparkBoost, ({ one }) => ({
+  fromUser: one(users, {
+    fields: [userSparkBoost.fromUserId],
+    references: [users.id],
+  }),
+  toUser: one(users, {
+    fields: [userSparkBoost.toUserId],
+    references: [users.id],
+  }),
+}));
+
+// Gamification insert schemas
+export const insertBadgeTypeSchema = createInsertSchema(badgeTypes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertBadgeSchema = createInsertSchema(badges).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTrophySchema = createInsertSchema(trophies).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertChallengeSchema = createInsertSchema(challenges).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserChallengeSchema = createInsertSchema(userChallenges).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserSparkBoostSchema = createInsertSchema(userSparkBoost).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertQuizSessionSchema = createInsertSchema(quizSessions).omit({
   id: true,
   startedAt: true,
@@ -501,6 +666,23 @@ export type InsertQuizSession = z.infer<typeof insertQuizSessionSchema>;
 export type InsertUserAnswer = z.infer<typeof insertUserAnswerSchema>;
 export type InsertDailyChallenge = z.infer<typeof insertDailyChallengeSchema>;
 export type InsertUserChallengeProgress = z.infer<typeof insertUserChallengeProgressSchema>;
+
+// Gamification types
+export type BadgeType = typeof badgeTypes.$inferSelect;
+export type Badge = typeof badges.$inferSelect;
+export type UserBadge = typeof userBadges.$inferSelect;
+export type Trophy = typeof trophies.$inferSelect;
+export type Challenge = typeof challenges.$inferSelect;
+export type UserChallenge = typeof userChallenges.$inferSelect;
+export type UserSparkBoost = typeof userSparkBoost.$inferSelect;
+
+export type InsertBadgeType = z.infer<typeof insertBadgeTypeSchema>;
+export type InsertBadge = z.infer<typeof insertBadgeSchema>;
+export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
+export type InsertTrophy = z.infer<typeof insertTrophySchema>;
+export type InsertChallenge = z.infer<typeof insertChallengeSchema>;
+export type InsertUserChallenge = z.infer<typeof insertUserChallengeSchema>;
+export type InsertUserSparkBoost = z.infer<typeof insertUserSparkBoostSchema>;
 
 // User preference changes tracking table  
 export const userPreferenceChanges = pgTable("user_preference_changes", {

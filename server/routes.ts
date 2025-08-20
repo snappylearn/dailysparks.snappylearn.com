@@ -684,7 +684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profile = await storage.getProfile(updatedSession.profileId);
       if (profile) {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        const lastQuizDate = profile.lastQuizDate ? (profile.lastQuizDate instanceof Date ? profile.lastQuizDate : new Date(profile.lastQuizDate)).toISOString().split('T')[0] : null;
+        const lastQuizDate = profile.lastQuizDate ? new Date(profile.lastQuizDate).toISOString().split('T')[0] : null;
         
         // Calculate streak
         let newCurrentStreak = profile.currentStreak || 0;
@@ -1260,6 +1260,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error seeding database:", error);
       res.status(500).json({ message: "Failed to seed database" });
+    }
+  });
+
+  // Gamification API endpoints
+  
+  // Get all badges
+  app.get('/api/badges', async (req, res) => {
+    try {
+      const badges = await storage.getBadges();
+      res.json(badges);
+    } catch (error) {
+      console.error("Error fetching badges:", error);
+      res.status(500).json({ message: "Failed to fetch badges" });
+    }
+  });
+
+  // Get user badges
+  app.get('/api/user/:userId/badges', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const userBadges = await storage.getUserBadges(userId);
+      res.json(userBadges);
+    } catch (error) {
+      console.error("Error fetching user badges:", error);
+      res.status(500).json({ message: "Failed to fetch user badges" });
+    }
+  });
+
+  // Award badge to user
+  app.post('/api/user/:userId/badges', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const { badgeId, streaks = 0 } = req.body;
+      
+      if (!badgeId) {
+        return res.status(400).json({ message: "Badge ID is required" });
+      }
+
+      const userBadge = await storage.awardBadge(userId, badgeId, streaks);
+      res.json(userBadge);
+    } catch (error) {
+      console.error("Error awarding badge:", error);
+      res.status(500).json({ message: "Failed to award badge" });
+    }
+  });
+
+  // Get all trophies
+  app.get('/api/trophies', async (req, res) => {
+    try {
+      const trophies = await storage.getTrophies();
+      res.json(trophies);
+    } catch (error) {
+      console.error("Error fetching trophies:", error);
+      res.status(500).json({ message: "Failed to fetch trophies" });
+    }
+  });
+
+  // Get all challenges
+  app.get('/api/challenges', async (req, res) => {
+    try {
+      const challenges = await storage.getChallenges();
+      res.json(challenges);
+    } catch (error) {
+      console.error("Error fetching challenges:", error);
+      res.status(500).json({ message: "Failed to fetch challenges" });
+    }
+  });
+
+  // Get user challenges
+  app.get('/api/user/:userId/challenges', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const userChallenges = await storage.getUserChallenges(userId);
+      res.json(userChallenges);
+    } catch (error) {
+      console.error("Error fetching user challenges:", error);
+      res.status(500).json({ message: "Failed to fetch user challenges" });
+    }
+  });
+
+  // Update challenge progress
+  app.put('/api/user/:userId/challenges/:challengeId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId, challengeId } = req.params;
+      const { progress } = req.body;
+      
+      if (progress === undefined) {
+        return res.status(400).json({ message: "Progress is required" });
+      }
+
+      const userChallenge = await storage.updateChallengeProgress(userId, challengeId, progress);
+      res.json(userChallenge);
+    } catch (error) {
+      console.error("Error updating challenge progress:", error);
+      res.status(500).json({ message: "Failed to update challenge progress" });
+    }
+  });
+
+  // Complete challenge
+  app.post('/api/user/:userId/challenges/:challengeId/complete', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId, challengeId } = req.params;
+      const userChallenge = await storage.completeChallenge(userId, challengeId);
+      res.json(userChallenge);
+    } catch (error) {
+      console.error("Error completing challenge:", error);
+      res.status(500).json({ message: "Failed to complete challenge" });
+    }
+  });
+
+  // Get user spark boosts
+  app.get('/api/user/:userId/spark-boosts', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const sparkBoosts = await storage.getUserSparkBoosts(userId);
+      res.json(sparkBoosts);
+    } catch (error) {
+      console.error("Error fetching spark boosts:", error);
+      res.status(500).json({ message: "Failed to fetch spark boosts" });
+    }
+  });
+
+  // Create spark boost
+  app.post('/api/user/:fromUserId/boost/:toUserId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { fromUserId, toUserId } = req.params;
+      const { sparks } = req.body;
+      
+      if (!sparks || sparks <= 0) {
+        return res.status(400).json({ message: "Valid sparks amount is required" });
+      }
+
+      // Check if user can boost today
+      const canBoost = await storage.canBoostUser(fromUserId);
+      if (!canBoost) {
+        return res.status(400).json({ message: "You can only boost one user per day" });
+      }
+
+      const sparkBoost = await storage.createSparkBoost(fromUserId, toUserId, sparks);
+      res.json(sparkBoost);
+    } catch (error) {
+      console.error("Error creating spark boost:", error);
+      res.status(500).json({ message: "Failed to create spark boost" });
+    }
+  });
+
+  // Check if user can boost
+  app.get('/api/user/:userId/can-boost', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const canBoost = await storage.canBoostUser(userId);
+      res.json({ canBoost });
+    } catch (error) {
+      console.error("Error checking boost availability:", error);
+      res.status(500).json({ message: "Failed to check boost availability" });
     }
   });
 

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MainLayout } from "@/components/MainLayout";
-import { Crown, Medal, Trophy, Zap, Flame, Target, User } from "lucide-react";
+import { Crown, Medal, Trophy, Zap, Flame, Target, User, Award, Star } from "lucide-react";
 import { useState } from "react";
 
 interface LeaderboardEntry {
@@ -25,6 +25,17 @@ export default function Leaderboard() {
   const { data: leaderboard = [], isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ['/api/leaderboard', filterType],
     queryFn: () => fetch(`/api/leaderboard/${filterType}`).then(res => res.json()),
+  });
+
+  // Fetch badges and trophies
+  const { data: badges = [] } = useQuery({
+    queryKey: ['/api/badges'],
+    queryFn: () => fetch('/api/badges').then(res => res.json()),
+  });
+
+  const { data: trophies = [] } = useQuery({
+    queryKey: ['/api/trophies'],
+    queryFn: () => fetch('/api/trophies').then(res => res.json()),
   });
 
   const getRankIcon = (rank: number) => {
@@ -308,6 +319,65 @@ export default function Leaderboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Gamification Section */}
+        <div className="mt-8 space-y-6">
+          {/* Badges Section */}
+          {badges.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5 text-yellow-500" />
+                  Available Badges
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {badges.map((badge: any) => (
+                    <div key={badge.id} className="bg-gray-50 rounded-lg p-4 text-center hover:bg-gray-100 transition-colors">
+                      <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <span className="text-2xl">{badge.icon || '🏆'}</span>
+                      </div>
+                      <h4 className="font-medium text-sm text-gray-900 mb-1">{badge.title}</h4>
+                      <p className="text-xs text-gray-600 mb-2">{badge.description}</p>
+                      {badge.sparks && (
+                        <div className="flex items-center justify-center gap-1">
+                          <Zap className="h-3 w-3 text-orange-500" />
+                          <span className="text-xs font-medium text-orange-600">{badge.sparks} sparks</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Trophies Section */}
+          {trophies.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-amber-500" />
+                  Achievement Trophies
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {trophies.map((trophy: any) => (
+                    <div key={trophy.id} className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg p-4 text-center border border-amber-200">
+                      <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span className="text-3xl">{trophy.icon || '🏆'}</span>
+                      </div>
+                      <h4 className="font-semibold text-amber-900 mb-1">{trophy.title}</h4>
+                      <p className="text-sm text-amber-700">{trophy.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </MainLayout>
   );

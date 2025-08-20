@@ -17,6 +17,14 @@ import {
   quizzes,
   quizQuestions,
   quizQuestionChoices,
+  // Gamification tables
+  badgeTypes,
+  badges,
+  userBadges,
+  trophies,
+  challenges,
+  userChallenges,
+  userSparkBoost,
   type User,
   type UpsertUser,
   type ExaminationSystem,
@@ -41,6 +49,21 @@ import {
   type InsertUserAnswer,
   type InsertDailyChallenge,
   type InsertUserChallengeProgress,
+  // Gamification types
+  type BadgeType,
+  type Badge,
+  type UserBadge,
+  type Trophy,
+  type Challenge,
+  type UserChallenge,
+  type UserSparkBoost,
+  type InsertBadgeType,
+  type InsertBadge,
+  type InsertUserBadge,
+  type InsertTrophy,
+  type InsertChallenge,
+  type InsertUserChallenge,
+  type InsertUserSparkBoost,
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, sql, count, avg, gte, lte, inArray } from "drizzle-orm";
@@ -118,6 +141,20 @@ export interface IStorage {
   
   // Today's leaderboard
   getTodayLeaderboard(): Promise<any[]>;
+  
+  // Gamification operations
+  getBadgeTypes(): Promise<BadgeType[]>;
+  getBadges(): Promise<Badge[]>;
+  getUserBadges(userId: string): Promise<UserBadge[]>;
+  awardBadge(userId: string, badgeId: string, streaks?: number): Promise<UserBadge>;
+  getTrophies(): Promise<Trophy[]>;
+  getChallenges(): Promise<Challenge[]>;
+  getUserChallenges(userId: string): Promise<UserChallenge[]>;
+  updateChallengeProgress(userId: string, challengeId: string, progress: number): Promise<UserChallenge>;
+  completeChallenge(userId: string, challengeId: string): Promise<UserChallenge>;
+  getUserSparkBoosts(userId: string): Promise<UserSparkBoost[]>;
+  createSparkBoost(fromUserId: string, toUserId: string, sparks: number): Promise<UserSparkBoost>;
+  canBoostUser(fromUserId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -911,6 +948,91 @@ export class DatabaseStorage implements IStorage {
       console.error("Error updating quiz:", error);
       throw new Error("Failed to update quiz");
     }
+  }
+
+  // Gamification operations
+  async getBadgeTypes(): Promise<BadgeType[]> {
+    return await db.select().from(badgeTypes).orderBy(badgeTypes.title);
+  }
+
+  async getBadges(): Promise<Badge[]> {
+    return await db.select().from(badges).orderBy(badges.title);
+  }
+
+  async getUserBadges(userId: string): Promise<UserBadge[]> {
+    return await db.select().from(userBadges).where(eq(userBadges.userId, userId));
+  }
+
+  async awardBadge(userId: string, badgeId: string, streaks = 0): Promise<UserBadge> {
+    const [userBadge] = await db
+      .insert(userBadges)
+      .values({ userId, badgeId, streaks })
+      .onConflictDoUpdate({
+        target: [userBadges.userId, userBadges.badgeId],
+        set: { streaks, updatedAt: new Date() },
+      })
+      .returning();
+    return userBadge;
+  }
+
+  async getTrophies(): Promise<Trophy[]> {
+    return await db.select().from(trophies).orderBy(trophies.title);
+  }
+
+  async getChallenges(): Promise<Challenge[]> {
+    return await db.select().from(challenges).where(eq(challenges.isActive, true));
+  }
+
+  async getUserChallenges(userId: string): Promise<UserChallenge[]> {
+    return await db.select().from(userChallenges).where(eq(userChallenges.userId, userId));
+  }
+
+  async updateChallengeProgress(userId: string, challengeId: string, progress: number): Promise<UserChallenge> {
+    const [userChallenge] = await db
+      .insert(userChallenges)
+      .values({ userId, challengeId, progress })
+      .onConflictDoUpdate({
+        target: [userChallenges.userId, userChallenges.challengeId],
+        set: { progress, updatedAt: new Date() },
+      })
+      .returning();
+    return userChallenge;
+  }
+
+  async completeChallenge(userId: string, challengeId: string): Promise<UserChallenge> {
+    const [userChallenge] = await db
+      .update(userChallenges)
+      .set({ completed: true, updatedAt: new Date() })
+      .where(and(eq(userChallenges.userId, userId), eq(userChallenges.challengeId, challengeId)))
+      .returning();
+    return userChallenge;
+  }
+
+  async getUserSparkBoosts(userId: string): Promise<UserSparkBoost[]> {
+    return await db.select().from(userSparkBoost).where(eq(userSparkBoost.toUserId, userId));
+  }
+
+  async createSparkBoost(fromUserId: string, toUserId: string, sparks: number): Promise<UserSparkBoost> {
+    const [sparkBoost] = await db
+      .insert(userSparkBoost)
+      .values({ fromUserId, toUserId, sparks })
+      .returning();
+    return sparkBoost;
+  }
+
+  async canBoostUser(fromUserId: string): Promise<boolean> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const todayBoosts = await db
+      .select()
+      .from(userSparkBoost)
+      .where(and(
+        eq(userSparkBoost.fromUserId, fromUserId),
+        gte(userSparkBoost.createdAt, today)
+      ));
+    
+    return todayBoosts.length === 0; // User can only boost once per day
   }
 }
 
