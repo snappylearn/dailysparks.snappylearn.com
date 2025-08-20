@@ -134,9 +134,12 @@ export default function Home() {
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center ${subject.color || 'bg-blue-500'} text-white`}>
                   <BookOpen className="h-6 w-6" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className="font-semibold text-lg">{subject.name}</h3>
                   <p className="text-gray-500 text-sm">{subject.code}</p>
+                  <p className="text-blue-600 text-xs mt-1">
+                    {subject.quizCount || 0} quiz{(subject.quizCount || 0) !== 1 ? 'es' : ''} available
+                  </p>
                 </div>
               </div>
               

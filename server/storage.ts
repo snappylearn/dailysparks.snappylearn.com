@@ -262,7 +262,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSubjectsBySystem(examinationSystemId: string): Promise<Subject[]> {
-    return await db.select().from(subjects).where(eq(subjects.examinationSystemId, examinationSystemId));
+    const subjectList = await db.select().from(subjects).where(eq(subjects.examinationSystemId, examinationSystemId));
+    
+    // Get quiz counts for each subject
+    const subjectsWithCounts = await Promise.all(
+      subjectList.map(async (subject) => {
+        const [questionCount] = await db
+          .select({ count: count() })
+          .from(questions)
+          .where(eq(questions.subjectId, subject.id));
+        
+        return {
+          ...subject,
+          quizCount: Math.floor((questionCount?.count || 0) / 10) // Assuming 10 questions per quiz
+        };
+      })
+    );
+    
+    return subjectsWithCounts;
   }
 
   async createSubject(subject: InsertSubject): Promise<Subject> {
@@ -752,85 +769,53 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
 
-      // Get quiz sessions with subject information first
-      const sessions = await db
-        .select({
-          id: quizSessions.id,
-          profileId: quizSessions.profileId,
-          subjectId: quizSessions.subjectId,
-          quizType: quizSessions.quizType,
-          totalQuestions: quizSessions.totalQuestions,
-          correctAnswers: quizSessions.correctAnswers,
-          completed: quizSessions.completed,
-          completedAt: quizSessions.completedAt,
-          startedAt: quizSessions.startedAt,
-          timeSpent: quizSessions.timeSpent,
-          sparksEarned: quizSessions.sparksEarned,
-          subjectName: subjects.name,
-          subjectCode: subjects.code,
-        })
-        .from(quizSessions)
-        .leftJoin(subjects, eq(quizSessions.subjectId, subjects.id))
-        .where(
-          and(
-            inArray(quizSessions.profileId, profileIds),
-            eq(quizSessions.completed, true)
-          )
-        )
-        .orderBy(desc(quizSessions.completedAt))
-        .limit(50);
+      // Use raw SQL query to avoid Drizzle ORM complex join issues
+      const sessionQuery = sql`
+        SELECT 
+          qs.id,
+          qs.profile_id,
+          qs.subject_id,
+          qs.quiz_type,
+          qs.total_questions,
+          qs.correct_answers,
+          qs.completed,
+          qs.completed_at,
+          qs.started_at,
+          qs.time_spent,
+          qs.sparks_earned,
+          s.name as subject_name,
+          s.code as subject_code,
+          es.code as examination_system_code,
+          es.name as examination_system_name,
+          l.title as level_title,
+          l.name as level_name
+        FROM quiz_sessions qs
+        LEFT JOIN subjects s ON qs.subject_id = s.id
+        LEFT JOIN profiles p ON qs.profile_id = p.id
+        LEFT JOIN examination_systems es ON p.examination_system_id = es.id
+        LEFT JOIN levels l ON p.level_id = l.id
+        WHERE qs.profile_id = ANY(${profileIds})
+          AND qs.completed = true
+        ORDER BY qs.completed_at DESC
+        LIMIT 50
+      `;
 
-      // Get profile information for examination system and level
-      const sessionWithProfileInfo = await Promise.all(
-        sessions.map(async (session) => {
-          const [profile] = await db
-            .select({
-              examinationSystemId: profiles.examinationSystemId,
-              levelId: profiles.levelId,
-            })
-            .from(profiles)
-            .where(eq(profiles.id, session.profileId));
+      const sessionResults = await db.execute(sessionQuery);
+      const sessions = sessionResults.rows;
 
-          let examinationSystemInfo = null;
-          let levelInfo = null;
-
-          if (profile?.examinationSystemId) {
-            [examinationSystemInfo] = await db
-              .select({ code: examinationSystems.code, name: examinationSystems.name })
-              .from(examinationSystems)
-              .where(eq(examinationSystems.id, profile.examinationSystemId));
-          }
-
-          if (profile?.levelId) {
-            [levelInfo] = await db
-              .select({ title: levels.title, name: levels.name })
-              .from(levels)
-              .where(eq(levels.id, profile.levelId));
-          }
-
-          return {
-            ...session,
-            examinationSystemCode: examinationSystemInfo?.code,
-            examinationSystemName: examinationSystemInfo?.name,
-            levelTitle: levelInfo?.title,
-            levelName: levelInfo?.name,
-          };
-        })
-      );
-
-      return sessionWithProfileInfo.map(session => ({
+      return sessions.map((session: any) => ({
         id: session.id,
-        subjectName: session.subjectName || 'Unknown Subject',
-        subjectCode: session.subjectCode || 'UNK',
-        quizType: session.quizType,
-        totalQuestions: session.totalQuestions || 0,
-        correctAnswers: session.correctAnswers || 0,
-        completedAt: session.completedAt || session.startedAt,
-        timeTaken: session.timeSpent || 0,
-        sparksEarned: session.sparksEarned || 0,
+        subjectName: session.subject_name || 'Unknown Subject',
+        subjectCode: session.subject_code || 'UNK',
+        quizType: session.quiz_type,
+        totalQuestions: session.total_questions || 0,
+        correctAnswers: session.correct_answers || 0,
+        completedAt: session.completed_at || session.started_at,
+        timeTaken: session.time_spent || 0,
+        sparksEarned: session.sparks_earned || 0,
         isCompleted: session.completed || false,
-        examinationSystem: session.examinationSystemCode || session.examinationSystemName || 'Unknown',
-        level: session.levelTitle || session.levelName || 'Unknown',
+        examinationSystem: session.examination_system_code || session.examination_system_name || 'Unknown',
+        level: session.level_title || session.level_name || 'Unknown',
       }));
     } catch (error) {
       console.error('Error fetching quiz history:', error);
