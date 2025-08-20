@@ -8,6 +8,7 @@ import { Profile } from "@shared/schema";
 import Landing from "@/pages/Landing";
 import SimpleHome from "@/pages/SimpleHome";
 import Quiz from "@/pages/Quiz";
+import QuizHistory from "@/pages/QuizHistory";
 import Results from "@/pages/Results";
 import Leaderboard from "@/pages/Leaderboard";
 import NotFound from "@/pages/not-found";
@@ -87,6 +88,7 @@ function Router() {
       {/* Student Routes */}
       <Route path="/" component={SimpleHome} />
       <Route path="/quiz/:sessionId?" component={Quiz} />
+      <Route path="/quiz-history" component={QuizHistory} />
       <Route path="/results/:sessionId" component={Results} />
       <Route path="/leaderboard" component={Leaderboard} />
       <Route component={NotFound} />

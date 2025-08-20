@@ -126,13 +126,13 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   const navigationItems = [
     { icon: Home, label: 'Dashboard', path: '/', active: location === '/' },
-    { icon: Target, label: 'Quiz', path: '/quiz', active: location.startsWith('/quiz') },
+    { icon: Target, label: 'Quiz History', path: '/quiz-history', active: location === '/quiz-history' },
     { icon: Trophy, label: 'Leaderboard', path: '/leaderboard', active: location === '/leaderboard' },
     { icon: User, label: 'Profile', path: '/profile', active: location === '/profile' },
   ];
 
-  // Check if we should show sidebar (dashboard and leaderboard)
-  const showSidebar = location === '/' || location === '/leaderboard';
+  // Check if we should show sidebar (dashboard, leaderboard, and quiz history)
+  const showSidebar = location === '/' || location === '/leaderboard' || location === '/quiz-history';
 
   if (!isAuthenticated) {
     return <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50">{children}</div>;

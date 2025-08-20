@@ -112,6 +112,9 @@ export interface IStorage {
   getAdminQuizList(filters?: any): Promise<any[]>;
   getRecentActivity(): Promise<any[]>;
   getTopPerformers(): Promise<any[]>;
+  
+  // Quiz History
+  getQuizHistoryForUser(userId: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -692,6 +695,62 @@ export class DatabaseStorage implements IStorage {
       sparks: entry.sparks,
       score: entry.averageScore
     }));
+  }
+
+  async getQuizHistoryForUser(userId: string): Promise<any[]> {
+    try {
+      // Get all quiz sessions for user's profiles
+      const userProfiles = await this.getUserProfiles(userId);
+      const profileIds = userProfiles.map(p => p.id);
+
+      if (profileIds.length === 0) {
+        return [];
+      }
+
+      // Get quiz sessions with subject and profile information
+      const sessions = await db
+        .select({
+          id: quizSessions.id,
+          profileId: quizSessions.profileId,
+          subjectId: quizSessions.subjectId,
+          quizType: quizSessions.quizType,
+          totalQuestions: quizSessions.totalQuestions,
+          correctAnswers: quizSessions.correctAnswers,
+          completed: quizSessions.completed,
+          completedAt: quizSessions.completedAt,
+          startedAt: quizSessions.startedAt,
+          timeSpent: quizSessions.timeSpent,
+          sparksEarned: quizSessions.sparksEarned,
+          subjectName: subjects.name,
+          subjectCode: subjects.code,
+        })
+        .from(quizSessions)
+        .leftJoin(subjects, eq(quizSessions.subjectId, subjects.id))
+        .where(
+          and(
+            sql`${quizSessions.profileId} = ANY(${profileIds})`,
+            eq(quizSessions.completed, true)
+          )
+        )
+        .orderBy(desc(quizSessions.completedAt))
+        .limit(50);
+
+      return sessions.map(session => ({
+        id: session.id,
+        subjectName: session.subjectName || 'Unknown Subject',
+        subjectCode: session.subjectCode || 'UNK',
+        quizType: session.quizType,
+        totalQuestions: session.totalQuestions || 0,
+        correctAnswers: session.correctAnswers || 0,
+        completedAt: session.completedAt || session.startedAt,
+        timeTaken: session.timeSpent || 0,
+        sparksEarned: session.sparksEarned || 0,
+        isCompleted: session.completed || false,
+      }));
+    } catch (error) {
+      console.error('Error fetching quiz history:', error);
+      return [];
+    }
   }
 
   private getTimeAgo(date: Date): string {

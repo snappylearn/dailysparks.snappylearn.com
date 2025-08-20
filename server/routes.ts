@@ -80,6 +80,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get quiz history for current user
+  app.get('/api/quiz-history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const quizHistory = await storage.getQuizHistoryForUser(userId);
+      res.json(quizHistory);
+    } catch (error) {
+      console.error('Error fetching quiz history:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   // Profile update routes
   app.patch('/api/profiles/:id', isAuthenticated, async (req: any, res) => {
     try {
