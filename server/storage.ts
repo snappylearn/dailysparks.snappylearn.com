@@ -264,18 +264,25 @@ export class DatabaseStorage implements IStorage {
   async getSubjectsBySystem(examinationSystemId: string): Promise<Subject[]> {
     const subjectList = await db.select().from(subjects).where(eq(subjects.examinationSystemId, examinationSystemId));
     
-    // Get quiz counts for each subject
+    // Get quiz counts for each subject using raw SQL to avoid Drizzle count issues
     const subjectsWithCounts = await Promise.all(
       subjectList.map(async (subject) => {
-        const [questionCount] = await db
-          .select({ count: count(questions.id) })
-          .from(questions)
-          .where(eq(questions.subjectId, subject.id));
-        
-        return {
-          ...subject,
-          quizCount: Math.floor((questionCount?.count || 0) / 10) // Assuming 10 questions per quiz
-        };
+        try {
+          const countQuery = sql`SELECT COUNT(*) as count FROM questions WHERE subject_id = ${subject.id}`;
+          const countResult = await db.execute(countQuery);
+          const questionCount = countResult.rows[0]?.count || 0;
+          
+          return {
+            ...subject,
+            quizCount: Math.floor(Number(questionCount) / 10) // Assuming 10 questions per quiz
+          };
+        } catch (error) {
+          console.error(`Error counting questions for subject ${subject.id}:`, error);
+          return {
+            ...subject,
+            quizCount: 0
+          };
+        }
       })
     );
     
@@ -769,52 +776,100 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
 
-      // Use raw SQL query to avoid Drizzle ORM complex join issues
-      const sessionQuery = sql`
-        SELECT 
-          qs.id,
-          qs.profile_id,
-          qs.subject_id,
-          qs.quiz_type,
-          qs.total_questions,
-          qs.correct_answers,
-          qs.completed,
-          qs.completed_at,
-          qs.started_at,
-          qs.time_spent,
-          qs.sparks_earned,
-          s.name as subject_name,
-          s.code as subject_code,
-          es.code as examination_system_code,
-          es.name as examination_system_name,
-          l.title as level_title
-        FROM quiz_sessions qs
-        LEFT JOIN subjects s ON qs.subject_id = s.id
-        LEFT JOIN profiles p ON qs.profile_id = p.id
-        LEFT JOIN examination_systems es ON p.examination_system_id = es.id
-        LEFT JOIN levels l ON p.level_id = l.id
-        WHERE qs.profile_id = ANY(${profileIds})
-          AND qs.completed = true
-        ORDER BY qs.completed_at DESC
-        LIMIT 50
-      `;
+      // Use simpler approach to get quiz sessions for each profile separately
+      const sessions = [];
+      
+      for (const profileId of profileIds) {
+        const profileSessions = await db
+          .select({
+            id: quizSessions.id,
+            profileId: quizSessions.profileId,
+            subjectId: quizSessions.subjectId,
+            quizType: quizSessions.quizType,
+            totalQuestions: quizSessions.totalQuestions,
+            correctAnswers: quizSessions.correctAnswers,
+            completed: quizSessions.completed,
+            completedAt: quizSessions.completedAt,
+            startedAt: quizSessions.startedAt,
+            timeSpent: quizSessions.timeSpent,
+            sparksEarned: quizSessions.sparksEarned,
+            subjectName: subjects.name,
+            subjectCode: subjects.code,
+          })
+          .from(quizSessions)
+          .leftJoin(subjects, eq(quizSessions.subjectId, subjects.id))
+          .where(
+            and(
+              eq(quizSessions.profileId, profileId),
+              eq(quizSessions.completed, true)
+            )
+          )
+          .orderBy(desc(quizSessions.completedAt))
+          .limit(20);
+        
+        sessions.push(...profileSessions);
+      }
+      
+      // Sort all sessions by completion date and limit to 50
+      sessions.sort((a, b) => {
+        const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+        const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      
+      const limitedSessions = sessions.slice(0, 50);
+      
+      // Get additional profile info for each session
+      const sessionsWithProfileInfo = await Promise.all(
+        limitedSessions.map(async (session) => {
+          const [profile] = await db
+            .select({
+              examinationSystemId: profiles.examinationSystemId,
+              levelId: profiles.levelId,
+            })
+            .from(profiles)
+            .where(eq(profiles.id, session.profileId));
 
-      const sessionResults = await db.execute(sessionQuery);
-      const sessions = sessionResults.rows;
+          let examinationSystemCode = 'Unknown';
+          let levelTitle = 'Unknown';
 
-      return sessions.map((session: any) => ({
+          if (profile?.examinationSystemId) {
+            const [examSystem] = await db
+              .select({ code: examinationSystems.code })
+              .from(examinationSystems)
+              .where(eq(examinationSystems.id, profile.examinationSystemId));
+            examinationSystemCode = examSystem?.code || 'Unknown';
+          }
+
+          if (profile?.levelId) {
+            const [level] = await db
+              .select({ title: levels.title })
+              .from(levels)
+              .where(eq(levels.id, profile.levelId));
+            levelTitle = level?.title || 'Unknown';
+          }
+
+          return {
+            ...session,
+            examinationSystemCode,
+            levelTitle,
+          };
+        })
+      );
+
+      return sessionsWithProfileInfo.map((session: any) => ({
         id: session.id,
-        subjectName: session.subject_name || 'Unknown Subject',
-        subjectCode: session.subject_code || 'UNK',
-        quizType: session.quiz_type,
-        totalQuestions: session.total_questions || 0,
-        correctAnswers: session.correct_answers || 0,
-        completedAt: session.completed_at || session.started_at,
-        timeTaken: session.time_spent || 0,
-        sparksEarned: session.sparks_earned || 0,
+        subjectName: session.subjectName || 'Unknown Subject',
+        subjectCode: session.subjectCode || 'UNK',
+        quizType: session.quizType,
+        totalQuestions: session.totalQuestions || 0,
+        correctAnswers: session.correctAnswers || 0,
+        completedAt: session.completedAt || session.startedAt,
+        timeTaken: session.timeSpent || 0,
+        sparksEarned: session.sparksEarned || 0,
         isCompleted: session.completed || false,
-        examinationSystem: session.examination_system_code || session.examination_system_name || 'Unknown',
-        level: session.level_title || 'Unknown',
+        examinationSystem: session.examinationSystemCode || 'Unknown',
+        level: session.levelTitle || 'Unknown',
       }));
     } catch (error) {
       console.error('Error fetching quiz history:', error);
