@@ -24,8 +24,19 @@ export default function BadgesAndTrophies() {
     enabled: !!user?.id,
   });
 
+  // Fetch user trophies
+  const { data: userTrophies = [] } = useQuery<any[]>({
+    queryKey: ['/api/user', user?.id, 'trophies'],
+    enabled: !!user?.id,
+  });
+
   // Get earned badge IDs for easy lookup
   const earnedBadgeIds = new Set(userBadges.map(ub => ub.badgeId));
+
+  // Create a map of user trophy counts
+  const userTrophyMap = new Map(
+    userTrophies.map(ut => [ut.trophyId, ut.count])
+  );
 
   return (
     <MainLayout>
@@ -133,25 +144,58 @@ export default function BadgesAndTrophies() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {trophies.map((trophy: any) => (
-                    <div 
-                      key={trophy.id}
-                      className="p-3 rounded-lg border bg-amber-50 border-amber-200"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-xl">{trophy.icon || '🏆'}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-amber-800 mb-1 text-sm">{trophy.title}</h3>
-                          <p className="text-xs text-amber-700 mb-2">{trophy.description}</p>
-                          <Badge variant="outline" className="text-xs border-amber-300 text-amber-700">
-                            Available
-                          </Badge>
+                  {trophies.map((trophy: any) => {
+                    const earnedCount = userTrophyMap.get(trophy.id) || 0;
+                    const isEarned = earnedCount > 0;
+                    
+                    return (
+                      <div 
+                        key={trophy.id}
+                        className={`p-3 rounded-lg border transition-all ${
+                          isEarned 
+                            ? 'bg-amber-50 border-amber-200 shadow-sm' 
+                            : 'bg-gray-50 border-gray-200 opacity-75'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 relative ${
+                            isEarned ? 'bg-amber-100' : 'bg-gray-200'
+                          }`}>
+                            <span className="text-xl">{trophy.icon || '🏆'}</span>
+                            {earnedCount > 1 && (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                                {earnedCount}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className={`font-semibold text-sm ${
+                                isEarned ? 'text-amber-800' : 'text-gray-600'
+                              }`}>
+                                {trophy.title}
+                              </h3>
+                              {isEarned && (
+                                <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-xs">
+                                  Earned {earnedCount}x
+                                </Badge>
+                              )}
+                            </div>
+                            <p className={`text-xs mb-2 ${
+                              isEarned ? 'text-amber-700' : 'text-gray-500'
+                            }`}>
+                              {trophy.description}
+                            </p>
+                            {!isEarned && (
+                              <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">
+                                Available
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

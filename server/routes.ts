@@ -1329,6 +1329,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user trophies
+  app.get('/api/user/:userId/trophies', async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const userTrophies = await storage.getUserTrophies(userId);
+      res.json(userTrophies);
+    } catch (error) {
+      console.error("Error fetching user trophies:", error);
+      res.status(500).json({ error: "Failed to fetch user trophies" });
+    }
+  });
+
+  // Award trophy to user
+  app.post('/api/user/:userId/trophy', async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const { trophyId } = req.body;
+      
+      const userTrophy = await storage.awardTrophy(userId, trophyId);
+      
+      res.json(userTrophy);
+    } catch (error) {
+      console.error("Error awarding trophy:", error);
+      res.status(500).json({ error: "Failed to award trophy" });
+    }
+  });
+
   // Get user challenges progress
   app.get('/api/user/:userId/challenges', async (req, res) => {
     try {

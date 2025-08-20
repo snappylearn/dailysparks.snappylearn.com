@@ -25,6 +25,7 @@ import {
   challenges,
   userChallenges,
   userSparkBoost,
+  userTrophies,
   type User,
   type UpsertUser,
   type ExaminationSystem,
@@ -54,6 +55,7 @@ import {
   type Badge,
   type UserBadge,
   type Trophy,
+  type UserTrophy,
   type Challenge,
   type UserChallenge,
   type UserSparkBoost,
@@ -61,6 +63,7 @@ import {
   type InsertBadge,
   type InsertUserBadge,
   type InsertTrophy,
+  type InsertUserTrophy,
   type InsertChallenge,
   type InsertUserChallenge,
   type InsertUserSparkBoost,
@@ -148,6 +151,8 @@ export interface IStorage {
   getUserBadges(userId: string): Promise<UserBadge[]>;
   awardBadge(userId: string, badgeId: string, streaks?: number): Promise<UserBadge>;
   getTrophies(): Promise<Trophy[]>;
+  getUserTrophies(userId: string): Promise<UserTrophy[]>;
+  awardTrophy(userId: string, trophyId: string): Promise<UserTrophy>;
   getChallenges(): Promise<Challenge[]>;
   getUserChallenges(userId: string): Promise<UserChallenge[]>;
   updateChallengeProgress(userId: string, challengeId: string, progress: number): Promise<UserChallenge>;
@@ -973,6 +978,26 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return userBadge;
+  }
+
+  async getUserTrophies(userId: string): Promise<UserTrophy[]> {
+    return await db.select().from(userTrophies).where(eq(userTrophies.userId, userId));
+  }
+
+  async awardTrophy(userId: string, trophyId: string): Promise<UserTrophy> {
+    const [userTrophy] = await db
+      .insert(userTrophies)
+      .values({ userId, trophyId, count: 1 })
+      .onConflictDoUpdate({
+        target: [userTrophies.userId, userTrophies.trophyId],
+        set: { 
+          count: sql`${userTrophies.count} + 1`,
+          lastEarnedAt: new Date(),
+          updatedAt: new Date() 
+        },
+      })
+      .returning();
+    return userTrophy;
   }
 
   async getTrophies(): Promise<Trophy[]> {

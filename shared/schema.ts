@@ -9,7 +9,8 @@ import {
   integer,
   text,
   boolean,
-  decimal
+  decimal,
+  unique
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -116,6 +117,20 @@ export const trophies = pgTable("trophies", {
   icon: varchar("icon"), // URL or asset reference
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// User trophies (earned trophies with count)
+export const userTrophies = pgTable("user_trophies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  trophyId: varchar("trophy_id").notNull().references(() => trophies.id),
+  count: integer("count").default(1), // Number of times trophy was earned
+  lastEarnedAt: timestamp("last_earned_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  // Ensure one record per user-trophy combination
+  userTrophyUnique: unique().on(table.userId, table.trophyId),
+}));
 
 // Challenges table
 export const challenges = pgTable("challenges", {
@@ -552,6 +567,21 @@ export const userBadgesRelations = relations(userBadges, ({ one }) => ({
   }),
 }));
 
+export const trophiesRelations = relations(trophies, ({ many }) => ({
+  userTrophies: many(userTrophies),
+}));
+
+export const userTrophiesRelations = relations(userTrophies, ({ one }) => ({
+  user: one(users, {
+    fields: [userTrophies.userId],
+    references: [users.id],
+  }),
+  trophy: one(trophies, {
+    fields: [userTrophies.trophyId],
+    references: [trophies.id],
+  }),
+}));
+
 export const challengesRelations = relations(challenges, ({ one, many }) => ({
   badge: one(badges, {
     fields: [challenges.badgeId],
@@ -602,6 +632,13 @@ export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({
 export const insertTrophySchema = createInsertSchema(trophies).omit({
   id: true,
   createdAt: true,
+});
+
+export const insertUserTrophySchema = createInsertSchema(userTrophies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastEarnedAt: true,
 });
 
 export const insertChallengeSchema = createInsertSchema(challenges).omit({
@@ -678,6 +715,7 @@ export type BadgeType = typeof badgeTypes.$inferSelect;
 export type Badge = typeof badges.$inferSelect;
 export type UserBadge = typeof userBadges.$inferSelect;
 export type Trophy = typeof trophies.$inferSelect;
+export type UserTrophy = typeof userTrophies.$inferSelect;
 export type Challenge = typeof challenges.$inferSelect;
 export type UserChallenge = typeof userChallenges.$inferSelect;
 export type UserSparkBoost = typeof userSparkBoost.$inferSelect;
@@ -686,6 +724,7 @@ export type InsertBadgeType = z.infer<typeof insertBadgeTypeSchema>;
 export type InsertBadge = z.infer<typeof insertBadgeSchema>;
 export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
 export type InsertTrophy = z.infer<typeof insertTrophySchema>;
+export type InsertUserTrophy = z.infer<typeof insertUserTrophySchema>;
 export type InsertChallenge = z.infer<typeof insertChallengeSchema>;
 export type InsertUserChallenge = z.infer<typeof insertUserChallengeSchema>;
 export type InsertUserSparkBoost = z.infer<typeof insertUserSparkBoostSchema>;
