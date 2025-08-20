@@ -32,7 +32,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const createProfileMutation = useMutation({
     mutationFn: async (data: { examinationSystemId: string; levelId: string }) => {
       console.log("Creating profile with data:", data);
-      const response = await apiRequest("/api/profiles", "POST", data);
+      const response = await apiRequest("POST", "/api/profiles", data);
       console.log("Profile creation response:", response);
       return response;
     },
