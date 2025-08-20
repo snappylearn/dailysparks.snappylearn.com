@@ -18,10 +18,10 @@ export default function Home() {
   const { toast } = useToast();
   const [showProfile, setShowProfile] = useState(false);
 
-  // Fetch subjects
+  // Fetch subjects based on current profile's examination system
   const { data: subjects } = useQuery<any[]>({
-    queryKey: ["/api/subjects"],
-    enabled: user?.onboardingCompleted === true,
+    queryKey: ["/api/subjects", currentProfile?.examinationSystemId],
+    enabled: user?.onboardingCompleted === true && !!currentProfile?.examinationSystemId,
   });
 
   // Fetch today's challenge
