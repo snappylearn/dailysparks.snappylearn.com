@@ -20,7 +20,7 @@ interface LeaderboardEntry {
 }
 
 export default function Leaderboard() {
-  const [filterType, setFilterType] = useState<'overall' | 'today'>('overall');
+  const [filterType, setFilterType] = useState<'overall' | 'today'>('today');
   
   const { data: leaderboard = [], isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ['/api/leaderboard', filterType],
@@ -69,18 +69,6 @@ export default function Leaderboard() {
             {/* Filter Controls */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               <Button
-                variant={filterType === 'overall' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setFilterType('overall')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                  filterType === 'overall'
-                    ? 'bg-white shadow-sm text-gray-900'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Overall
-              </Button>
-              <Button
                 variant={filterType === 'today' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setFilterType('today')}
@@ -91,6 +79,18 @@ export default function Leaderboard() {
                 }`}
               >
                 Today
+              </Button>
+              <Button
+                variant={filterType === 'overall' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setFilterType('overall')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  filterType === 'overall'
+                    ? 'bg-white shadow-sm text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Overall
               </Button>
             </div>
           </div>
