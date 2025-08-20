@@ -20,6 +20,8 @@ import AdminUsers from "@/pages/admin/Users";
 import AdminAnalytics from "@/pages/admin/Analytics";
 import AdminSettings from "@/pages/admin/Settings";
 import QuizPreview from "@/pages/QuizPreview";
+import BadgesAndTrophies from "@/pages/BadgesAndTrophies";
+import Challenges from "@/pages/Challenges";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -91,6 +93,12 @@ function Router() {
       <Route path="/quiz-history" component={QuizHistory} />
       <Route path="/results/:sessionId" component={Results} />
       <Route path="/leaderboard" component={Leaderboard} />
+      <Route path="/badges-trophies">
+        <BadgesAndTrophies />
+      </Route>
+      <Route path="/challenges">
+        <Challenges />
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );

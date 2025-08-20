@@ -150,30 +150,7 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Active Challenges Section - Below Dashboard */}
-        {challenges && challenges.length > 0 && (
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-6 text-white">
-            <div className="flex items-center gap-2 mb-4">
-              <Trophy className="h-5 w-5" />
-              <h3 className="font-semibold text-lg">Active Challenges</h3>
-            </div>
-            <div className="space-y-3">
-              {challenges.slice(0, 3).map((challenge: any) => (
-                <div key={challenge.id} className="bg-white/10 rounded-lg p-3">
-                  <h4 className="font-medium mb-1">{challenge.title}</h4>
-                  <p className="text-sm opacity-90 mb-2">{challenge.description}</p>
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Reward: {challenge.sparks} sparks</span>
-                    <div className="flex items-center gap-1">
-                      <Zap className="h-4 w-4" />
-                      <span>+{challenge.streaks || 0} streak</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+
 
         {/* Today's Challenge */}
         {challengeData && (

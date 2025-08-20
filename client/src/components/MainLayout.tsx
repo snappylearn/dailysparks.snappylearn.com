@@ -126,22 +126,15 @@ export function MainLayout({ children }: MainLayoutProps) {
     { icon: Home, label: 'Dashboard', path: '/', active: location === '/' },
     { icon: Target, label: 'Quiz History', path: '/quiz-history', active: location === '/quiz-history' },
     { icon: Trophy, label: 'Leaderboard', path: '/leaderboard', active: location === '/leaderboard' },
+    { icon: Award, label: 'Badges & Trophies', path: '/badges-trophies', active: location === '/badges-trophies' },
+    { icon: Zap, label: 'Challenges', path: '/challenges', active: location === '/challenges' },
     { icon: User, label: 'Profile', path: '/profile', active: location === '/profile' },
   ];
 
-  // Check if we should show sidebar (dashboard, leaderboard, and quiz history)
-  const showSidebar = location === '/' || location === '/leaderboard' || location === '/quiz-history';
+  // Check if we should show sidebar (dashboard, leaderboard, quiz history, badges, and challenges)
+  const showSidebar = location === '/' || location === '/leaderboard' || location === '/quiz-history' || location === '/badges-trophies' || location === '/challenges';
 
-  // Fetch badges and trophies for sidebar
-  const { data: badges = [] } = useQuery<any[]>({
-    queryKey: ['/api/badges'],
-    enabled: showSidebar,
-  });
 
-  const { data: trophies = [] } = useQuery<any[]>({
-    queryKey: ['/api/trophies'], 
-    enabled: showSidebar,
-  });
 
   if (!isAuthenticated) {
     return <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50">{children}</div>;
@@ -321,57 +314,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               </CardContent>
             </Card>
 
-            {/* Badges Section */}
-            {badges.length > 0 && (
-              <Card className="mt-4">
-                <CardContent className="p-6">
-                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <Award className="h-4 w-4 text-yellow-500" />
-                    Available Badges
-                  </h4>
-                  <div className="space-y-2">
-                    {badges.slice(0, 3).map((badge: any) => (
-                      <div key={badge.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
-                        <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                          <span className="text-lg">{badge.icon || '🏆'}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{badge.title}</p>
-                          {badge.sparks && (
-                            <p className="text-xs text-orange-600">+{badge.sparks} sparks</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
-            {/* Trophies Section */}
-            {trophies.length > 0 && (
-              <Card className="mt-4">
-                <CardContent className="p-6">
-                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-amber-500" />
-                    Achievement Trophies
-                  </h4>
-                  <div className="space-y-2">
-                    {trophies.slice(0, 3).map((trophy: any) => (
-                      <div key={trophy.id} className="flex items-center gap-3 p-2 bg-amber-50 rounded-lg border border-amber-200">
-                        <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
-                          <span className="text-lg">{trophy.icon || '🏆'}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-amber-900 truncate">{trophy.title}</p>
-                          <p className="text-xs text-amber-700 truncate">{trophy.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
         )}
 
