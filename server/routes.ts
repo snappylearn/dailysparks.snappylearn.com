@@ -426,22 +426,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const { examinationSystemId, levelId } = req.body;
       
+      console.log('=== CREATE PROFILE REQUEST ===');
+      console.log('User ID:', userId);
+      console.log('Request body:', req.body);
+      console.log('Examination System ID:', examinationSystemId);
+      console.log('Level ID:', levelId);
+      
       const profile = await storage.createProfile({
         userId,
         examinationSystemId,
         levelId,
       });
 
+      console.log('Profile created:', profile);
+
       // If this is the user's first profile, set it as default
       const userProfiles = await storage.getUserProfiles(userId);
+      console.log('User profiles count:', userProfiles.length);
+      
       if (userProfiles.length === 1) {
         await storage.setDefaultProfile(userId, profile.id);
+        console.log('Set as default profile');
       }
 
+      console.log('=== PROFILE CREATION SUCCESS ===');
       res.json(profile);
     } catch (error) {
-      console.error("Error creating profile:", error);
-      res.status(500).json({ message: "Failed to create profile" });
+      console.error("=== PROFILE CREATION ERROR ===", error);
+      res.status(500).json({ message: "Failed to create profile: " + error.message });
     }
   });
 

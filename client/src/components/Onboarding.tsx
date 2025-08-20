@@ -31,14 +31,20 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   // Create profile mutation
   const createProfileMutation = useMutation({
     mutationFn: async (data: { examinationSystemId: string; levelId: string }) => {
+      console.log("Creating profile with data:", data);
       const response = await apiRequest("/api/profiles", "POST", data);
+      console.log("Profile creation response:", response);
       return response;
     },
     onSuccess: () => {
+      console.log("Profile created successfully, invalidating queries");
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       // Force a page reload to redirect to the dashboard
       window.location.reload();
+    },
+    onError: (error) => {
+      console.error("Profile creation failed:", error);
     },
   });
 
