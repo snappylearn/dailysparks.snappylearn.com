@@ -130,6 +130,8 @@ export const challenges = pgTable("challenges", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+
+
 // User challenges (progress tracking)
 export const userChallenges = pgTable("user_challenges", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -537,6 +539,8 @@ export const badgesRelations = relations(badges, ({ one, many }) => ({
   challenges: many(challenges),
 }));
 
+
+
 export const userBadgesRelations = relations(userBadges, ({ one }) => ({
   user: one(users, {
     fields: [userBadges.userId],
@@ -616,6 +620,8 @@ export const insertUserSparkBoostSchema = createInsertSchema(userSparkBoost).omi
   id: true,
   createdAt: true,
 });
+
+
 
 export const insertQuizSessionSchema = createInsertSchema(quizSessions).omit({
   id: true,

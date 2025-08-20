@@ -1317,6 +1317,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user badges
+  app.get('/api/user/:userId/badges', async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const userBadges = await storage.getUserBadges(userId);
+      res.json(userBadges);
+    } catch (error) {
+      console.error("Error fetching user badges:", error);
+      res.status(500).json({ error: "Failed to fetch user badges" });
+    }
+  });
+
+  // Get user challenges progress
+  app.get('/api/user/:userId/challenges', async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const userChallenges = await storage.getUserChallenges(userId);
+      res.json(userChallenges);
+    } catch (error) {
+      console.error("Error fetching user challenges:", error);
+      res.status(500).json({ error: "Failed to fetch user challenges" });
+    }
+  });
+
+  // Award badge to user
+  app.post('/api/user/:userId/badge', async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const { badgeId, streaks } = req.body;
+      
+      const userBadge = await storage.awardBadge(userId, badgeId, streaks || 0);
+      
+      res.json(userBadge);
+    } catch (error) {
+      console.error("Error awarding badge:", error);
+      res.status(500).json({ error: "Failed to award badge" });
+    }
+  });
+
   // Get all challenges
   app.get('/api/challenges', async (req, res) => {
     try {

@@ -30,6 +30,14 @@ export default function Home() {
     enabled: user?.onboardingCompleted === true,
   });
 
+  // Fetch current profile for stats
+  const { data: profiles } = useQuery<any[]>({
+    queryKey: ["/api/profiles"],
+    enabled: !!user?.id,
+  });
+  
+  const currentProfile = profiles?.[0];
+
   // Fetch user badges
   const { data: userBadges } = useQuery<any[]>({
     queryKey: ["/api/user", user?.id, "badges"],
@@ -99,7 +107,7 @@ export default function Home() {
             <div className="flex items-center justify-center mb-2">
               <Zap className="h-6 w-6 text-orange-500" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{user?.sparks || 0}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{currentProfile?.sparks || 0}</h3>
             <p className="text-sm text-gray-600">Total Sparks</p>
           </div>
           <div className="bg-white rounded-lg shadow-md p-4 text-center">
@@ -113,7 +121,7 @@ export default function Home() {
             <div className="flex items-center justify-center mb-2">
               <Award className="h-6 w-6 text-blue-500" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{user?.currentStreak || 0}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">{currentProfile?.currentStreak || 0}</h3>
             <p className="text-sm text-gray-600">Day Streak</p>
           </div>
         </div>
