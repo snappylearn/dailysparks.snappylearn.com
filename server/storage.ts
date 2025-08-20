@@ -758,42 +758,38 @@ export class DatabaseStorage implements IStorage {
 
   async getTodayLeaderboard(): Promise<any[]> {
     try {
-      // Get start of today in UTC
-      const today = new Date();
-      today.setUTCHours(0, 0, 0, 0);
+      // Get quiz sessions completed today using raw SQL for better compatibility
+      const todayQuery = sql`
+        SELECT 
+          qs.user_id,
+          qs.profile_id,
+          qs.sparks_earned,
+          qs.correct_answers,
+          qs.total_questions,
+          u.first_name,
+          u.last_name,
+          u.profile_image_url,
+          p.streak
+        FROM quiz_sessions qs
+        INNER JOIN profiles p ON qs.profile_id = p.id
+        INNER JOIN users u ON p.user_id = u.id
+        WHERE qs.completed = true
+          AND DATE(qs.completed_at) = CURRENT_DATE
+        ORDER BY qs.completed_at DESC
+      `;
 
-      // Get quiz sessions completed today with sparks earned
-      const todaySessions = await db
-        .select({
-          userId: quizSessions.userId,
-          profileId: quizSessions.profileId,
-          sparksEarned: quizSessions.sparksEarned,
-          correctAnswers: quizSessions.correctAnswers,
-          totalQuestions: quizSessions.totalQuestions,
-          firstName: profiles.firstName,
-          lastName: profiles.lastName,
-          profileImageUrl: profiles.profileImageUrl,
-          streak: profiles.streak,
-        })
-        .from(quizSessions)
-        .innerJoin(profiles, eq(quizSessions.profileId, profiles.id))
-        .where(
-          and(
-            eq(quizSessions.completed, true),
-            gte(quizSessions.completedAt, today)
-          )
-        );
+      const todaySessions = await db.execute(todayQuery);
 
       // Group by user and calculate today's totals
       const userStats = new Map();
-      for (const session of todaySessions) {
-        const userId = session.userId;
+      for (const session of todaySessions.rows) {
+        const userId = session.user_id;
         if (!userStats.has(userId)) {
           userStats.set(userId, {
             userId,
-            firstName: session.firstName || 'Student',
-            lastName: session.lastName || '',
-            profileImageUrl: session.profileImageUrl,
+            firstName: session.first_name || 'Student',
+            lastName: session.last_name || '',
+            profileImageUrl: session.profile_image_url,
             todaySparks: 0,
             todayQuizzes: 0,
             todayCorrect: 0,
@@ -803,10 +799,10 @@ export class DatabaseStorage implements IStorage {
         }
         
         const stats = userStats.get(userId);
-        stats.todaySparks += session.sparksEarned || 0;
+        stats.todaySparks += parseInt(session.sparks_earned) || 0;
         stats.todayQuizzes += 1;
-        stats.todayCorrect += session.correctAnswers || 0;
-        stats.todayTotal += session.totalQuestions || 0;
+        stats.todayCorrect += parseInt(session.correct_answers) || 0;
+        stats.todayTotal += parseInt(session.total_questions) || 0;
       }
 
       // Convert to array and calculate average scores
