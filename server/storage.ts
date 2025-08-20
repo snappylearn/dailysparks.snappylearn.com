@@ -752,7 +752,7 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
 
-      // Get quiz sessions with subject, profile, examination system, and level information
+      // Get quiz sessions with subject information first
       const sessions = await db
         .select({
           id: quizSessions.id,
@@ -768,16 +768,9 @@ export class DatabaseStorage implements IStorage {
           sparksEarned: quizSessions.sparksEarned,
           subjectName: subjects.name,
           subjectCode: subjects.code,
-          examinationSystemCode: examinationSystems.code,
-          examinationSystemName: examinationSystems.name,
-          levelTitle: levels.title,
-          levelName: levels.name,
         })
         .from(quizSessions)
         .leftJoin(subjects, eq(quizSessions.subjectId, subjects.id))
-        .leftJoin(profiles, eq(quizSessions.profileId, profiles.id))
-        .leftJoin(examinationSystems, eq(profiles.examinationSystemId, examinationSystems.id))
-        .leftJoin(levels, eq(profiles.levelId, levels.id))
         .where(
           and(
             inArray(quizSessions.profileId, profileIds),
@@ -787,7 +780,45 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(quizSessions.completedAt))
         .limit(50);
 
-      return sessions.map(session => ({
+      // Get profile information for examination system and level
+      const sessionWithProfileInfo = await Promise.all(
+        sessions.map(async (session) => {
+          const [profile] = await db
+            .select({
+              examinationSystemId: profiles.examinationSystemId,
+              levelId: profiles.levelId,
+            })
+            .from(profiles)
+            .where(eq(profiles.id, session.profileId));
+
+          let examinationSystemInfo = null;
+          let levelInfo = null;
+
+          if (profile?.examinationSystemId) {
+            [examinationSystemInfo] = await db
+              .select({ code: examinationSystems.code, name: examinationSystems.name })
+              .from(examinationSystems)
+              .where(eq(examinationSystems.id, profile.examinationSystemId));
+          }
+
+          if (profile?.levelId) {
+            [levelInfo] = await db
+              .select({ title: levels.title, name: levels.name })
+              .from(levels)
+              .where(eq(levels.id, profile.levelId));
+          }
+
+          return {
+            ...session,
+            examinationSystemCode: examinationSystemInfo?.code,
+            examinationSystemName: examinationSystemInfo?.name,
+            levelTitle: levelInfo?.title,
+            levelName: levelInfo?.name,
+          };
+        })
+      );
+
+      return sessionWithProfileInfo.map(session => ({
         id: session.id,
         subjectName: session.subjectName || 'Unknown Subject',
         subjectCode: session.subjectCode || 'UNK',
