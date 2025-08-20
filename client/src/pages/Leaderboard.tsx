@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { MainLayout } from "@/components/MainLayout";
 import { Crown, Medal, Trophy, Zap, Flame, Target, User } from "lucide-react";
+import { useState } from "react";
 
 interface LeaderboardEntry {
   rank: number;
@@ -18,8 +20,11 @@ interface LeaderboardEntry {
 }
 
 export default function Leaderboard() {
+  const [filterType, setFilterType] = useState<'overall' | 'today'>('overall');
+  
   const { data: leaderboard = [], isLoading } = useQuery<LeaderboardEntry[]>({
-    queryKey: ['/api/leaderboard'],
+    queryKey: ['/api/leaderboard', filterType],
+    queryFn: () => fetch(`/api/leaderboard/${filterType}`).then(res => res.json()),
   });
 
   const getRankIcon = (rank: number) => {
@@ -52,12 +57,42 @@ export default function Leaderboard() {
     return (
       <MainLayout>
         <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center">
-              <Trophy className="h-6 w-6 text-orange-500 mr-3" />
-              Leaderboard
-            </h2>
-            <p className="text-gray-600">See how you rank against other students</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center">
+                <Trophy className="h-6 w-6 text-orange-500 mr-3" />
+                Leaderboard {filterType === 'today' ? 'Today' : 'Overall'}
+              </h2>
+              <p className="text-gray-600">See how you rank against other students</p>
+            </div>
+            
+            {/* Filter Controls */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <Button
+                variant={filterType === 'overall' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setFilterType('overall')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  filterType === 'overall'
+                    ? 'bg-white shadow-sm text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Overall
+              </Button>
+              <Button
+                variant={filterType === 'today' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setFilterType('today')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  filterType === 'today'
+                    ? 'bg-white shadow-sm text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Today
+              </Button>
+            </div>
           </div>
           
           <div className="grid gap-4">
@@ -78,12 +113,42 @@ export default function Leaderboard() {
     <MainLayout>
       <div className="space-y-6">
         {/* Header Section - matching homepage style */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center">
-            <Trophy className="h-6 w-6 text-orange-500 mr-3" />
-            Leaderboard
-          </h2>
-          <p className="text-gray-600">See how you rank against other students</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center">
+              <Trophy className="h-6 w-6 text-orange-500 mr-3" />
+              Leaderboard {filterType === 'today' ? 'Today' : 'Overall'}
+            </h2>
+            <p className="text-gray-600">See how you rank against other students</p>
+          </div>
+          
+          {/* Filter Controls */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <Button
+              variant={filterType === 'overall' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setFilterType('overall')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                filterType === 'overall'
+                  ? 'bg-white shadow-sm text-gray-900'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Overall
+            </Button>
+            <Button
+              variant={filterType === 'today' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setFilterType('today')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                filterType === 'today'
+                  ? 'bg-white shadow-sm text-gray-900'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Today
+            </Button>
+          </div>
         </div>
 
         {/* Top 3 Podium */}

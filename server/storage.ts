@@ -115,6 +115,9 @@ export interface IStorage {
   
   // Quiz History
   getQuizHistoryForUser(userId: string): Promise<any[]>;
+  
+  // Today's leaderboard
+  getTodayLeaderboard(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -749,6 +752,83 @@ export class DatabaseStorage implements IStorage {
       }));
     } catch (error) {
       console.error('Error fetching quiz history:', error);
+      return [];
+    }
+  }
+
+  async getTodayLeaderboard(): Promise<any[]> {
+    try {
+      // Get start of today in UTC
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+
+      // Get quiz sessions completed today with sparks earned
+      const todaySessions = await db
+        .select({
+          userId: quizSessions.userId,
+          profileId: quizSessions.profileId,
+          sparksEarned: quizSessions.sparksEarned,
+          correctAnswers: quizSessions.correctAnswers,
+          totalQuestions: quizSessions.totalQuestions,
+          firstName: profiles.firstName,
+          lastName: profiles.lastName,
+          profileImageUrl: profiles.profileImageUrl,
+          streak: profiles.streak,
+        })
+        .from(quizSessions)
+        .innerJoin(profiles, eq(quizSessions.profileId, profiles.id))
+        .where(
+          and(
+            eq(quizSessions.completed, true),
+            gte(quizSessions.completedAt, today)
+          )
+        );
+
+      // Group by user and calculate today's totals
+      const userStats = new Map();
+      for (const session of todaySessions) {
+        const userId = session.userId;
+        if (!userStats.has(userId)) {
+          userStats.set(userId, {
+            userId,
+            firstName: session.firstName || 'Student',
+            lastName: session.lastName || '',
+            profileImageUrl: session.profileImageUrl,
+            todaySparks: 0,
+            todayQuizzes: 0,
+            todayCorrect: 0,
+            todayTotal: 0,
+            streak: session.streak || 0,
+          });
+        }
+        
+        const stats = userStats.get(userId);
+        stats.todaySparks += session.sparksEarned || 0;
+        stats.todayQuizzes += 1;
+        stats.todayCorrect += session.correctAnswers || 0;
+        stats.todayTotal += session.totalQuestions || 0;
+      }
+
+      // Convert to array and calculate average scores
+      const leaderboard = Array.from(userStats.values())
+        .map(user => ({
+          ...user,
+          averageScore: user.todayTotal > 0 
+            ? Math.round((user.todayCorrect / user.todayTotal) * 100)
+            : 0,
+          sparks: user.todaySparks, // For compatibility with frontend
+          quizzesCompleted: user.todayQuizzes,
+          lastActive: new Date().toISOString(),
+        }))
+        .sort((a, b) => b.todaySparks - a.todaySparks) // Sort by today's sparks
+        .map((user, index) => ({
+          ...user,
+          rank: index + 1,
+        }));
+
+      return leaderboard;
+    } catch (error) {
+      console.error('Error fetching today leaderboard:', error);
       return [];
     }
   }

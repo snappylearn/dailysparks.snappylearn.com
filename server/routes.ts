@@ -70,9 +70,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Leaderboard routes
-  app.get('/api/leaderboard', async (req, res) => {
+  app.get('/api/leaderboard/:filter?', async (req, res) => {
     try {
-      const leaderboard = await storage.getLeaderboard();
+      const filter = req.params.filter || 'overall';
+      const leaderboard = filter === 'today' 
+        ? await storage.getTodayLeaderboard()
+        : await storage.getLeaderboard();
       res.json(leaderboard);
     } catch (error) {
       console.error("Error fetching leaderboard:", error);
