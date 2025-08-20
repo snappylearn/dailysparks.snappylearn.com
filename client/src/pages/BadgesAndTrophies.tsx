@@ -62,94 +62,101 @@ export default function BadgesAndTrophies() {
           </Card>
         </div>
 
-        {/* Badges Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-yellow-500" />
-              Achievement Badges
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {badges.map((badge: any) => {
-                const isEarned = earnedBadgeIds.has(badge.id);
-                return (
-                  <div 
-                    key={badge.id} 
-                    className={`p-4 rounded-lg border transition-all ${
-                      isEarned 
-                        ? 'bg-yellow-50 border-yellow-200 shadow-md' 
-                        : 'bg-gray-50 border-gray-200 opacity-75'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        isEarned ? 'bg-yellow-100' : 'bg-gray-200'
-                      }`}>
-                        <span className="text-2xl">{badge.icon || '🏆'}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className={`font-semibold ${isEarned ? 'text-yellow-800' : 'text-gray-600'}`}>
-                            {badge.title}
-                          </h3>
-                          {isEarned && (
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                              Earned
-                            </Badge>
-                          )}
-                        </div>
-                        <p className={`text-sm ${isEarned ? 'text-yellow-700' : 'text-gray-500'}`}>
-                          {badge.description}
-                        </p>
-                        {badge.sparks && (
-                          <div className="flex items-center gap-1 mt-2">
-                            <Zap className="h-3 w-3 text-orange-500" />
-                            <span className="text-xs text-orange-600">+{badge.sparks} sparks</span>
+        {/* Badges and Trophies Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Badges Section - 2/3 width */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5 text-yellow-500" />
+                  Achievement Badges
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {badges.map((badge: any) => {
+                    const isEarned = earnedBadgeIds.has(badge.id);
+                    return (
+                      <div 
+                        key={badge.id} 
+                        className={`p-4 rounded-lg border transition-all ${
+                          isEarned 
+                            ? 'bg-yellow-50 border-yellow-200 shadow-md' 
+                            : 'bg-gray-50 border-gray-200 opacity-75'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                            isEarned ? 'bg-yellow-100' : 'bg-gray-200'
+                          }`}>
+                            <span className="text-2xl">{badge.icon || '🏆'}</span>
                           </div>
-                        )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className={`font-semibold ${isEarned ? 'text-yellow-800' : 'text-gray-600'}`}>
+                                {badge.title}
+                              </h3>
+                              {isEarned && (
+                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                                  Earned
+                                </Badge>
+                              )}
+                            </div>
+                            <p className={`text-sm ${isEarned ? 'text-yellow-700' : 'text-gray-500'}`}>
+                              {badge.description}
+                            </p>
+                            {badge.sparks && (
+                              <div className="flex items-center gap-1 mt-2">
+                                <Zap className="h-3 w-3 text-orange-500" />
+                                <span className="text-xs text-orange-600">+{badge.sparks} sparks</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Trophies Section - 1/3 width */}
+          <div className="lg:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-amber-600" />
+                  Achievement Trophies
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {trophies.map((trophy: any) => (
+                    <div 
+                      key={trophy.id}
+                      className="p-3 rounded-lg border bg-amber-50 border-amber-200"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-xl">{trophy.icon || '🏆'}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-amber-800 mb-1 text-sm">{trophy.title}</h3>
+                          <p className="text-xs text-amber-700 mb-2">{trophy.description}</p>
+                          <Badge variant="outline" className="text-xs border-amber-300 text-amber-700">
+                            Available
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Trophies Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-amber-600" />
-              Achievement Trophies
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {trophies.map((trophy: any) => (
-                <div 
-                  key={trophy.id}
-                  className="p-4 rounded-lg border bg-amber-50 border-amber-200"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">{trophy.icon || '🏆'}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-amber-800 mb-1">{trophy.title}</h3>
-                      <p className="text-sm text-amber-700">{trophy.description}</p>
-                      <Badge variant="outline" className="mt-2 border-amber-300 text-amber-700">
-                        Available
-                      </Badge>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </MainLayout>
   );
