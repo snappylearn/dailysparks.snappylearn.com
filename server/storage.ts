@@ -971,10 +971,15 @@ export class DatabaseStorage implements IStorage {
   async awardBadge(userId: string, badgeId: string, streaks = 0): Promise<UserBadge> {
     const [userBadge] = await db
       .insert(userBadges)
-      .values({ userId, badgeId, streaks })
+      .values({ userId, badgeId, count: 1, streaks })
       .onConflictDoUpdate({
         target: [userBadges.userId, userBadges.badgeId],
-        set: { streaks, updatedAt: new Date() },
+        set: { 
+          count: sql`${userBadges.count} + 1`,
+          streaks, 
+          lastEarnedAt: new Date(),
+          updatedAt: new Date() 
+        },
       })
       .returning();
     return userBadge;

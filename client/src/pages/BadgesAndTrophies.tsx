@@ -33,6 +33,11 @@ export default function BadgesAndTrophies() {
   // Get earned badge IDs for easy lookup
   const earnedBadgeIds = new Set(userBadges.map(ub => ub.badgeId));
 
+  // Create a map of user badge counts
+  const userBadgeMap = new Map(
+    userBadges.map(ub => [ub.badgeId, ub.count || 1])
+  );
+
   // Create a map of user trophy counts
   const userTrophyMap = new Map(
     userTrophies.map(ut => [ut.trophyId, ut.count])
@@ -88,6 +93,8 @@ export default function BadgesAndTrophies() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {badges.map((badge: any) => {
                     const isEarned = earnedBadgeIds.has(badge.id);
+                    const earnedCount = userBadgeMap.get(badge.id) || 0;
+                    
                     return (
                       <div 
                         key={badge.id} 
@@ -98,10 +105,15 @@ export default function BadgesAndTrophies() {
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center relative ${
                             isEarned ? 'bg-yellow-100' : 'bg-gray-200'
                           }`}>
                             <span className="text-2xl">{badge.icon || '🏆'}</span>
+                            {earnedCount > 1 && (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                                {earnedCount}
+                              </div>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
@@ -110,7 +122,7 @@ export default function BadgesAndTrophies() {
                               </h3>
                               {isEarned && (
                                 <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                                  Earned
+                                  {earnedCount > 1 ? `Earned ${earnedCount}x` : 'Earned'}
                                 </Badge>
                               )}
                             </div>

@@ -104,10 +104,15 @@ export const userBadges = pgTable("user_badges", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   badgeId: varchar("badge_id").notNull().references(() => badges.id),
+  count: integer("count").default(1), // Number of times badge was earned
   streaks: integer("streaks").default(0), // Optional streaks earned when badge unlocked
+  lastEarnedAt: timestamp("last_earned_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  // Ensure one record per user-badge combination
+  userBadgeUnique: unique().on(table.userId, table.badgeId),
+}));
 
 // Trophies table
 export const trophies = pgTable("trophies", {
