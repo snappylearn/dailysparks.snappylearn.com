@@ -434,28 +434,6 @@ export default function Quiz() {
 
               {/* Navigation and Submit Buttons */}
               <div className="space-y-3 pt-4">
-                {/* Question Navigation */}
-                <div className="flex gap-2 justify-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
-                    disabled={currentQuestionIndex === 0}
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-1" />
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentQuestionIndex(Math.min(quizSession.questions.length - 1, currentQuestionIndex + 1))}
-                    disabled={currentQuestionIndex === quizSession.questions.length - 1}
-                  >
-                    Next
-                    <ArrowLeft className="h-4 w-4 ml-1 rotate-180" />
-                  </Button>
-                </div>
-
                 {/* Submit Answer and Exit */}
                 <div className="flex gap-3">
                   <Button 
@@ -468,10 +446,42 @@ export default function Quiz() {
                   </Button>
                   <Button 
                     onClick={handleAnswerSubmit}
-                    disabled={!selectedAnswer}
+                    disabled={!selectedAnswer || submitAnswerMutation.isPending}
                     className="flex-1"
                   >
-                    {currentQuestionIndex === quizSession.questions.length - 1 ? "Finish Quiz" : "Submit Answer"}
+                    {submitAnswerMutation.isPending ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Submitting...
+                      </div>
+                    ) : (
+                      currentQuestionIndex === quizSession.questions.length - 1 ? "Finish Quiz" : "Next Question"
+                    )}
+                  </Button>
+                </div>
+                
+                {/* Question Navigation */}
+                <div className="flex gap-2 justify-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
+                    disabled={currentQuestionIndex === 0}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-gray-500 flex items-center px-2">
+                    {currentQuestionIndex + 1} of {quizSession.questions.length}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentQuestionIndex(Math.min(quizSession.questions.length - 1, currentQuestionIndex + 1))}
+                    disabled={currentQuestionIndex === quizSession.questions.length - 1}
+                  >
+                    Next
+                    <ArrowLeft className="h-4 w-4 ml-1 rotate-180" />
                   </Button>
                 </div>
               </div>
