@@ -53,7 +53,10 @@ export default function Leaderboard() {
       <MainLayout>
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">🏆 Leaderboard</h1>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center">
+              <Trophy className="h-6 w-6 text-orange-500 mr-3" />
+              Leaderboard
+            </h2>
             <p className="text-gray-600">See how you rank against other students</p>
           </div>
           
@@ -74,8 +77,12 @@ export default function Leaderboard() {
   return (
     <MainLayout>
       <div className="space-y-6">
+        {/* Header Section - matching homepage style */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">🏆 Leaderboard</h1>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center">
+            <Trophy className="h-6 w-6 text-orange-500 mr-3" />
+            Leaderboard
+          </h2>
           <p className="text-gray-600">See how you rank against other students</p>
         </div>
 

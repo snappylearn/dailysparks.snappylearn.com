@@ -131,8 +131,8 @@ export function MainLayout({ children }: MainLayoutProps) {
     { icon: User, label: 'Profile', path: '/profile', active: location === '/profile' },
   ];
 
-  // Check if we should show sidebar (only on dashboard)
-  const showSidebar = location === '/';
+  // Check if we should show sidebar (dashboard and leaderboard)
+  const showSidebar = location === '/' || location === '/leaderboard';
 
   if (!isAuthenticated) {
     return <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50">{children}</div>;
@@ -306,7 +306,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                       <Crown className="h-4 w-4 text-purple-500" />
                       Today's Rank
                     </span>
-                    <span className="font-semibold text-lg">#47</span>
+                    <span className="font-semibold text-lg">#{currentProfile?.rank || '—'}</span>
                   </div>
                 </div>
               </CardContent>
