@@ -752,7 +752,7 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
 
-      // Get quiz sessions with subject and profile information
+      // Get quiz sessions with subject, profile, examination system, and level information
       const sessions = await db
         .select({
           id: quizSessions.id,
@@ -768,9 +768,16 @@ export class DatabaseStorage implements IStorage {
           sparksEarned: quizSessions.sparksEarned,
           subjectName: subjects.name,
           subjectCode: subjects.code,
+          examinationSystemCode: examinationSystems.code,
+          examinationSystemName: examinationSystems.name,
+          levelTitle: levels.title,
+          levelName: levels.name,
         })
         .from(quizSessions)
         .leftJoin(subjects, eq(quizSessions.subjectId, subjects.id))
+        .leftJoin(profiles, eq(quizSessions.profileId, profiles.id))
+        .leftJoin(examinationSystems, eq(profiles.examinationSystemId, examinationSystems.id))
+        .leftJoin(levels, eq(profiles.levelId, levels.id))
         .where(
           and(
             inArray(quizSessions.profileId, profileIds),
@@ -791,6 +798,8 @@ export class DatabaseStorage implements IStorage {
         timeTaken: session.timeSpent || 0,
         sparksEarned: session.sparksEarned || 0,
         isCompleted: session.completed || false,
+        examinationSystem: session.examinationSystemCode || session.examinationSystemName || 'Unknown',
+        level: session.levelTitle || session.levelName || 'Unknown',
       }));
     } catch (error) {
       console.error('Error fetching quiz history:', error);

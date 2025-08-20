@@ -18,6 +18,8 @@ interface QuizHistoryEntry {
   timeTaken: number; // in seconds
   sparksEarned: number;
   isCompleted: boolean;
+  examinationSystem: string;
+  level: string;
 }
 
 export default function QuizHistory() {
@@ -181,6 +183,15 @@ export default function QuizHistory() {
                         ) : (
                           <Clock className="h-5 w-5 text-yellow-500" />
                         )}
+                      </div>
+                      
+                      <div className="flex items-center gap-3 mb-3">
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                          {quiz.examinationSystem}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                          {quiz.level}
+                        </Badge>
                       </div>
                       
                       <div className="flex items-center gap-6 text-sm text-gray-600">
