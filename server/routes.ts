@@ -892,17 +892,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if answer is correct by looking at choices
       const correctChoice = question.choices?.find((choice: any) => choice.isCorrect);
-      // Handle both letter answers (A, B, C, D) and full text answers
       let isCorrect = false;
+      
+      // Handle letter answers (A, B, C, D) - map to choice IDs
       if (userAnswer === 'A' || userAnswer === 'B' || userAnswer === 'C' || userAnswer === 'D') {
-        // Letter-based answer - find by orderIndex
-        const letterToIndex = { 'A': 1, 'B': 2, 'C': 3, 'D': 4 };
-        const selectedChoice = question.choices?.find((choice: any) => choice.orderIndex === letterToIndex[userAnswer]);
-        isCorrect = selectedChoice && selectedChoice.isCorrect;
+        const letterToChoiceId = { 'A': 'a', 'B': 'b', 'C': 'c', 'D': 'd' };
+        const choiceId = letterToChoiceId[userAnswer];
+        const selectedChoice = question.choices?.find((choice: any) => choice.id === choiceId);
+        isCorrect = selectedChoice && selectedChoice.isCorrect === true;
       } else {
         // Full text answer
         const userChoice = question.choices?.find((choice: any) => choice.content === userAnswer);
-        isCorrect = correctChoice && userChoice && correctChoice.content === userAnswer;
+        isCorrect = userChoice && userChoice.isCorrect === true;
       }
 
       console.log('Question found:', question.content);
