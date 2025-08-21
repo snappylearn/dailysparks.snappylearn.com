@@ -243,6 +243,9 @@ export default function AdminExaminationSystems() {
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Quizzes</TableHead>
+                  <TableHead>Attempts</TableHead>
+                  <TableHead>Users</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -252,6 +255,9 @@ export default function AdminExaminationSystems() {
                   <TableRow key={system.id}>
                     <TableCell className="font-medium">{system.name}</TableCell>
                     <TableCell>{system.description || "-"}</TableCell>
+                    <TableCell className="text-center">{system.quizCount || 0}</TableCell>
+                    <TableCell className="text-center">{system.quizAttempts || 0}</TableCell>
+                    <TableCell className="text-center">{system.usersCount || 0}</TableCell>
                     <TableCell>{new Date(system.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

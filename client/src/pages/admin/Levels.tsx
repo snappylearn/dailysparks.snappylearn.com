@@ -293,6 +293,9 @@ export default function AdminLevels() {
                   <TableHead>Title</TableHead>
                   <TableHead>Examination System</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Quizzes</TableHead>
+                  <TableHead>Attempts</TableHead>
+                  <TableHead>Users</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -307,6 +310,9 @@ export default function AdminLevels() {
                       </Badge>
                     </TableCell>
                     <TableCell>{level.description || "-"}</TableCell>
+                    <TableCell className="text-center">{level.quizCount || 0}</TableCell>
+                    <TableCell className="text-center">{level.quizAttempts || 0}</TableCell>
+                    <TableCell className="text-center">{level.usersCount || 0}</TableCell>
                     <TableCell>{new Date(level.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

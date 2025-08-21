@@ -293,6 +293,9 @@ export default function AdminTerms() {
                   <TableHead>Title</TableHead>
                   <TableHead>Examination System</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Quizzes</TableHead>
+                  <TableHead>Attempts</TableHead>
+                  <TableHead>Users</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -307,6 +310,9 @@ export default function AdminTerms() {
                       </Badge>
                     </TableCell>
                     <TableCell>{term.description || "-"}</TableCell>
+                    <TableCell className="text-center">{term.quizCount || 0}</TableCell>
+                    <TableCell className="text-center">{term.quizAttempts || 0}</TableCell>
+                    <TableCell className="text-center">{term.usersCount || 0}</TableCell>
                     <TableCell>{new Date(term.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

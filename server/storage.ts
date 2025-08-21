@@ -196,7 +196,54 @@ export class DatabaseStorage implements IStorage {
 
   // Examination system operations
   async getExaminationSystems(): Promise<ExaminationSystem[]> {
-    return await db.select().from(examinationSystems).where(eq(examinationSystems.isActive, true));
+    const systems = await db.select().from(examinationSystems).where(eq(examinationSystems.isActive, true));
+    
+    // Add calculated fields for each system
+    const systemsWithMetrics = await Promise.all(
+      systems.map(async (system) => {
+        try {
+          // Get quiz count for this examination system
+          const quizCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(quizSessions)
+            .innerJoin(profiles, eq(quizSessions.profileId, profiles.id))
+            .where(eq(profiles.examinationSystemId, system.id));
+          
+          // Get quiz attempts count
+          const attemptCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(quizSessions)
+            .innerJoin(profiles, eq(quizSessions.profileId, profiles.id))
+            .where(and(
+              eq(profiles.examinationSystemId, system.id),
+              eq(quizSessions.completed, true)
+            ));
+          
+          // Get unique users count
+          const userCountResult = await db
+            .select({ count: sql`count(distinct ${profiles.userId})` })
+            .from(profiles)
+            .where(eq(profiles.examinationSystemId, system.id));
+
+          return {
+            ...system,
+            quizCount: Number(quizCountResult[0]?.count || 0),
+            quizAttempts: Number(attemptCountResult[0]?.count || 0),
+            usersCount: Number(userCountResult[0]?.count || 0)
+          };
+        } catch (error) {
+          console.error(`Error calculating metrics for system ${system.id}:`, error);
+          return {
+            ...system,
+            quizCount: 0,
+            quizAttempts: 0,
+            usersCount: 0
+          };
+        }
+      })
+    );
+    
+    return systemsWithMetrics;
   }
 
   async createExaminationSystem(system: InsertExaminationSystem): Promise<ExaminationSystem> {
@@ -206,9 +253,56 @@ export class DatabaseStorage implements IStorage {
 
   // Level operations
   async getAllLevels(): Promise<Level[]> {
-    return await db.select().from(levels)
+    const levelsList = await db.select().from(levels)
       .where(eq(levels.isActive, true))
       .orderBy(levels.order);
+    
+    // Add calculated fields for each level
+    const levelsWithMetrics = await Promise.all(
+      levelsList.map(async (level) => {
+        try {
+          // Get quiz count for this level
+          const quizCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(quizSessions)
+            .innerJoin(profiles, eq(quizSessions.profileId, profiles.id))
+            .where(eq(profiles.levelId, level.id));
+          
+          // Get quiz attempts count (completed sessions)
+          const attemptCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(quizSessions)
+            .innerJoin(profiles, eq(quizSessions.profileId, profiles.id))
+            .where(and(
+              eq(profiles.levelId, level.id),
+              eq(quizSessions.completed, true)
+            ));
+          
+          // Get unique users count for this level
+          const userCountResult = await db
+            .select({ count: sql`count(distinct ${profiles.userId})` })
+            .from(profiles)
+            .where(eq(profiles.levelId, level.id));
+
+          return {
+            ...level,
+            quizCount: Number(quizCountResult[0]?.count || 0),
+            quizAttempts: Number(attemptCountResult[0]?.count || 0),
+            usersCount: Number(userCountResult[0]?.count || 0)
+          };
+        } catch (error) {
+          console.error(`Error calculating metrics for level ${level.id}:`, error);
+          return {
+            ...level,
+            quizCount: 0,
+            quizAttempts: 0,
+            usersCount: 0
+          };
+        }
+      })
+    );
+    
+    return levelsWithMetrics;
   }
 
   async getLevelsBySystem(examinationSystemId: string): Promise<Level[]> {
@@ -224,7 +318,55 @@ export class DatabaseStorage implements IStorage {
 
   // Term operations
   async getTerms(): Promise<Term[]> {
-    return await db.select().from(terms).orderBy(terms.order);
+    const termsList = await db.select().from(terms).orderBy(terms.order);
+    
+    // Add calculated fields for each term
+    const termsWithMetrics = await Promise.all(
+      termsList.map(async (term) => {
+        try {
+          // Get quiz count for topics in this term
+          const quizCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(quizSessions)
+            .innerJoin(topics, eq(quizSessions.topicId, topics.id))
+            .where(eq(topics.termId, term.id));
+          
+          // Get quiz attempts count (completed sessions for this term)
+          const attemptCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(quizSessions)
+            .innerJoin(topics, eq(quizSessions.topicId, topics.id))
+            .where(and(
+              eq(topics.termId, term.id),
+              eq(quizSessions.completed, true)
+            ));
+          
+          // Get unique users count who attempted quizzes in this term
+          const userCountResult = await db
+            .select({ count: sql`count(distinct ${quizSessions.profileId})` })
+            .from(quizSessions)
+            .innerJoin(topics, eq(quizSessions.topicId, topics.id))
+            .where(eq(topics.termId, term.id));
+
+          return {
+            ...term,
+            quizCount: Number(quizCountResult[0]?.count || 0),
+            quizAttempts: Number(attemptCountResult[0]?.count || 0),
+            usersCount: Number(userCountResult[0]?.count || 0)
+          };
+        } catch (error) {
+          console.error(`Error calculating metrics for term ${term.id}:`, error);
+          return {
+            ...term,
+            quizCount: 0,
+            quizAttempts: 0,
+            usersCount: 0
+          };
+        }
+      })
+    );
+    
+    return termsWithMetrics;
   }
 
   // Profile operations
@@ -267,8 +409,56 @@ export class DatabaseStorage implements IStorage {
 
   // Subject operations
   async getAllSubjects(): Promise<Subject[]> {
-    return await db.select().from(subjects)
+    const subjectsList = await db.select().from(subjects)
       .orderBy(subjects.name);
+    
+    // Add calculated fields for each subject
+    const subjectsWithMetrics = await Promise.all(
+      subjectsList.map(async (subject) => {
+        try {
+          // Get quiz count for this subject
+          const quizCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(quizSessions)
+            .innerJoin(topics, eq(quizSessions.topicId, topics.id))
+            .where(eq(topics.subjectId, subject.id));
+          
+          // Get quiz attempts count (completed sessions)
+          const attemptCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(quizSessions)
+            .innerJoin(topics, eq(quizSessions.topicId, topics.id))
+            .where(and(
+              eq(topics.subjectId, subject.id),
+              eq(quizSessions.completed, true)
+            ));
+          
+          // Get unique users count who attempted quizzes in this subject
+          const userCountResult = await db
+            .select({ count: sql`count(distinct ${quizSessions.profileId})` })
+            .from(quizSessions)
+            .innerJoin(topics, eq(quizSessions.topicId, topics.id))
+            .where(eq(topics.subjectId, subject.id));
+
+          return {
+            ...subject,
+            quizCount: Number(quizCountResult[0]?.count || 0),
+            quizAttempts: Number(attemptCountResult[0]?.count || 0),
+            usersCount: Number(userCountResult[0]?.count || 0)
+          };
+        } catch (error) {
+          console.error(`Error calculating metrics for subject ${subject.id}:`, error);
+          return {
+            ...subject,
+            quizCount: 0,
+            quizAttempts: 0,
+            usersCount: 0
+          };
+        }
+      })
+    );
+    
+    return subjectsWithMetrics;
   }
 
   async getSubjectsBySystem(examinationSystemId: string, levelId?: string): Promise<Subject[]> {
@@ -1218,6 +1408,33 @@ export class DatabaseStorage implements IStorage {
             console.error('Error fetching related data for topic:', err);
           }
 
+          // Calculate metrics for this topic
+          let quizCount = 0, quizAttempts = 0, usersCount = 0;
+          try {
+            const quizCountResult = await db
+              .select({ count: sql`count(*)` })
+              .from(quizSessions)
+              .where(eq(quizSessions.topicId, topic.id));
+            quizCount = Number(quizCountResult[0]?.count || 0);
+            
+            const attemptCountResult = await db
+              .select({ count: sql`count(*)` })
+              .from(quizSessions)
+              .where(and(
+                eq(quizSessions.topicId, topic.id),
+                eq(quizSessions.completed, true)
+              ));
+            quizAttempts = Number(attemptCountResult[0]?.count || 0);
+            
+            const userCountResult = await db
+              .select({ count: sql`count(distinct ${quizSessions.profileId})` })
+              .from(quizSessions)
+              .where(eq(quizSessions.topicId, topic.id));
+            usersCount = Number(userCountResult[0]?.count || 0);
+          } catch (err) {
+            console.error('Error calculating topic metrics:', err);
+          }
+
           return {
             id: topic.id,
             title: topic.title,
@@ -1232,6 +1449,9 @@ export class DatabaseStorage implements IStorage {
             examination_system: examinationSystemName,
             term: termTitle,
             createdAt: topic.createdAt,
+            quizCount,
+            quizAttempts,
+            usersCount
           };
         })
       );

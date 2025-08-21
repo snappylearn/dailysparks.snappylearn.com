@@ -293,6 +293,9 @@ export default function AdminSubjects() {
                   <TableHead>Title</TableHead>
                   <TableHead>Examination System</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Quizzes</TableHead>
+                  <TableHead>Attempts</TableHead>
+                  <TableHead>Users</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -307,6 +310,9 @@ export default function AdminSubjects() {
                       </Badge>
                     </TableCell>
                     <TableCell>{subject.description || "-"}</TableCell>
+                    <TableCell className="text-center">{subject.quizCount || 0}</TableCell>
+                    <TableCell className="text-center">{subject.quizAttempts || 0}</TableCell>
+                    <TableCell className="text-center">{subject.usersCount || 0}</TableCell>
                     <TableCell>{new Date(subject.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

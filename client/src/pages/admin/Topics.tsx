@@ -525,6 +525,9 @@ export default function AdminTopics() {
                   <TableHead>Subject</TableHead>
                   <TableHead>Term</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Quizzes</TableHead>
+                  <TableHead>Attempts</TableHead>
+                  <TableHead>Users</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -561,6 +564,9 @@ export default function AdminTopics() {
                         {topic.description || 'No description'}
                       </div>
                     </TableCell>
+                    <TableCell className="text-center">{topic.quizCount || 0}</TableCell>
+                    <TableCell className="text-center">{topic.quizAttempts || 0}</TableCell>
+                    <TableCell className="text-center">{topic.usersCount || 0}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button 
