@@ -958,10 +958,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const correctAnswers = answers.filter(a => a.isCorrect).length;
       const totalTime = answers.reduce((sum, a) => sum + (a.timeSpent || 0), 0);
       
+      // Get quiz settings for configurable values
+      const quizSettings = await storage.getQuizSettings();
+      
       // Calculate sparks earned (base + accuracy bonus)
       const accuracy = correctAnswers / answers.length;
-      const baseSparks = correctAnswers * 10;
-      const bonusMultiplier = accuracy >= 0.8 ? 1.5 : accuracy >= 0.6 ? 1.2 : 1;
+      const baseSparks = correctAnswers * quizSettings.sparksPerCorrectAnswer;
+      
+      // Apply accuracy bonuses based on settings
+      let bonusMultiplier = 1;
+      if (accuracy >= Number(quizSettings.accuracyBonusThreshold)) {
+        bonusMultiplier = Number(quizSettings.accuracyBonusMultiplier);
+      } else if (accuracy >= Number(quizSettings.goodAccuracyThreshold)) {
+        bonusMultiplier = Number(quizSettings.goodAccuracyMultiplier);
+      }
+      
       const sparksEarned = Math.round(baseSparks * bonusMultiplier);
 
       // Update quiz session
@@ -1784,6 +1795,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error checking boost availability:", error);
       res.status(500).json({ message: "Failed to check boost availability" });
+    }
+  });
+
+  // Platform Settings Routes
+  // General Settings
+  app.get('/api/admin/settings/general', isAuthenticated, async (req: any, res) => {
+    try {
+      const settings = await storage.getGeneralSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching general settings:", error);
+      res.status(500).json({ message: "Failed to fetch general settings" });
+    }
+  });
+
+  app.put('/api/admin/settings/general', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const settings = await storage.updateGeneralSettings(req.body, userId);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating general settings:", error);
+      res.status(500).json({ message: "Failed to update general settings" });
+    }
+  });
+
+  // Quiz Settings
+  app.get('/api/admin/settings/quiz', isAuthenticated, async (req: any, res) => {
+    try {
+      const settings = await storage.getQuizSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching quiz settings:", error);
+      res.status(500).json({ message: "Failed to fetch quiz settings" });
+    }
+  });
+
+  app.put('/api/admin/settings/quiz', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const settings = await storage.updateQuizSettings(req.body, userId);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating quiz settings:", error);
+      res.status(500).json({ message: "Failed to update quiz settings" });
+    }
+  });
+
+  // Notification Settings
+  app.get('/api/admin/settings/notifications', isAuthenticated, async (req: any, res) => {
+    try {
+      const settings = await storage.getNotificationSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching notification settings:", error);
+      res.status(500).json({ message: "Failed to fetch notification settings" });
+    }
+  });
+
+  app.put('/api/admin/settings/notifications', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const settings = await storage.updateNotificationSettings(req.body, userId);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating notification settings:", error);
+      res.status(500).json({ message: "Failed to update notification settings" });
     }
   });
 

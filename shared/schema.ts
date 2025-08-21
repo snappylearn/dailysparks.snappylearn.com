@@ -758,3 +758,82 @@ export const insertUserPreferenceChangeSchema = createInsertSchema(userPreferenc
 
 export type InsertUserPreferenceChange = z.infer<typeof insertUserPreferenceChangeSchema>;
 export type UserPreferenceChange = typeof userPreferenceChanges.$inferSelect;
+
+// Platform Settings Tables
+export const generalSettings = pgTable("general_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  platformName: varchar("platform_name").notNull().default("Daily Sparks"),
+  tagline: varchar("tagline").default("TikTok Simple, Harvard Smart"),
+  primaryColor: varchar("primary_color").default("#3b82f6"),
+  secondaryColor: varchar("secondary_color").default("#1e40af"),
+  accentColor: varchar("accent_color").default("#f59e0b"),
+  logoUrl: varchar("logo_url"),
+  faviconUrl: varchar("favicon_url"),
+  supportEmail: varchar("support_email").default("support@dailysparks.com"),
+  maintenanceMode: boolean("maintenance_mode").default(false),
+  maxUsers: integer("max_users").default(10000),
+  timezone: varchar("timezone").default("Africa/Nairobi"),
+  language: varchar("language").default("en"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedBy: varchar("updated_by"), // user ID of admin who made the change
+});
+
+export const quizSettings = pgTable("quiz_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sparksPerCorrectAnswer: integer("sparks_per_correct_answer").notNull().default(5),
+  accuracyBonusThreshold: decimal("accuracy_bonus_threshold", { precision: 3, scale: 2 }).default("0.80"), // 80%
+  accuracyBonusMultiplier: decimal("accuracy_bonus_multiplier", { precision: 3, scale: 2 }).default("1.50"), // 1.5x
+  goodAccuracyThreshold: decimal("good_accuracy_threshold", { precision: 3, scale: 2 }).default("0.60"), // 60%
+  goodAccuracyMultiplier: decimal("good_accuracy_multiplier", { precision: 3, scale: 2 }).default("1.20"), // 1.2x
+  maxQuestionsPerQuiz: integer("max_questions_per_quiz").default(15),
+  minQuestionsPerQuiz: integer("min_questions_per_quiz").default(5),
+  timePerQuestionSeconds: integer("time_per_question_seconds").default(45),
+  allowSkipQuestions: boolean("allow_skip_questions").default(false),
+  showCorrectAnswers: boolean("show_correct_answers").default(true),
+  showExplanations: boolean("show_explanations").default(true),
+  randomizeQuestions: boolean("randomize_questions").default(true),
+  randomizeOptions: boolean("randomize_options").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedBy: varchar("updated_by"), // user ID of admin who made the change
+});
+
+export const notificationSettings = pgTable("notification_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  emailNotificationsEnabled: boolean("email_notifications_enabled").default(true),
+  dailyReminderEnabled: boolean("daily_reminder_enabled").default(true),
+  dailyReminderTime: varchar("daily_reminder_time").default("18:00"), // 6 PM
+  streakReminderEnabled: boolean("streak_reminder_enabled").default(true),
+  achievementNotificationsEnabled: boolean("achievement_notifications_enabled").default(true),
+  leaderboardUpdatesEnabled: boolean("leaderboard_updates_enabled").default(true),
+  weeklyProgressReportEnabled: boolean("weekly_progress_report_enabled").default(true),
+  weeklyProgressReportDay: integer("weekly_progress_report_day").default(0), // 0 = Sunday
+  challengeNotificationsEnabled: boolean("challenge_notifications_enabled").default(true),
+  sparkBoostNotificationsEnabled: boolean("spark_boost_notifications_enabled").default(true),
+  maintenanceNotificationsEnabled: boolean("maintenance_notifications_enabled").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedBy: varchar("updated_by"), // user ID of admin who made the change
+});
+
+// Insert schemas for settings tables
+export const insertGeneralSettingsSchema = createInsertSchema(generalSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertQuizSettingsSchema = createInsertSchema(quizSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertNotificationSettingsSchema = createInsertSchema(notificationSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+// Type exports for settings
+export type GeneralSettings = typeof generalSettings.$inferSelect;
+export type QuizSettings = typeof quizSettings.$inferSelect;
+export type NotificationSettings = typeof notificationSettings.$inferSelect;
+export type InsertGeneralSettings = z.infer<typeof insertGeneralSettingsSchema>;
+export type InsertQuizSettings = z.infer<typeof insertQuizSettingsSchema>;
+export type InsertNotificationSettings = z.infer<typeof insertNotificationSettingsSchema>;

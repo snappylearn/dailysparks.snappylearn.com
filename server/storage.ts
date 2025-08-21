@@ -26,6 +26,9 @@ import {
   userChallenges,
   userSparkBoost,
   userTrophies,
+  generalSettings,
+  quizSettings,
+  notificationSettings,
   type User,
   type UpsertUser,
   type ExaminationSystem,
@@ -67,6 +70,13 @@ import {
   type InsertChallenge,
   type InsertUserChallenge,
   type InsertUserSparkBoost,
+  // Settings types
+  type GeneralSettings,
+  type QuizSettings,
+  type NotificationSettings,
+  type InsertGeneralSettings,
+  type InsertQuizSettings,
+  type InsertNotificationSettings,
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, sql, count, avg, gte, lte, inArray, or, isNull } from "drizzle-orm";
@@ -179,6 +189,14 @@ export interface IStorage {
   getUserSparkBoosts(userId: string): Promise<UserSparkBoost[]>;
   createSparkBoost(fromUserId: string, toUserId: string, sparks: number): Promise<UserSparkBoost>;
   canBoostUser(fromUserId: string): Promise<boolean>;
+
+  // Platform Settings operations
+  getGeneralSettings(): Promise<GeneralSettings>;
+  updateGeneralSettings(settings: Partial<InsertGeneralSettings>, updatedBy: string): Promise<GeneralSettings>;
+  getQuizSettings(): Promise<QuizSettings>;
+  updateQuizSettings(settings: Partial<InsertQuizSettings>, updatedBy: string): Promise<QuizSettings>;
+  getNotificationSettings(): Promise<NotificationSettings>;
+  updateNotificationSettings(settings: Partial<InsertNotificationSettings>, updatedBy: string): Promise<NotificationSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2063,6 +2081,133 @@ export class DatabaseStorage implements IStorage {
     ];
 
     return questions.slice(0, Math.min(quiz.totalQuestions || 5, questions.length));
+  }
+
+  // Platform Settings operations
+  async getGeneralSettings(): Promise<GeneralSettings> {
+    const [settings] = await db.select().from(generalSettings).limit(1);
+    if (!settings) {
+      // If no settings exist, create default ones
+      const [newSettings] = await db
+        .insert(generalSettings)
+        .values({})
+        .returning();
+      return newSettings;
+    }
+    return settings;
+  }
+
+  async updateGeneralSettings(settingsData: Partial<InsertGeneralSettings>, updatedBy: string): Promise<GeneralSettings> {
+    const [settings] = await db.select().from(generalSettings).limit(1);
+    
+    if (!settings) {
+      // Create new settings if none exist
+      const [newSettings] = await db
+        .insert(generalSettings)
+        .values({
+          ...settingsData,
+          updatedBy,
+          updatedAt: new Date(),
+        })
+        .returning();
+      return newSettings;
+    } else {
+      // Update existing settings
+      const [updatedSettings] = await db
+        .update(generalSettings)
+        .set({
+          ...settingsData,
+          updatedBy,
+          updatedAt: new Date(),
+        })
+        .where(eq(generalSettings.id, settings.id))
+        .returning();
+      return updatedSettings;
+    }
+  }
+
+  async getQuizSettings(): Promise<QuizSettings> {
+    const [settings] = await db.select().from(quizSettings).limit(1);
+    if (!settings) {
+      // If no settings exist, create default ones
+      const [newSettings] = await db
+        .insert(quizSettings)
+        .values({})
+        .returning();
+      return newSettings;
+    }
+    return settings;
+  }
+
+  async updateQuizSettings(settingsData: Partial<InsertQuizSettings>, updatedBy: string): Promise<QuizSettings> {
+    const [settings] = await db.select().from(quizSettings).limit(1);
+    
+    if (!settings) {
+      // Create new settings if none exist
+      const [newSettings] = await db
+        .insert(quizSettings)
+        .values({
+          ...settingsData,
+          updatedBy,
+          updatedAt: new Date(),
+        })
+        .returning();
+      return newSettings;
+    } else {
+      // Update existing settings
+      const [updatedSettings] = await db
+        .update(quizSettings)
+        .set({
+          ...settingsData,
+          updatedBy,
+          updatedAt: new Date(),
+        })
+        .where(eq(quizSettings.id, settings.id))
+        .returning();
+      return updatedSettings;
+    }
+  }
+
+  async getNotificationSettings(): Promise<NotificationSettings> {
+    const [settings] = await db.select().from(notificationSettings).limit(1);
+    if (!settings) {
+      // If no settings exist, create default ones
+      const [newSettings] = await db
+        .insert(notificationSettings)
+        .values({})
+        .returning();
+      return newSettings;
+    }
+    return settings;
+  }
+
+  async updateNotificationSettings(settingsData: Partial<InsertNotificationSettings>, updatedBy: string): Promise<NotificationSettings> {
+    const [settings] = await db.select().from(notificationSettings).limit(1);
+    
+    if (!settings) {
+      // Create new settings if none exist
+      const [newSettings] = await db
+        .insert(notificationSettings)
+        .values({
+          ...settingsData,
+          updatedBy,
+          updatedAt: new Date(),
+        })
+        .returning();
+      return newSettings;
+    } else {
+      // Update existing settings
+      const [updatedSettings] = await db
+        .update(notificationSettings)
+        .set({
+          ...settingsData,
+          updatedBy,
+          updatedAt: new Date(),
+        })
+        .where(eq(notificationSettings.id, settings.id))
+        .returning();
+      return updatedSettings;
+    }
   }
 }
 

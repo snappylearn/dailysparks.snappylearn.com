@@ -25,6 +25,7 @@ import AdminUsers from "@/pages/admin/Users";
 import QuizTypes from "@/pages/admin/QuizTypes";
 import AdminAnalytics from "@/pages/admin/Analytics";
 import AdminSettings from "@/pages/admin/Settings";
+import PlatformSettings from "@/pages/admin/PlatformSettings";
 import QuizPreview from "@/pages/QuizPreview";
 import BadgesAndTrophies from "@/pages/BadgesAndTrophies";
 import Challenges from "@/pages/Challenges";
@@ -116,6 +117,11 @@ function Router() {
       <Route path="/admin/settings">
         <AdminLayout>
           <AdminSettings />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/platform-settings">
+        <AdminLayout>
+          <PlatformSettings />
         </AdminLayout>
       </Route>
       

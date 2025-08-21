@@ -37,7 +37,7 @@ const menuItems = [
   { icon: Calendar, label: "Terms", href: "/admin/terms" },
   { icon: Users, label: "Users", href: "/admin/users" },
   { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
-  { icon: Settings, label: "Settings", href: "/admin/settings" },
+  { icon: Settings, label: "Platform Settings", href: "/admin/platform-settings" },
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
