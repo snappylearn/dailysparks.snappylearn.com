@@ -582,6 +582,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(quizzes);
   });
 
+  // Get single quiz details for preview
+  app.get('/api/admin/quizzes/:quizId', isAuthenticated, async (req: any, res) => {
+    try {
+      const quiz = await storage.getQuizDetails(req.params.quizId);
+      if (!quiz) {
+        return res.status(404).json({ error: 'Quiz not found' });
+      }
+      res.json(quiz);
+    } catch (error) {
+      console.error('Error fetching quiz details:', error);
+      res.status(500).json({ error: 'Failed to fetch quiz details' });
+    }
+  });
+
   // ===== END ADMIN ROUTES =====
 
   // Get quiz types

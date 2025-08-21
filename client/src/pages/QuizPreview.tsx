@@ -12,60 +12,45 @@ export default function QuizPreview() {
   const [, setLocation] = useLocation();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-  // Mock quiz data based on our created quizzes
-  const mockQuizData = {
-    id: quizId,
-    title: "Introduction to Biology - Sample Quiz",
-    subject: "Biology",
-    description: "Test your knowledge of basic biology concepts including cell structure, living organisms, and biological processes.",
-    totalQuestions: 15,
-    timeLimit: 30,
-    difficulty: "medium",
-    questions: [
-      {
-        id: "q_1",
-        content: "What is the basic unit of life in all living organisms?",
-        type: "mcq",
-        choices: [
-          { id: "c_1", content: "Cell", isCorrect: true },
-          { id: "c_2", content: "Tissue", isCorrect: false },
-          { id: "c_3", content: "Organ", isCorrect: false },
-          { id: "c_4", content: "Organ system", isCorrect: false }
-        ],
-        explanation: "The cell is considered the basic unit of life because it is the smallest structure capable of performing all the processes necessary for life."
-      },
-      {
-        id: "q_2", 
-        content: "Which part of the plant cell contains chlorophyll?",
-        type: "mcq",
-        choices: [
-          { id: "c_1", content: "Nucleus", isCorrect: false },
-          { id: "c_2", content: "Chloroplast", isCorrect: true },
-          { id: "c_3", content: "Mitochondria", isCorrect: false },
-          { id: "c_4", content: "Cell wall", isCorrect: false }
-        ],
-        explanation: "Chloroplasts contain chlorophyll, the green pigment that captures light energy for photosynthesis."
-      },
-      {
-        id: "q_3",
-        content: "What characteristic do all living things share?",
-        type: "mcq", 
-        choices: [
-          { id: "c_1", content: "They can move", isCorrect: false },
-          { id: "c_2", content: "They reproduce", isCorrect: true },
-          { id: "c_3", content: "They are visible", isCorrect: false },
-          { id: "c_4", content: "They are large", isCorrect: false }
-        ],
-        explanation: "All living organisms have the ability to reproduce, ensuring the continuation of their species."
-      }
-    ]
-  };
+  // Fetch quiz data from API
+  const { data: quizData, isLoading, error } = useQuery({
+    queryKey: ['/api/admin/quizzes', quizId],
+    enabled: !!quizId,
+  });
 
-  const currentQuestion = mockQuizData.questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / mockQuizData.totalQuestions) * 100;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 flex items-center justify-center">
+        <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-full flex items-center justify-center animate-pulse">
+          <i className="fas fa-fire text-white text-2xl"></i>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !quizData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <h3 className="text-lg font-semibold mb-2">Quiz Not Found</h3>
+            <p className="text-muted-foreground mb-4">
+              The quiz you're looking for doesn't exist or has been removed.
+            </p>
+            <Button onClick={() => setLocation('/admin/quizzes')}>
+              Back to Quizzes
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const currentQuestion = quizData.questions?.[currentQuestionIndex];
+  const progress = quizData.questions?.length ? ((currentQuestionIndex + 1) / quizData.questions.length) * 100 : 0;
 
   const handleNext = () => {
-    if (currentQuestionIndex < mockQuizData.questions.length - 1) {
+    if (quizData.questions && currentQuestionIndex < quizData.questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
@@ -99,24 +84,34 @@ export default function QuizPreview() {
           <CardHeader>
             <div className="flex items-start justify-between">
               <div>
-                <CardTitle className="text-2xl mb-2">{mockQuizData.title}</CardTitle>
+                <CardTitle className="text-2xl mb-2">{quizData.title}</CardTitle>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <BookOpen className="h-4 w-4" />
-                    {mockQuizData.subject}
+                    {quizData.subject || 'General'}
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
-                    {mockQuizData.timeLimit} minutes
+                    {quizData.timeLimit || 30} minutes
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
-                    {mockQuizData.totalQuestions} questions
+                    {quizData.totalQuestions || quizData.questions?.length || 0} questions
                   </div>
+                </div>
+                {quizData.description && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {quizData.description}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                  {quizData.level && <span>Level: {quizData.level}</span>}
+                  {quizData.examSystem && <span>• {quizData.examSystem}</span>}
+                  {quizData.term && <span>• {quizData.term}</span>}
                 </div>
               </div>
               <Badge variant="outline" className="capitalize">
-                {mockQuizData.difficulty}
+                {quizData.difficulty || 'medium'}
               </Badge>
             </div>
           </CardHeader>
@@ -128,7 +123,7 @@ export default function QuizPreview() {
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">Progress</span>
               <span className="text-sm text-muted-foreground">
-                Question {currentQuestionIndex + 1} of {mockQuizData.totalQuestions}
+                Question {currentQuestionIndex + 1} of {quizData.questions?.length || 0}
               </span>
             </div>
             <Progress value={progress} className="h-2" />
@@ -136,44 +131,54 @@ export default function QuizPreview() {
         </Card>
 
         {/* Question Card */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">
-              Question {currentQuestionIndex + 1}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-lg leading-relaxed">{currentQuestion.content}</p>
-              
-              <div className="space-y-3">
-                {currentQuestion.choices.map((choice, index) => (
-                  <Button
-                    key={choice.id}
-                    variant="outline"
-                    className="w-full text-left justify-start h-auto py-3 px-4 hover:bg-blue-50"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center text-sm font-medium mt-0.5">
-                        {String.fromCharCode(65 + index)}
+        {currentQuestion ? (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">
+                Question {currentQuestionIndex + 1}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-lg leading-relaxed">{currentQuestion.content}</p>
+                
+                <div className="space-y-3">
+                  {currentQuestion.choices?.map((choice, index) => (
+                    <Button
+                      key={choice.id}
+                      variant="outline"
+                      className="w-full text-left justify-start h-auto py-3 px-4 hover:bg-blue-50"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center text-sm font-medium mt-0.5">
+                          {String.fromCharCode(65 + index)}
+                        </div>
+                        <span className="flex-1">{choice.content}</span>
                       </div>
-                      <span className="flex-1">{choice.content}</span>
-                    </div>
-                  </Button>
-                ))}
-              </div>
+                    </Button>
+                  ))}
+                </div>
 
-              {/* Show explanation in preview mode */}
-              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <h4 className="font-semibold text-green-800 mb-2">Explanation (Preview Only)</h4>
-                <p className="text-green-700">{currentQuestion.explanation}</p>
-                <p className="text-sm text-green-600 mt-2">
-                  Correct answer: <strong>{currentQuestion.choices.find(c => c.isCorrect)?.content}</strong>
-                </p>
+                {/* Show explanation in preview mode */}
+                {currentQuestion.explanation && (
+                  <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <h4 className="font-semibold text-green-800 mb-2">Explanation (Preview Only)</h4>
+                    <p className="text-green-700">{currentQuestion.explanation}</p>
+                    <p className="text-sm text-green-600 mt-2">
+                      Correct answer: <strong>{currentQuestion.choices?.find(c => c.isCorrect)?.content}</strong>
+                    </p>
+                  </div>
+                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mb-6">
+            <CardContent className="pt-6 text-center">
+              <p className="text-muted-foreground">No question available.</p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Navigation */}
         <div className="flex items-center justify-between">
@@ -186,7 +191,7 @@ export default function QuizPreview() {
           </Button>
           
           <div className="flex gap-2">
-            {mockQuizData.questions.map((_, index) => (
+            {quizData.questions?.map((_, index) => (
               <Button
                 key={index}
                 variant={index === currentQuestionIndex ? "default" : "outline"}
@@ -201,7 +206,7 @@ export default function QuizPreview() {
 
           <Button 
             onClick={handleNext}
-            disabled={currentQuestionIndex === mockQuizData.questions.length - 1}
+            disabled={!quizData.questions || currentQuestionIndex === quizData.questions.length - 1}
           >
             Next
           </Button>

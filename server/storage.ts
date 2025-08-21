@@ -161,6 +161,9 @@ export interface IStorage {
   updateQuizType(id: string, data: any): Promise<any>;
   deleteQuizType(id: string): Promise<void>;
 
+  // Quiz details for preview
+  getQuizDetails(quizId: string): Promise<any>;
+
   // Gamification operations
   getBadgeTypes(): Promise<BadgeType[]>;
   getBadges(): Promise<Badge[]>;
@@ -1933,6 +1936,133 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(quizTypes)
       .where(eq(quizTypes.id, id));
+  }
+
+  // Get quiz details with questions for preview
+  async getQuizDetails(quizId: string): Promise<any> {
+    try {
+      // Get quiz basic info
+      const [quiz] = await db
+        .select({
+          id: quizzes.id,
+          title: quizzes.title,
+          description: quizzes.description,
+          totalQuestions: quizzes.totalQuestions,
+          timeLimit: quizzes.timeLimit,
+          difficulty: quizzes.difficulty,
+          quizType: quizzes.quizType,
+          subject: subjects.name,
+          level: levels.title,
+          examSystem: examinationSystems.name,
+          term: terms.name,
+          createdAt: quizzes.createdAt,
+          questions: quizzes.questions,
+        })
+        .from(quizzes)
+        .leftJoin(subjects, eq(quizzes.subjectId, subjects.id))
+        .leftJoin(levels, eq(quizzes.levelId, levels.id))
+        .leftJoin(examinationSystems, eq(quizzes.examinationSystemId, examinationSystems.id))
+        .leftJoin(terms, eq(quizzes.termId, terms.id))
+        .where(eq(quizzes.id, quizId));
+
+      if (!quiz) {
+        return null;
+      }
+
+      // Get questions for this quiz - parse from JSON field if available
+      let questionsData = [];
+      if (quiz.questions && Array.isArray(quiz.questions)) {
+        questionsData = quiz.questions;
+      } else {
+        // If no questions stored, create sample questions based on quiz info
+        questionsData = this.generateSampleQuestions(quiz);
+      }
+
+      return {
+        ...quiz,
+        questions: questionsData
+      };
+    } catch (error) {
+      console.error('Error fetching quiz details:', error);
+      throw error;
+    }
+  }
+
+  private generateSampleQuestions(quiz: any): any[] {
+    const subjectQuestions = {
+      Mathematics: [
+        {
+          id: "math_1",
+          content: `What is the result of 2 + 3 × 4?`,
+          type: "mcq",
+          choices: [
+            { id: "c_1", content: "14", isCorrect: true },
+            { id: "c_2", content: "20", isCorrect: false },
+            { id: "c_3", content: "24", isCorrect: false },
+            { id: "c_4", content: "10", isCorrect: false }
+          ],
+          explanation: "Following order of operations (BODMAS), multiplication comes before addition: 2 + (3 × 4) = 2 + 12 = 14"
+        },
+        {
+          id: "math_2",
+          content: `If x + 5 = 12, what is the value of x?`,
+          type: "mcq",
+          choices: [
+            { id: "c_1", content: "7", isCorrect: true },
+            { id: "c_2", content: "17", isCorrect: false },
+            { id: "c_3", content: "5", isCorrect: false },
+            { id: "c_4", content: "12", isCorrect: false }
+          ],
+          explanation: "To solve x + 5 = 12, subtract 5 from both sides: x = 12 - 5 = 7"
+        }
+      ],
+      Biology: [
+        {
+          id: "bio_1",
+          content: "What is the basic unit of life?",
+          type: "mcq",
+          choices: [
+            { id: "c_1", content: "Cell", isCorrect: true },
+            { id: "c_2", content: "Tissue", isCorrect: false },
+            { id: "c_3", content: "Organ", isCorrect: false },
+            { id: "c_4", content: "Organism", isCorrect: false }
+          ],
+          explanation: "The cell is the smallest structural and functional unit of life."
+        }
+      ],
+      Physics: [
+        {
+          id: "phy_1",
+          content: "What is the SI unit of force?",
+          type: "mcq",
+          choices: [
+            { id: "c_1", content: "Newton", isCorrect: true },
+            { id: "c_2", content: "Joule", isCorrect: false },
+            { id: "c_3", content: "Watt", isCorrect: false },
+            { id: "c_4", content: "Pascal", isCorrect: false }
+          ],
+          explanation: "The Newton (N) is the SI unit of force, named after Sir Isaac Newton."
+        }
+      ]
+    };
+
+    // Return subject-specific questions or generic ones
+    const questions = subjectQuestions[quiz.subject as keyof typeof subjectQuestions] || [
+      {
+        id: "gen_1",
+        content: `Sample question for ${quiz.subject || 'this subject'} - ${quiz.title}`,
+        type: "mcq",
+        choices: [
+          { id: "c_1", content: "Option A", isCorrect: true },
+          { id: "c_2", content: "Option B", isCorrect: false },
+          { id: "c_3", content: "Option C", isCorrect: false },
+          { id: "c_4", content: "Option D", isCorrect: false }
+        ],
+        explanation: "This is a sample question for preview purposes."
+      }
+    ];
+
+    return questions.slice(0, Math.min(quiz.totalQuestions || 5, questions.length));
   }
 }
 
