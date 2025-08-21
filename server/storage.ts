@@ -155,6 +155,12 @@ export interface IStorage {
   updateTopic(topicId: string, updateData: Partial<InsertTopic>): Promise<Topic>;
   deleteTopic(topicId: string): Promise<void>;
 
+  // Quiz types management
+  getQuizTypes(): Promise<any[]>;
+  createQuizType(data: any): Promise<any>;
+  updateQuizType(id: string, data: any): Promise<any>;
+  deleteQuizType(id: string): Promise<void>;
+
   // Gamification operations
   getBadgeTypes(): Promise<BadgeType[]>;
   getBadges(): Promise<Badge[]>;
@@ -1884,6 +1890,49 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(topics)
       .where(eq(topics.id, topicId));
+  }
+
+  // Quiz types management implementation
+  async getQuizTypes(): Promise<any[]> {
+    try {
+      const quizTypesData = await db.select().from(quizTypes).orderBy(quizTypes.title);
+      return quizTypesData;
+    } catch (error) {
+      console.error('Error fetching quiz types:', error);
+      return [];
+    }
+  }
+
+  async createQuizType(data: any): Promise<any> {
+    const [quizType] = await db
+      .insert(quizTypes)
+      .values({
+        title: data.title,
+        description: data.description,
+        code: data.code,
+      })
+      .returning();
+    return quizType;
+  }
+
+  async updateQuizType(id: string, data: any): Promise<any> {
+    const [quizType] = await db
+      .update(quizTypes)
+      .set({
+        title: data.title,
+        description: data.description,
+        code: data.code,
+        updatedAt: new Date(),
+      })
+      .where(eq(quizTypes.id, id))
+      .returning();
+    return quizType;
+  }
+
+  async deleteQuizType(id: string): Promise<void> {
+    await db
+      .delete(quizTypes)
+      .where(eq(quizTypes.id, id));
   }
 }
 

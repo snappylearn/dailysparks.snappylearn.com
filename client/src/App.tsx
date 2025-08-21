@@ -22,6 +22,7 @@ import AdminLevels from "@/pages/admin/Levels";
 import AdminSubjects from "@/pages/admin/Subjects";
 import AdminTerms from "@/pages/admin/Terms";
 import AdminUsers from "@/pages/admin/Users";
+import QuizTypes from "@/pages/admin/QuizTypes";
 import AdminAnalytics from "@/pages/admin/Analytics";
 import AdminSettings from "@/pages/admin/Settings";
 import QuizPreview from "@/pages/QuizPreview";
@@ -100,6 +101,11 @@ function Router() {
       <Route path="/admin/users">
         <AdminLayout>
           <AdminUsers />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/quiz-types">
+        <AdminLayout>
+          <QuizTypes />
         </AdminLayout>
       </Route>
       <Route path="/admin/analytics">

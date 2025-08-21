@@ -29,6 +29,7 @@ interface AdminLayoutProps {
 const menuItems = [
   { icon: Home, label: "Dashboard", href: "/admin" },
   { icon: BookOpen, label: "Quizzes", href: "/admin/quizzes" },
+  { icon: FileText, label: "Quiz Types", href: "/admin/quiz-types" },
   { icon: FileText, label: "Topics", href: "/admin/topics" },
   { icon: GraduationCap, label: "Exam Systems", href: "/admin/examination-systems" },
   { icon: TrendingUp, label: "Levels", href: "/admin/levels" },

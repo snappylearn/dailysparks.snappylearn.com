@@ -535,6 +535,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quiz types management routes
+  app.get('/api/admin/quiz-types', isAuthenticated, async (req: any, res) => {
+    try {
+      const quizTypes = await storage.getQuizTypes();
+      res.json(quizTypes);
+    } catch (error) {
+      console.error('Error fetching quiz types:', error);
+      res.status(500).json({ error: 'Failed to fetch quiz types' });
+    }
+  });
+
+  app.post('/api/admin/quiz-types', isAuthenticated, async (req: any, res) => {
+    try {
+      const quizType = await storage.createQuizType(req.body);
+      res.json(quizType);
+    } catch (error) {
+      console.error('Error creating quiz type:', error);
+      res.status(500).json({ error: 'Failed to create quiz type' });
+    }
+  });
+
+  app.patch('/api/admin/quiz-types/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const quizType = await storage.updateQuizType(req.params.id, req.body);
+      res.json(quizType);
+    } catch (error) {
+      console.error('Error updating quiz type:', error);
+      res.status(500).json({ error: 'Failed to update quiz type' });
+    }
+  });
+
+  app.delete('/api/admin/quiz-types/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteQuizType(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting quiz type:', error);
+      res.status(500).json({ error: 'Failed to delete quiz type' });
+    }
+  });
+
+  // Enhanced quiz system routes
+  app.get('/api/admin/quizzes', isAuthenticated, async (req: any, res) => {
+    const quizzes = await storage.getAdminQuizzes();
+    res.json(quizzes);
+  });
+
   // ===== END ADMIN ROUTES =====
 
   // Get quiz types
