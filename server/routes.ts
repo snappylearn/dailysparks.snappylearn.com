@@ -1023,8 +1023,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastActivity: new Date(),
         });
         
-        // Update rankings after profile update
-        await updateUserRankings();
+        // Rankings are calculated dynamically when leaderboard is requested
         
         console.log(`Profile updated: sparks +${sparksEarned} (total: ${(profile.sparks || 0) + sparksEarned}), streak: ${newCurrentStreak}`);
         
