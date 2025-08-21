@@ -293,6 +293,7 @@ export default function AdminLevels() {
                   <TableHead>Title</TableHead>
                   <TableHead>Examination System</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Topics</TableHead>
                   <TableHead>Quizzes</TableHead>
                   <TableHead>Attempts</TableHead>
                   <TableHead>Users</TableHead>
@@ -310,6 +311,7 @@ export default function AdminLevels() {
                       </Badge>
                     </TableCell>
                     <TableCell>{level.description || "-"}</TableCell>
+                    <TableCell className="text-center">{level.topicsCount || 0}</TableCell>
                     <TableCell className="text-center">{level.quizCount || 0}</TableCell>
                     <TableCell className="text-center">{level.quizAttempts || 0}</TableCell>
                     <TableCell className="text-center">{level.usersCount || 0}</TableCell>

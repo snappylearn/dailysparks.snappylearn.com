@@ -243,6 +243,8 @@ export default function AdminExaminationSystems() {
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Subjects</TableHead>
+                  <TableHead>Topics</TableHead>
                   <TableHead>Quizzes</TableHead>
                   <TableHead>Attempts</TableHead>
                   <TableHead>Users</TableHead>
@@ -255,6 +257,8 @@ export default function AdminExaminationSystems() {
                   <TableRow key={system.id}>
                     <TableCell className="font-medium">{system.name}</TableCell>
                     <TableCell>{system.description || "-"}</TableCell>
+                    <TableCell className="text-center">{system.subjectsCount || 0}</TableCell>
+                    <TableCell className="text-center">{system.topicsCount || 0}</TableCell>
                     <TableCell className="text-center">{system.quizCount || 0}</TableCell>
                     <TableCell className="text-center">{system.quizAttempts || 0}</TableCell>
                     <TableCell className="text-center">{system.usersCount || 0}</TableCell>

@@ -225,11 +225,25 @@ export class DatabaseStorage implements IStorage {
             .from(profiles)
             .where(eq(profiles.examinationSystemId, system.id));
 
+          // Get subjects count for this examination system
+          const subjectsCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(subjects)
+            .where(eq(subjects.examinationSystemId, system.id));
+
+          // Get topics count for this examination system
+          const topicsCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(topics)
+            .where(eq(topics.examinationSystemId, system.id));
+
           return {
             ...system,
             quizCount: Number(quizCountResult[0]?.count || 0),
             quizAttempts: Number(attemptCountResult[0]?.count || 0),
-            usersCount: Number(userCountResult[0]?.count || 0)
+            usersCount: Number(userCountResult[0]?.count || 0),
+            subjectsCount: Number(subjectsCountResult[0]?.count || 0),
+            topicsCount: Number(topicsCountResult[0]?.count || 0)
           };
         } catch (error) {
           console.error(`Error calculating metrics for system ${system.id}:`, error);
@@ -237,7 +251,9 @@ export class DatabaseStorage implements IStorage {
             ...system,
             quizCount: 0,
             quizAttempts: 0,
-            usersCount: 0
+            usersCount: 0,
+            subjectsCount: 0,
+            topicsCount: 0
           };
         }
       })
@@ -284,11 +300,18 @@ export class DatabaseStorage implements IStorage {
             .from(profiles)
             .where(eq(profiles.levelId, level.id));
 
+          // Get topics count for this level
+          const topicsCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(topics)
+            .where(eq(topics.levelId, level.id));
+
           return {
             ...level,
             quizCount: Number(quizCountResult[0]?.count || 0),
             quizAttempts: Number(attemptCountResult[0]?.count || 0),
-            usersCount: Number(userCountResult[0]?.count || 0)
+            usersCount: Number(userCountResult[0]?.count || 0),
+            topicsCount: Number(topicsCountResult[0]?.count || 0)
           };
         } catch (error) {
           console.error(`Error calculating metrics for level ${level.id}:`, error);
@@ -296,7 +319,8 @@ export class DatabaseStorage implements IStorage {
             ...level,
             quizCount: 0,
             quizAttempts: 0,
-            usersCount: 0
+            usersCount: 0,
+            topicsCount: 0
           };
         }
       })
@@ -440,11 +464,18 @@ export class DatabaseStorage implements IStorage {
             .innerJoin(topics, eq(quizSessions.topicId, topics.id))
             .where(eq(topics.subjectId, subject.id));
 
+          // Get topics count for this subject
+          const topicsCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(topics)
+            .where(eq(topics.subjectId, subject.id));
+
           return {
             ...subject,
             quizCount: Number(quizCountResult[0]?.count || 0),
             quizAttempts: Number(attemptCountResult[0]?.count || 0),
-            usersCount: Number(userCountResult[0]?.count || 0)
+            usersCount: Number(userCountResult[0]?.count || 0),
+            topicsCount: Number(topicsCountResult[0]?.count || 0)
           };
         } catch (error) {
           console.error(`Error calculating metrics for subject ${subject.id}:`, error);
@@ -452,7 +483,8 @@ export class DatabaseStorage implements IStorage {
             ...subject,
             quizCount: 0,
             quizAttempts: 0,
-            usersCount: 0
+            usersCount: 0,
+            topicsCount: 0
           };
         }
       })
