@@ -15,7 +15,11 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  FileText
+  FileText,
+  GraduationCap,
+  TrendingUp,
+  Book,
+  Calendar
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -26,6 +30,10 @@ const menuItems = [
   { icon: Home, label: "Dashboard", href: "/admin" },
   { icon: BookOpen, label: "Quizzes", href: "/admin/quizzes" },
   { icon: FileText, label: "Topics", href: "/admin/topics" },
+  { icon: GraduationCap, label: "Exam Systems", href: "/admin/examination-systems" },
+  { icon: TrendingUp, label: "Levels", href: "/admin/levels" },
+  { icon: Book, label: "Subjects", href: "/admin/subjects" },
+  { icon: Calendar, label: "Terms", href: "/admin/terms" },
   { icon: Users, label: "Users", href: "/admin/users" },
   { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },

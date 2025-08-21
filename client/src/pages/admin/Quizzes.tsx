@@ -986,6 +986,27 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
     queryKey: [`/api/admin/quizzes/${quiz.id}`],
   });
 
+  // Fetch required data for form dropdowns
+  const { data: examSystems } = useQuery({
+    queryKey: ["/api/examination-systems"],
+  });
+
+  const { data: allLevels } = useQuery({
+    queryKey: ["/api/levels"],
+  });
+
+  const { data: allSubjects } = useQuery({
+    queryKey: ["/api/subjects"],
+  });
+
+  const { data: terms } = useQuery({
+    queryKey: ["/api/terms"],
+  });
+
+  const { data: topics } = useQuery({
+    queryKey: ["/api/admin/topics"],
+  });
+
   // Default questions
   const defaultQuestions = [
     {
@@ -1468,6 +1489,21 @@ function EditChoicesForm({
     setChoices(updatedChoices);
   };
 
+  const addChoice = () => {
+    const newChoice = {
+      id: `c_${Date.now()}_${choices.length + 1}`,
+      content: "",
+      isCorrect: false
+    };
+    setChoices([...choices, newChoice]);
+  };
+
+  const removeChoice = (choiceIndex: number) => {
+    if (choices.length <= 2) return; // Minimum 2 choices required
+    const updatedChoices = choices.filter((_, idx) => idx !== choiceIndex);
+    setChoices(updatedChoices);
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -1476,7 +1512,15 @@ function EditChoicesForm({
       </div>
       
       <div className="space-y-3">
-        <label className="text-sm font-medium">Answer Choices (Select the correct answer):</label>
+        <div className="flex justify-between items-center">
+          <label className="text-sm font-medium">Answer Choices (Select the correct answer):</label>
+          <div className="flex gap-2">
+            <Button type="button" size="sm" onClick={addChoice}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Choice
+            </Button>
+          </div>
+        </div>
         {choices.map((choice: any, choiceIndex: number) => (
           <div key={choice.id} className="flex items-center gap-3 p-3 border rounded-lg">
             <input
@@ -1495,6 +1539,17 @@ function EditChoicesForm({
               placeholder={`Enter choice ${String.fromCharCode(65 + choiceIndex)}`}
               className="flex-1"
             />
+            {choices.length > 2 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => removeChoice(choiceIndex)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         ))}
       </div>

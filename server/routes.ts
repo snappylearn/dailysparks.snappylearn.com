@@ -295,6 +295,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CRUD routes for Examination Systems
+  app.post('/api/admin/examination-systems', isAuthenticated, async (req: any, res) => {
+    try {
+      const newSystem = await storage.createExaminationSystem(req.body);
+      res.json(newSystem);
+    } catch (error) {
+      console.error("Error creating examination system:", error);
+      res.status(500).json({ message: "Failed to create examination system" });
+    }
+  });
+
+  app.put('/api/admin/examination-systems/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updatedSystem = await storage.updateExaminationSystem(id, req.body);
+      res.json(updatedSystem);
+    } catch (error) {
+      console.error("Error updating examination system:", error);
+      res.status(500).json({ message: "Failed to update examination system" });
+    }
+  });
+
+  app.delete('/api/admin/examination-systems/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteExaminationSystem(id);
+      res.json({ message: "Examination system deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting examination system:", error);
+      res.status(500).json({ message: "Failed to delete examination system" });
+    }
+  });
+
+  // CRUD routes for Levels
+  app.post('/api/admin/levels', isAuthenticated, async (req: any, res) => {
+    try {
+      const newLevel = await storage.createLevel(req.body);
+      res.json(newLevel);
+    } catch (error) {
+      console.error("Error creating level:", error);
+      res.status(500).json({ message: "Failed to create level" });
+    }
+  });
+
+  app.put('/api/admin/levels/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updatedLevel = await storage.updateLevel(id, req.body);
+      res.json(updatedLevel);
+    } catch (error) {
+      console.error("Error updating level:", error);
+      res.status(500).json({ message: "Failed to update level" });
+    }
+  });
+
+  app.delete('/api/admin/levels/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteLevel(id);
+      res.json({ message: "Level deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting level:", error);
+      res.status(500).json({ message: "Failed to delete level" });
+    }
+  });
+
+  // CRUD routes for Subjects
+  app.post('/api/admin/subjects', isAuthenticated, async (req: any, res) => {
+    try {
+      const newSubject = await storage.createSubject(req.body);
+      res.json(newSubject);
+    } catch (error) {
+      console.error("Error creating subject:", error);
+      res.status(500).json({ message: "Failed to create subject" });
+    }
+  });
+
+  app.put('/api/admin/subjects/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updatedSubject = await storage.updateSubject(id, req.body);
+      res.json(updatedSubject);
+    } catch (error) {
+      console.error("Error updating subject:", error);
+      res.status(500).json({ message: "Failed to update subject" });
+    }
+  });
+
+  app.delete('/api/admin/subjects/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteSubject(id);
+      res.json({ message: "Subject deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting subject:", error);
+      res.status(500).json({ message: "Failed to delete subject" });
+    }
+  });
+
+  // CRUD routes for Terms
+  app.post('/api/admin/terms', isAuthenticated, async (req: any, res) => {
+    try {
+      const newTerm = await storage.createTerm(req.body);
+      res.json(newTerm);
+    } catch (error) {
+      console.error("Error creating term:", error);
+      res.status(500).json({ message: "Failed to create term" });
+    }
+  });
+
+  app.put('/api/admin/terms/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updatedTerm = await storage.updateTerm(id, req.body);
+      res.json(updatedTerm);
+    } catch (error) {
+      console.error("Error updating term:", error);
+      res.status(500).json({ message: "Failed to update term" });
+    }
+  });
+
+  app.delete('/api/admin/terms/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteTerm(id);
+      res.json({ message: "Term deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting term:", error);
+      res.status(500).json({ message: "Failed to delete term" });
+    }
+  });
+
   // Admin generate quiz endpoint
   app.post('/api/admin/generate-quiz', isAuthenticated, async (req: any, res) => {
     try {

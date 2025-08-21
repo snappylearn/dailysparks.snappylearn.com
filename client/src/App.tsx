@@ -17,6 +17,10 @@ import AdminLayout from "@/layouts/AdminLayout";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminQuizzes from "@/pages/admin/Quizzes";
 import AdminTopics from "@/pages/admin/Topics";
+import AdminExaminationSystems from "@/pages/admin/ExaminationSystems";
+import AdminLevels from "@/pages/admin/Levels";
+import AdminSubjects from "@/pages/admin/Subjects";
+import AdminTerms from "@/pages/admin/Terms";
 import AdminUsers from "@/pages/admin/Users";
 import AdminAnalytics from "@/pages/admin/Analytics";
 import AdminSettings from "@/pages/admin/Settings";
@@ -71,6 +75,26 @@ function Router() {
       <Route path="/admin/topics">
         <AdminLayout>
           <AdminTopics />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/examination-systems">
+        <AdminLayout>
+          <AdminExaminationSystems />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/levels">
+        <AdminLayout>
+          <AdminLevels />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/subjects">
+        <AdminLayout>
+          <AdminSubjects />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/terms">
+        <AdminLayout>
+          <AdminTerms />
         </AdminLayout>
       </Route>
       <Route path="/admin/users">

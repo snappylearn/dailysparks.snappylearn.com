@@ -1265,6 +1265,168 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Examination Systems CRUD
+  async createExaminationSystem(data: any): Promise<any> {
+    try {
+      const [newSystem] = await db.insert(examinationSystems).values({
+        name: data.name,
+        description: data.description
+      }).returning();
+      return newSystem;
+    } catch (error) {
+      console.error('Error creating examination system:', error);
+      throw error;
+    }
+  }
+
+  async updateExaminationSystem(id: string, data: any): Promise<any> {
+    try {
+      const [updatedSystem] = await db.update(examinationSystems)
+        .set({
+          name: data.name,
+          description: data.description
+        })
+        .where(eq(examinationSystems.id, id))
+        .returning();
+      return updatedSystem;
+    } catch (error) {
+      console.error('Error updating examination system:', error);
+      throw error;
+    }
+  }
+
+  async deleteExaminationSystem(id: string): Promise<void> {
+    try {
+      await db.delete(examinationSystems).where(eq(examinationSystems.id, id));
+    } catch (error) {
+      console.error('Error deleting examination system:', error);
+      throw error;
+    }
+  }
+
+  // Levels CRUD
+  async createLevel(data: any): Promise<any> {
+    try {
+      const [newLevel] = await db.insert(levels).values({
+        examinationSystemId: data.examinationSystemId,
+        title: data.title,
+        description: data.description
+      }).returning();
+      return newLevel;
+    } catch (error) {
+      console.error('Error creating level:', error);
+      throw error;
+    }
+  }
+
+  async updateLevel(id: string, data: any): Promise<any> {
+    try {
+      const [updatedLevel] = await db.update(levels)
+        .set({
+          examinationSystemId: data.examinationSystemId,
+          title: data.title,
+          description: data.description
+        })
+        .where(eq(levels.id, id))
+        .returning();
+      return updatedLevel;
+    } catch (error) {
+      console.error('Error updating level:', error);
+      throw error;
+    }
+  }
+
+  async deleteLevel(id: string): Promise<void> {
+    try {
+      await db.delete(levels).where(eq(levels.id, id));
+    } catch (error) {
+      console.error('Error deleting level:', error);
+      throw error;
+    }
+  }
+
+  // Subjects CRUD
+  async createSubject(data: any): Promise<any> {
+    try {
+      const [newSubject] = await db.insert(subjects).values({
+        examinationSystemId: data.examinationSystemId,
+        name: data.name,
+        description: data.description
+      }).returning();
+      return newSubject;
+    } catch (error) {
+      console.error('Error creating subject:', error);
+      throw error;
+    }
+  }
+
+  async updateSubject(id: string, data: any): Promise<any> {
+    try {
+      const [updatedSubject] = await db.update(subjects)
+        .set({
+          examinationSystemId: data.examinationSystemId,
+          name: data.name,
+          description: data.description
+        })
+        .where(eq(subjects.id, id))
+        .returning();
+      return updatedSubject;
+    } catch (error) {
+      console.error('Error updating subject:', error);
+      throw error;
+    }
+  }
+
+  async deleteSubject(id: string): Promise<void> {
+    try {
+      await db.delete(subjects).where(eq(subjects.id, id));
+    } catch (error) {
+      console.error('Error deleting subject:', error);
+      throw error;
+    }
+  }
+
+  // Terms CRUD
+  async createTerm(data: any): Promise<any> {
+    try {
+      const [newTerm] = await db.insert(terms).values({
+        examinationSystemId: data.examinationSystemId,
+        title: data.title,
+        description: data.description
+      }).returning();
+      return newTerm;
+    } catch (error) {
+      console.error('Error creating term:', error);
+      throw error;
+    }
+  }
+
+  async updateTerm(id: string, data: any): Promise<any> {
+    try {
+      const [updatedTerm] = await db.update(terms)
+        .set({
+          examinationSystemId: data.examinationSystemId,
+          title: data.title,
+          description: data.description
+        })
+        .where(eq(terms.id, id))
+        .returning();
+      return updatedTerm;
+    } catch (error) {
+      console.error('Error updating term:', error);
+      throw error;
+    }
+  }
+
+  async deleteTerm(id: string): Promise<void> {
+    try {
+      await db.delete(terms).where(eq(terms.id, id));
+    } catch (error) {
+      console.error('Error deleting term:', error);
+      throw error;
+    }
+  }
+
   async createTopic(topicData: InsertTopic): Promise<Topic> {
     const [topic] = await db
       .insert(topics)
