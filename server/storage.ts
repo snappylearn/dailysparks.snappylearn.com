@@ -69,7 +69,7 @@ import {
   type InsertUserSparkBoost,
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, desc, sql, count, avg, gte, lte, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, count, avg, gte, lte, inArray, or, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -1434,6 +1434,7 @@ export class DatabaseStorage implements IStorage {
   // Admin user operations
   async getAdminUserList(filters?: any): Promise<any[]> {
     try {
+      // First get all users with their primary profile (or any profile if default_profile_id is null)
       const query = db
         .select({
           id: users.id,
@@ -1444,7 +1445,7 @@ export class DatabaseStorage implements IStorage {
           createdAt: users.createdAt,
           isPremium: users.isPremium,
           defaultProfileId: users.defaultProfileId,
-          // Profile information
+          // Profile information (prefer default profile, fallback to any profile)
           profileId: profiles.id,
           examinationSystemId: profiles.examinationSystemId,
           levelId: profiles.levelId,
@@ -1458,7 +1459,13 @@ export class DatabaseStorage implements IStorage {
           levelTitle: levels.title,
         })
         .from(users)
-        .leftJoin(profiles, eq(users.defaultProfileId, profiles.id))
+        .leftJoin(profiles, or(
+          eq(users.defaultProfileId, profiles.id),
+          and(
+            isNull(users.defaultProfileId),
+            eq(profiles.userId, users.id)
+          )
+        ))
         .leftJoin(examinationSystems, eq(profiles.examinationSystemId, examinationSystems.id))
         .leftJoin(levels, eq(profiles.levelId, levels.id))
         .orderBy(desc(users.createdAt));
