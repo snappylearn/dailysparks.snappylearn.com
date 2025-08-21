@@ -87,11 +87,18 @@ export default function AdminQuizzes() {
   });
   const { data: terms } = useQuery({ queryKey: ["/api/terms"] });
 
-  // Filter levels based on selected examination system
+  // Filter levels based on selected examination system (for form)
   const filteredLevels = allLevels?.filter((level: any) => {
     if (!selectedExamSystemId) return true; // Show all if none selected
     // Check both camelCase and snake_case field names
     return level.examinationSystemId === selectedExamSystemId || level.examination_system_id === selectedExamSystemId;
+  }) || [];
+
+  // Filter levels based on selected examination system (for main filters)
+  const filteredLevelsForFilter = allLevels?.filter((level: any) => {
+    if (selectedExamSystem === 'all') return true; // Show all if none selected
+    // Check both camelCase and snake_case field names
+    return level.examinationSystemId === selectedExamSystem || level.examination_system_id === selectedExamSystem;
   }) || [];
 
   // Filter subjects based on selected examination system
@@ -417,7 +424,11 @@ export default function AdminQuizzes() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <Select value={selectedExamSystem} onValueChange={setSelectedExamSystem}>
+            <Select value={selectedExamSystem} onValueChange={(value) => {
+              setSelectedExamSystem(value);
+              // Reset level when exam system changes
+              setSelectedLevel("all");
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder="Exam System" />
               </SelectTrigger>
@@ -437,7 +448,7 @@ export default function AdminQuizzes() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Levels</SelectItem>
-                {allLevels?.map((level: any) => (
+                {filteredLevelsForFilter?.map((level: any) => (
                   <SelectItem key={level.id} value={level.id}>
                     {level.title}
                   </SelectItem>
