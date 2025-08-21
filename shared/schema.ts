@@ -186,6 +186,7 @@ export const subjects = pgTable("subjects", {
 // Terms table - represents academic terms (Term 1, Term 2, Term 3)
 export const terms = pgTable("terms", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  examinationSystemId: varchar("examination_system_id").notNull().references(() => examinationSystems.id),
   title: varchar("title").notNull(), // "Term 1", "Term 2", "Term 3"
   description: text("description"),
   order: integer("order").notNull(), // 1, 2, 3
@@ -428,7 +429,11 @@ export const subjectsRelations = relations(subjects, ({ one, many }) => ({
   quizSessions: many(quizSessions),
 }));
 
-export const termsRelations = relations(terms, ({ many }) => ({
+export const termsRelations = relations(terms, ({ one, many }) => ({
+  examinationSystem: one(examinationSystems, {
+    fields: [terms.examinationSystemId],
+    references: [examinationSystems.id],
+  }),
   topics: many(topics),
 }));
 
