@@ -28,7 +28,30 @@ const generateQuizSchema = z.object({
   timeLimit: z.number().min(5).max(120).default(30)
 });
 
+const addQuizSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  examinationSystemId: z.string().min(1, "Examination system is required"),
+  levelId: z.string().min(1, "Level is required"),
+  subjectId: z.string().min(1, "Subject is required"),
+  quizType: z.string().min(1, "Quiz type is required"),
+  topicId: z.string().optional(),
+  termId: z.string().optional(),
+  timeLimit: z.number().min(5).max(120).default(30),
+  difficulty: z.string().default("medium"),
+  questions: z.array(z.object({
+    questionText: z.string().min(1, "Question text is required"),
+    optionA: z.string().min(1, "Option A is required"),
+    optionB: z.string().min(1, "Option B is required"),
+    optionC: z.string().min(1, "Option C is required"),
+    optionD: z.string().min(1, "Option D is required"),
+    correctAnswer: z.enum(["A", "B", "C", "D"]),
+    explanation: z.string().optional()
+  })).min(1, "At least one question is required")
+});
+
 type GenerateQuizFormData = z.infer<typeof generateQuizSchema>;
+type AddQuizFormData = z.infer<typeof addQuizSchema>;
 
 export default function AdminQuizzes() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,6 +61,7 @@ export default function AdminQuizzes() {
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
   const [selectedTerm, setSelectedTerm] = useState<string>("all");
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
 
@@ -45,7 +69,7 @@ export default function AdminQuizzes() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
 
-  // Initialize form first
+  // Initialize forms
   const form = useForm<GenerateQuizFormData>({
     resolver: zodResolver(generateQuizSchema),
     defaultValues: {
@@ -54,10 +78,36 @@ export default function AdminQuizzes() {
     }
   });
 
+  const addForm = useForm<AddQuizFormData>({
+    resolver: zodResolver(addQuizSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      timeLimit: 30,
+      difficulty: "medium",
+      questions: [
+        {
+          questionText: "",
+          optionA: "",
+          optionB: "",
+          optionC: "",
+          optionD: "",
+          correctAnswer: "A" as const,
+          explanation: ""
+        }
+      ]
+    }
+  });
+
   // Watch form values for dynamic filtering
   const selectedExamSystemId = form.watch("examinationSystemId");
   const selectedLevelId = form.watch("levelId");
   const selectedSubjectId = form.watch("subjectId");
+
+  // Watch add form values
+  const addSelectedExamSystemId = addForm.watch("examinationSystemId");
+  const addSelectedLevelId = addForm.watch("levelId");
+  const addSelectedSubjectId = addForm.watch("subjectId");
 
   // Fetch quiz data with filters
   const { data: quizzes, isLoading: quizzesLoading } = useQuery({
@@ -108,6 +158,17 @@ export default function AdminQuizzes() {
     return subject.examinationSystemId === selectedExamSystemId || subject.examination_system_id === selectedExamSystemId;
   }) || [];
 
+  // Filter data for Add Quiz form
+  const addFilteredLevels = allLevels?.filter((level: any) => {
+    if (!addSelectedExamSystemId) return true;
+    return level.examinationSystemId === addSelectedExamSystemId || level.examination_system_id === addSelectedExamSystemId;
+  }) || [];
+
+  const addFilteredSubjects = allSubjects?.filter((subject: any) => {
+    if (!addSelectedExamSystemId) return true;
+    return subject.examinationSystemId === addSelectedExamSystemId || subject.examination_system_id === addSelectedExamSystemId;
+  }) || [];
+
   // Debug logging - Remove after testing
   // console.log('selectedExamSystemId:', selectedExamSystemId);
   // console.log('allLevels:', allLevels);
@@ -138,8 +199,34 @@ export default function AdminQuizzes() {
     }
   });
 
+  const addQuizMutation = useMutation({
+    mutationFn: async (data: AddQuizFormData) => {
+      return apiRequest("POST", "/api/admin/quizzes", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Quiz added successfully!"
+      });
+      setAddDialogOpen(false);
+      addForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/quizzes"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add quiz",
+        variant: "destructive"
+      });
+    }
+  });
+
   const onSubmit = (data: GenerateQuizFormData) => {
     generateQuizMutation.mutate(data);
+  };
+
+  const onAddSubmit = (data: AddQuizFormData) => {
+    addQuizMutation.mutate(data);
   };
 
   const filteredQuizzes = quizzes?.filter((quiz: any) => {
@@ -162,14 +249,15 @@ export default function AdminQuizzes() {
             Generate, edit, and manage all quizzes
           </p>
         </div>
-        <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Generate Quiz
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+        <div className="flex gap-2">
+          <Dialog open={generateDialogOpen} onOpenChange={setGenerateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Generate Quiz
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Generate New Quiz</DialogTitle>
             </DialogHeader>
@@ -398,7 +486,280 @@ export default function AdminQuizzes() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+          
+          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Quiz
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add New Quiz</DialogTitle>
+              </DialogHeader>
+              <Form {...addForm}>
+                <form onSubmit={addForm.handleSubmit(onAddSubmit)} className="space-y-6">
+                  {/* Basic Quiz Information */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={addForm.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quiz Title *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter quiz title" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={addForm.control}
+                      name="difficulty"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Difficulty</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select difficulty" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="easy">Easy</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="hard">Hard</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={addForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Enter quiz description" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* System Configuration */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={addForm.control}
+                      name="examinationSystemId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Examination System *</FormLabel>
+                          <Select onValueChange={(value) => {
+                            field.onChange(value);
+                            addForm.setValue("levelId", "");
+                            addForm.setValue("subjectId", "");
+                          }} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select exam system" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {examSystems?.map((system: any) => (
+                                <SelectItem key={system.id} value={system.id}>
+                                  {system.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={addForm.control}
+                      name="levelId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Level *</FormLabel>
+                          <Select onValueChange={(value) => {
+                            field.onChange(value);
+                            addForm.setValue("subjectId", "");
+                          }} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select level" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {addFilteredLevels?.map((level: any) => (
+                                <SelectItem key={level.id} value={level.id}>
+                                  {level.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={addForm.control}
+                      name="subjectId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Subject *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select subject" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {addFilteredSubjects?.map((subject: any) => (
+                                <SelectItem key={subject.id} value={subject.id}>
+                                  {subject.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={addForm.control}
+                      name="quizType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quiz Type *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select quiz type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="random">Random</SelectItem>
+                              <SelectItem value="topical">Topical</SelectItem>
+                              <SelectItem value="term">Term-based</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Conditional Fields */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {addForm.watch("quizType") === "topical" && (
+                      <FormField
+                        control={addForm.control}
+                        name="topicId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Topic</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select topic" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {topics?.map((topic: any) => (
+                                  <SelectItem key={topic.id} value={topic.id}>
+                                    {topic.title}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    {addForm.watch("quizType") === "term" && (
+                      <FormField
+                        control={addForm.control}
+                        name="termId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Term</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select term" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {terms?.map((term: any) => (
+                                  <SelectItem key={term.id} value={term.id}>
+                                    {term.title}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    <FormField
+                      control={addForm.control}
+                      name="timeLimit"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Time Limit (minutes)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="5"
+                              max="120"
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Questions Section */}
+                  <AddQuizQuestions form={addForm} />
+
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => setAddDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={addQuizMutation.isPending}>
+                      {addQuizMutation.isPending ? "Adding..." : "Add Quiz"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Filters and Search */}
@@ -805,6 +1166,164 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
           )}
         />
 
+        {/* System Configuration Fields */}
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="examinationSystemId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Examination System *</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select exam system" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {examSystems?.map((system: any) => (
+                      <SelectItem key={system.id} value={system.id}>
+                        {system.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="levelId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Level *</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {allLevels?.map((level: any) => (
+                      <SelectItem key={level.id} value={level.id}>
+                        {level.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="subjectId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Subject *</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select subject" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {allSubjects?.map((subject: any) => (
+                      <SelectItem key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="quizType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Quiz Type *</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select quiz type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="random">Random</SelectItem>
+                    <SelectItem value="topical">Topical</SelectItem>
+                    <SelectItem value="term">Term-based</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Conditional Fields */}
+        <div className="grid grid-cols-2 gap-4">
+          {form.watch("quizType") === "topical" && (
+            <FormField
+              control={form.control}
+              name="topicId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Topic</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select topic" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {topics?.map((topic: any) => (
+                        <SelectItem key={topic.id} value={topic.id}>
+                          {topic.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {form.watch("quizType") === "term" && (
+            <FormField
+              control={form.control}
+              name="termId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Term</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select term" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {terms?.map((term: any) => (
+                        <SelectItem key={term.id} value={term.id}>
+                          {term.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+        </div>
+
         {/* Questions Section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -988,6 +1507,154 @@ function EditChoicesForm({
           Save Choices
         </Button>
       </div>
+    </div>
+  );
+}
+
+// Add Quiz Questions Component
+function AddQuizQuestions({ form }: { form: any }) {
+  const { control, setValue, watch } = form;
+  const questions = watch("questions") || [];
+
+  const addQuestion = () => {
+    const newQuestion = {
+      questionText: "",
+      optionA: "",
+      optionB: "",
+      optionC: "",
+      optionD: "",
+      correctAnswer: "A" as const,
+      explanation: ""
+    };
+    setValue("questions", [...questions, newQuestion]);
+  };
+
+  const removeQuestion = (index: number) => {
+    const updatedQuestions = questions.filter((_: any, i: number) => i !== index);
+    setValue("questions", updatedQuestions);
+  };
+
+  const updateQuestion = (index: number, field: string, value: any) => {
+    const updatedQuestions = [...questions];
+    updatedQuestions[index] = { ...updatedQuestions[index], [field]: value };
+    setValue("questions", updatedQuestions);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Questions</h3>
+        <Button type="button" onClick={addQuestion} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Add Question
+        </Button>
+      </div>
+
+      {questions.map((question: any, index: number) => (
+        <Card key={index} className="p-4">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h4 className="font-medium">Question {index + 1}</h4>
+              {questions.length > 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => removeQuestion(index)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium">Question Text *</label>
+                <Textarea
+                  value={question.questionText}
+                  onChange={(e) => updateQuestion(index, "questionText", e.target.value)}
+                  placeholder="Enter the question text"
+                  className="mt-1"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium">Option A *</label>
+                  <Input
+                    value={question.optionA}
+                    onChange={(e) => updateQuestion(index, "optionA", e.target.value)}
+                    placeholder="Enter option A"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Option B *</label>
+                  <Input
+                    value={question.optionB}
+                    onChange={(e) => updateQuestion(index, "optionB", e.target.value)}
+                    placeholder="Enter option B"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Option C *</label>
+                  <Input
+                    value={question.optionC}
+                    onChange={(e) => updateQuestion(index, "optionC", e.target.value)}
+                    placeholder="Enter option C"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Option D *</label>
+                  <Input
+                    value={question.optionD}
+                    onChange={(e) => updateQuestion(index, "optionD", e.target.value)}
+                    placeholder="Enter option D"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Correct Answer *</label>
+                <Select
+                  value={question.correctAnswer}
+                  onValueChange={(value) => updateQuestion(index, "correctAnswer", value)}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select correct answer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A">A</SelectItem>
+                    <SelectItem value="B">B</SelectItem>
+                    <SelectItem value="C">C</SelectItem>
+                    <SelectItem value="D">D</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Explanation (Optional)</label>
+                <Textarea
+                  value={question.explanation}
+                  onChange={(e) => updateQuestion(index, "explanation", e.target.value)}
+                  placeholder="Enter explanation for the correct answer"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
+      ))}
+
+      {questions.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          <p>No questions added yet. Click "Add Question" to get started.</p>
+        </div>
+      )}
     </div>
   );
 }

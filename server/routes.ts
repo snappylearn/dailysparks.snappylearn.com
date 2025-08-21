@@ -267,6 +267,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create new quiz
+  app.post('/api/admin/quizzes', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const quizData = { ...req.body, createdBy: userId };
+      
+      const newQuiz = await storage.createQuiz(quizData);
+      res.json(newQuiz);
+    } catch (error) {
+      console.error("Error creating quiz:", error);
+      res.status(500).json({ message: "Failed to create quiz" });
+    }
+  });
+
   // Update quiz
   app.put('/api/admin/quizzes/:quizId', isAuthenticated, async (req: any, res) => {
     try {

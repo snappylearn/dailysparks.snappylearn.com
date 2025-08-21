@@ -1176,47 +1176,92 @@ export class DatabaseStorage implements IStorage {
   // Topic management operations
   async getAdminTopicList(filters?: any): Promise<any[]> {
     try {
+      // First get all topics
       const topicList = await db
-        .select({
-          id: topics.id,
-          title: topics.title,
-          description: topics.description,
-          content: topics.content,
-          subjectId: topics.subjectId,
-          levelId: topics.levelId,
-          examinationSystemId: topics.examinationSystemId,
-          termId: topics.termId,
-          createdAt: topics.createdAt,
-          subjectName: subjects.name,
-          levelTitle: levels.title,
-          examinationSystemName: examinationSystems.name,
-          termTitle: terms.title,
-        })
+        .select()
         .from(topics)
-        .leftJoin(subjects, eq(topics.subjectId, subjects.id))
-        .leftJoin(levels, eq(topics.levelId, levels.id))
-        .leftJoin(examinationSystems, eq(topics.examinationSystemId, examinationSystems.id))
-        .leftJoin(terms, eq(topics.termId, terms.id))
         .orderBy(desc(topics.createdAt));
 
-      return topicList.map(topic => ({
-        id: topic.id,
-        title: topic.title,
-        description: topic.description,
-        content: topic.content,
-        subjectId: topic.subjectId,
-        levelId: topic.levelId,
-        examinationSystemId: topic.examinationSystemId,
-        termId: topic.termId,
-        subject: topic.subjectName || 'Unknown',
-        level: topic.levelTitle || 'Unknown',
-        examination_system: topic.examinationSystemName || 'Unknown',
-        term: topic.termTitle || null,
-        createdAt: topic.createdAt,
-      }));
+      // Get related data separately to avoid join issues
+      const topicsWithDetails = await Promise.all(
+        topicList.map(async (topic) => {
+          let subjectName = 'Unknown';
+          let levelTitle = 'Unknown';
+          let examinationSystemName = 'Unknown';
+          let termTitle = null;
+
+          try {
+            if (topic.subjectId) {
+              const [subject] = await db.select({ name: subjects.name }).from(subjects).where(eq(subjects.id, topic.subjectId));
+              subjectName = subject?.name || 'Unknown';
+            }
+
+            if (topic.levelId) {
+              const [level] = await db.select({ title: levels.title }).from(levels).where(eq(levels.id, topic.levelId));
+              levelTitle = level?.title || 'Unknown';
+            }
+
+            if (topic.examinationSystemId) {
+              const [examSystem] = await db.select({ name: examinationSystems.name }).from(examinationSystems).where(eq(examinationSystems.id, topic.examinationSystemId));
+              examinationSystemName = examSystem?.name || 'Unknown';
+            }
+
+            if (topic.termId) {
+              const [term] = await db.select({ title: terms.title }).from(terms).where(eq(terms.id, topic.termId));
+              termTitle = term?.title || null;
+            }
+          } catch (err) {
+            console.error('Error fetching related data for topic:', err);
+          }
+
+          return {
+            id: topic.id,
+            title: topic.title,
+            description: topic.description,
+            content: topic.summaryContent,
+            subjectId: topic.subjectId,
+            levelId: topic.levelId,
+            examinationSystemId: topic.examinationSystemId,
+            termId: topic.termId,
+            subject: subjectName,
+            level: levelTitle,
+            examination_system: examinationSystemName,
+            term: termTitle,
+            createdAt: topic.createdAt,
+          };
+        })
+      );
+
+      return topicsWithDetails;
     } catch (error) {
       console.error('Error fetching admin topic list:', error);
       return [];
+    }
+  }
+
+  async createQuiz(quizData: any): Promise<any> {
+    try {
+      const [newQuiz] = await db.insert(quizzes).values({
+        title: quizData.title,
+        description: quizData.description,
+        examinationSystemId: quizData.examinationSystemId,
+        levelId: quizData.levelId,
+        subjectId: quizData.subjectId,
+        quizType: quizData.quizType,
+        topicId: quizData.topicId || null,
+        termId: quizData.termId || null,
+        questions: quizData.questions,
+        totalQuestions: quizData.questions.length,
+        timeLimit: quizData.timeLimit,
+        difficulty: quizData.difficulty || 'medium',
+        isActive: true,
+        createdBy: quizData.createdBy
+      }).returning();
+
+      return newQuiz;
+    } catch (error) {
+      console.error('Error creating quiz:', error);
+      throw error;
     }
   }
 
