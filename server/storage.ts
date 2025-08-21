@@ -706,28 +706,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAdminQuizList(filters: any): Promise<any[]> {
-    // Fetch from the correct quizzes table (admin-created templates)
+    // Fetch from the correct quizzes table (admin-created templates) with joins
     const quizTemplates = await db
       .select({
         id: quizzes.id,
         title: quizzes.title,
         subjectId: quizzes.subjectId,
+        levelId: quizzes.levelId,
+        examinationSystemId: quizzes.examinationSystemId,
         questionCount: quizzes.totalQuestions,
         timeLimit: quizzes.timeLimit,
         createdAt: quizzes.createdAt,
+        subjectName: subjects.name,
+        levelTitle: levels.title,
+        examinationSystemName: examinationSystems.name,
       })
       .from(quizzes)
+      .leftJoin(subjects, eq(quizzes.subjectId, subjects.id))
+      .leftJoin(levels, eq(quizzes.levelId, levels.id))
+      .leftJoin(examinationSystems, eq(quizzes.examinationSystemId, examinationSystems.id))
       .orderBy(desc(quizzes.createdAt));
 
-    // Get subject names, actual question counts, and session counts
+    // Get actual question counts and session counts
     const quizList = await Promise.all(
       quizTemplates.map(async (quiz) => {
-        // Get subject name
-        const [subject] = await db
-          .select({ name: subjects.name })
-          .from(subjects)
-          .where(eq(subjects.id, quiz.subjectId));
-
         // Count actual questions from quiz_questions table
         const [questionCount] = await db
           .select({ count: count() })
@@ -743,7 +745,9 @@ export class DatabaseStorage implements IStorage {
         return {
           id: quiz.id,
           title: quiz.title,
-          subject: subject?.name || 'Unknown',
+          subject: quiz.subjectName || 'Unknown',
+          examination_system: quiz.examinationSystemName || 'Unknown',
+          level: quiz.levelTitle || 'Unknown',
           type: 'topical', // Default for now
           questions: questionCount?.count || 0, // Use actual count from quiz_questions
           sessions: sessionCount?.count || 0,

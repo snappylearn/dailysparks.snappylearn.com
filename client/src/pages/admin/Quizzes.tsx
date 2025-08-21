@@ -516,6 +516,8 @@ export default function AdminQuizzes() {
                 <TableRow>
                   <TableHead>Quiz Title</TableHead>
                   <TableHead>Subject</TableHead>
+                  <TableHead>System</TableHead>
+                  <TableHead>Level</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Questions</TableHead>
                   <TableHead className="text-center">Sessions</TableHead>
@@ -529,6 +531,16 @@ export default function AdminQuizzes() {
                   <TableRow key={quiz.id}>
                     <TableCell className="font-medium">{quiz.title}</TableCell>
                     <TableCell>{quiz.subject}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="text-xs">
+                        {quiz.examination_system || quiz.examinationSystem || 'N/A'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="text-xs">
+                        {quiz.level || 'N/A'}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">
                         {quiz.type || 'topical'}
@@ -577,7 +589,7 @@ export default function AdminQuizzes() {
                 
                 {filteredQuizzes.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                       No quizzes found. Generate your first quiz!
                     </TableCell>
                   </TableRow>
