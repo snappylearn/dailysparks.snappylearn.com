@@ -15,7 +15,7 @@ export default function AdminUsers() {
   const [sortBy, setSortBy] = useState<string>("recent");
 
   const { data: users, isLoading } = useQuery({
-    queryKey: ["/api/admin/users", { search: searchQuery, status: statusFilter, sort: sortBy }],
+    queryKey: ["/api/admin/users"],
   });
 
   const { data: userStats, isLoading: statsLoading } = useQuery({
@@ -218,6 +218,8 @@ export default function AdminUsers() {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8">Loading users...</div>
+          ) : displayUsers.length === 0 ? (
+            <div className="text-center py-8">No users found</div>
           ) : (
             <Table>
               <TableHeader>
