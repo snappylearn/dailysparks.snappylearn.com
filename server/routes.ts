@@ -323,6 +323,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin topic management routes
+  app.get('/api/admin/topics', isAuthenticated, async (req: any, res) => {
+    try {
+      const topics = await storage.getAdminTopicList(req.query);
+      res.json(topics);
+    } catch (error) {
+      console.error("Error fetching admin topics:", error);
+      res.status(500).json({ message: "Failed to fetch topics" });
+    }
+  });
+
+  app.post('/api/admin/topics', isAuthenticated, async (req: any, res) => {
+    try {
+      const topicData = req.body;
+      const newTopic = await storage.createTopic(topicData);
+      res.json(newTopic);
+    } catch (error) {
+      console.error("Error creating topic:", error);
+      res.status(500).json({ message: "Failed to create topic" });
+    }
+  });
+
+  app.put('/api/admin/topics/:topicId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { topicId } = req.params;
+      const updateData = req.body;
+      const updatedTopic = await storage.updateTopic(topicId, updateData);
+      res.json(updatedTopic);
+    } catch (error) {
+      console.error("Error updating topic:", error);
+      res.status(500).json({ message: "Failed to update topic" });
+    }
+  });
+
+  app.delete('/api/admin/topics/:topicId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { topicId } = req.params;
+      await storage.deleteTopic(topicId);
+      res.json({ message: "Topic deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting topic:", error);
+      res.status(500).json({ message: "Failed to delete topic" });
+    }
+  });
+
   // ===== END ADMIN ROUTES =====
 
   // Get quiz types

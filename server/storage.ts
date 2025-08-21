@@ -145,6 +145,12 @@ export interface IStorage {
   // Today's leaderboard
   getTodayLeaderboard(): Promise<any[]>;
   
+  // Topic management operations
+  getAdminTopicList(filters?: any): Promise<any[]>;
+  createTopic(topicData: InsertTopic): Promise<Topic>;
+  updateTopic(topicId: string, updateData: Partial<InsertTopic>): Promise<Topic>;
+  deleteTopic(topicId: string): Promise<void>;
+
   // Gamification operations
   getBadgeTypes(): Promise<BadgeType[]>;
   getBadges(): Promise<Badge[]>;
@@ -1165,6 +1171,76 @@ export class DatabaseStorage implements IStorage {
       ));
     
     return todayBoosts.length === 0; // User can only boost once per day
+  }
+
+  // Topic management operations
+  async getAdminTopicList(filters?: any): Promise<any[]> {
+    try {
+      const topicList = await db
+        .select({
+          id: topics.id,
+          title: topics.title,
+          description: topics.description,
+          content: topics.content,
+          subjectId: topics.subjectId,
+          levelId: topics.levelId,
+          examinationSystemId: topics.examinationSystemId,
+          termId: topics.termId,
+          createdAt: topics.createdAt,
+          subjectName: subjects.name,
+          levelTitle: levels.title,
+          examinationSystemName: examinationSystems.name,
+          termTitle: terms.title,
+        })
+        .from(topics)
+        .leftJoin(subjects, eq(topics.subjectId, subjects.id))
+        .leftJoin(levels, eq(topics.levelId, levels.id))
+        .leftJoin(examinationSystems, eq(topics.examinationSystemId, examinationSystems.id))
+        .leftJoin(terms, eq(topics.termId, terms.id))
+        .orderBy(desc(topics.createdAt));
+
+      return topicList.map(topic => ({
+        id: topic.id,
+        title: topic.title,
+        description: topic.description,
+        content: topic.content,
+        subjectId: topic.subjectId,
+        levelId: topic.levelId,
+        examinationSystemId: topic.examinationSystemId,
+        termId: topic.termId,
+        subject: topic.subjectName || 'Unknown',
+        level: topic.levelTitle || 'Unknown',
+        examination_system: topic.examinationSystemName || 'Unknown',
+        term: topic.termTitle || null,
+        createdAt: topic.createdAt,
+      }));
+    } catch (error) {
+      console.error('Error fetching admin topic list:', error);
+      return [];
+    }
+  }
+
+  async createTopic(topicData: InsertTopic): Promise<Topic> {
+    const [topic] = await db
+      .insert(topics)
+      .values(topicData)
+      .returning();
+    return topic;
+  }
+
+  async updateTopic(topicId: string, updateData: Partial<InsertTopic>): Promise<Topic> {
+    const [topic] = await db
+      .update(topics)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(topics.id, topicId))
+      .returning();
+    return topic;
+  }
+
+  async deleteTopic(topicId: string): Promise<void> {
+    await db
+      .delete(topics)
+      .where(eq(topics.id, topicId));
   }
 }
 

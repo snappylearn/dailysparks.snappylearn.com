@@ -14,7 +14,8 @@ import {
   Settings, 
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -24,6 +25,7 @@ interface AdminLayoutProps {
 const menuItems = [
   { icon: Home, label: "Dashboard", href: "/admin" },
   { icon: BookOpen, label: "Quizzes", href: "/admin/quizzes" },
+  { icon: FileText, label: "Topics", href: "/admin/topics" },
   { icon: Users, label: "Users", href: "/admin/users" },
   { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },

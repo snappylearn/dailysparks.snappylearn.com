@@ -16,6 +16,7 @@ import Onboarding from "@/components/Onboarding";
 import AdminLayout from "@/layouts/AdminLayout";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminQuizzes from "@/pages/admin/Quizzes";
+import AdminTopics from "@/pages/admin/Topics";
 import AdminUsers from "@/pages/admin/Users";
 import AdminAnalytics from "@/pages/admin/Analytics";
 import AdminSettings from "@/pages/admin/Settings";
@@ -65,6 +66,11 @@ function Router() {
       <Route path="/admin/quizzes">
         <AdminLayout>
           <AdminQuizzes />
+        </AdminLayout>
+      </Route>
+      <Route path="/admin/topics">
+        <AdminLayout>
+          <AdminTopics />
         </AdminLayout>
       </Route>
       <Route path="/admin/users">
