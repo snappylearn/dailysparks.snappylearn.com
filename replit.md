@@ -6,6 +6,12 @@ Daily Sparks is an AI-powered revision platform specifically designed for Kenyan
 
 The application offers gamified quiz experiences where students can take random quizzes, topical quizzes, or term-specific quizzes. The AI engine analyzes user performance to optimize question difficulty, schedule reviews, and provide personalized explanations. Students earn "sparks" (points) and maintain learning streaks to encourage consistent study habits.
 
+**Recent Updates (August 21, 2025):**
+- Implemented comprehensive Platform Settings with live database integration
+- Added configurable sparks calculation system (now defaults to 5 per correct answer instead of hardcoded 15)
+- Created three-tab admin interface for General, Quiz, and Notification settings management
+- Established comprehensive Business Requirements Document (README_BRD.md) detailing platform specifications
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
