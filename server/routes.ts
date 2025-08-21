@@ -976,7 +976,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profile = await storage.getProfile(updatedSession.profileId);
       if (profile) {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        const lastQuizDate = profile.lastQuizDate ? new Date(profile.lastQuizDate).toISOString().split('T')[0] : null;
+        let lastQuizDate = null;
+        if (profile.lastQuizDate) {
+          try {
+            const lastDate = new Date(profile.lastQuizDate);
+            if (!isNaN(lastDate.getTime())) {
+              lastQuizDate = lastDate.toISOString().split('T')[0];
+            }
+          } catch (error) {
+            console.warn('Invalid lastQuizDate format:', profile.lastQuizDate);
+          }
+        }
         
         // Calculate streak
         let newCurrentStreak = profile.currentStreak || 0;
@@ -1022,11 +1032,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({
-        correctAnswers,
+        sessionId: sessionId,
         totalQuestions: answers.length,
-        accuracy: Math.round(accuracy * 100),
+        correctAnswers,
         sparksEarned,
         timeSpent: totalTime,
+        completed: true,
       });
 
     } catch (error) {
