@@ -628,8 +628,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "No quizzes available for this subject" });
       }
 
-      // Select a random quiz from available quizzes
-      const selectedQuiz = availableQuizzes[Math.floor(Math.random() * availableQuizzes.length)];
+      // Filter to only include quizzes that have questions
+      const quizzesWithQuestions = [];
+      for (const quiz of availableQuizzes) {
+        const quizWithQuestions = await storage.getQuizWithQuestions(quiz.id);
+        if (quizWithQuestions.questions && quizWithQuestions.questions.length > 0) {
+          quizzesWithQuestions.push(quiz);
+        }
+      }
+
+      if (quizzesWithQuestions.length === 0) {
+        return res.status(404).json({ message: "No quizzes with questions available for this subject" });
+      }
+
+      // Select a random quiz from available quizzes that have questions
+      const selectedQuiz = quizzesWithQuestions[Math.floor(Math.random() * quizzesWithQuestions.length)];
 
       // Get quiz questions
       const quizWithQuestions = await storage.getQuizWithQuestions(selectedQuiz.id);
