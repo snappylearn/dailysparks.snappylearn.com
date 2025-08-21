@@ -18,6 +18,10 @@ export default function AdminUsers() {
     queryKey: ["/api/admin/users", { search: searchQuery, status: statusFilter, sort: sortBy }],
   });
 
+  const { data: userStats, isLoading: statsLoading } = useQuery({
+    queryKey: ["/api/admin/user-stats"],
+  });
+
   const filteredUsers = users?.filter((user: any) => {
     const matchesSearch = searchQuery === "" || 
       user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,56 +58,7 @@ export default function AdminUsers() {
     );
   };
 
-  // Mock data for demonstration
-  const mockUsers = [
-    {
-      id: '1',
-      name: 'Alice Johnson',
-      email: 'alice@example.com',
-      avatar: '',
-      status: 'active',
-      examSystem: 'KCSE',
-      level: 'Form 4',
-      sparks: 2450,
-      streak: 12,
-      quizzesCompleted: 45,
-      averageScore: 87,
-      joinedAt: '2024-01-15',
-      lastActive: '2 hours ago'
-    },
-    {
-      id: '2', 
-      name: 'James Muriuki',
-      email: 'james@example.com',
-      avatar: '',
-      status: 'active',
-      examSystem: 'KCSE',
-      level: 'Form 3',
-      sparks: 1890,
-      streak: 8,
-      quizzesCompleted: 32,
-      averageScore: 82,
-      joinedAt: '2024-02-10',
-      lastActive: '1 day ago'
-    },
-    {
-      id: '3',
-      name: 'Grace Wanjiku', 
-      email: 'grace@example.com',
-      avatar: '',
-      status: 'inactive',
-      examSystem: 'IGCSE',
-      level: 'Year 11',
-      sparks: 1120,
-      streak: 0,
-      quizzesCompleted: 18,
-      averageScore: 79,
-      joinedAt: '2024-03-05',
-      lastActive: '2 weeks ago'
-    }
-  ];
-
-  const displayUsers = filteredUsers.length > 0 ? filteredUsers : mockUsers;
+  const displayUsers = filteredUsers || [];
 
   return (
     <div className="space-y-6">
@@ -131,12 +86,18 @@ export default function AdminUsers() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Badge className="bg-blue-100 text-blue-800">+12%</Badge>
+            {userStats?.totalUsers > 0 && (
+              <Badge className="bg-blue-100 text-blue-800">
+                {userStats.totalUsers > 100 ? '+12%' : 'New'}
+              </Badge>
+            )}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2,847</div>
+            <div className="text-2xl font-bold">
+              {statsLoading ? '...' : (userStats?.totalUsers || 0)}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Active learners on platform
+              Registered learners
             </p>
           </CardContent>
         </Card>
@@ -147,9 +108,11 @@ export default function AdminUsers() {
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,842</div>
+            <div className="text-2xl font-bold">
+              {statsLoading ? '...' : (userStats?.activeUsers || 0)}
+            </div>
             <p className="text-xs text-muted-foreground">
-              64.7% engagement rate
+              {userStats?.engagementRate || 0}% engagement rate
             </p>
           </CardContent>
         </Card>
@@ -160,7 +123,9 @@ export default function AdminUsers() {
             <Calendar className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">124</div>
+            <div className="text-2xl font-bold">
+              {statsLoading ? '...' : (userStats?.newSignups || 0)}
+            </div>
             <p className="text-xs text-muted-foreground">
               This month
             </p>
@@ -173,7 +138,9 @@ export default function AdminUsers() {
             <Zap className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,456</div>
+            <div className="text-2xl font-bold">
+              {statsLoading ? '...' : (userStats?.averageSparks || 0)}
+            </div>
             <p className="text-xs text-muted-foreground">
               Per active user
             </p>
@@ -315,7 +282,7 @@ export default function AdminUsers() {
                     <TableCell>
                       <div className="text-sm">{user.lastActive}</div>
                       <div className="text-xs text-muted-foreground">
-                        Joined {new Date(user.joinedAt).toLocaleDateString()}
+                        Joined {user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Unknown'}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

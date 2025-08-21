@@ -139,6 +139,10 @@ export interface IStorage {
   getRecentActivity(): Promise<any[]>;
   getTopPerformers(): Promise<any[]>;
   
+  // Admin user operations
+  getAdminUserList(filters?: any): Promise<any[]>;
+  getAdminUserStats(): Promise<any>;
+  
   // Quiz History
   getQuizHistoryForUser(userId: string): Promise<any[]>;
   
@@ -1424,6 +1428,179 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error deleting term:', error);
       throw error;
+    }
+  }
+
+  // Admin user operations
+  async getAdminUserList(filters?: any): Promise<any[]> {
+    try {
+      const query = db
+        .select({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          createdAt: users.createdAt,
+          isPremium: users.isPremium,
+          defaultProfileId: users.defaultProfileId,
+          // Profile information
+          profileId: profiles.id,
+          examinationSystemId: profiles.examinationSystemId,
+          levelId: profiles.levelId,
+          sparks: profiles.sparks,
+          streak: profiles.streak,
+          currentStreak: profiles.currentStreak,
+          lastActivity: profiles.lastActivity,
+          isActive: profiles.isActive,
+          // Examination system and level names
+          examSystemName: examinationSystems.name,
+          levelTitle: levels.title,
+        })
+        .from(users)
+        .leftJoin(profiles, eq(users.defaultProfileId, profiles.id))
+        .leftJoin(examinationSystems, eq(profiles.examinationSystemId, examinationSystems.id))
+        .leftJoin(levels, eq(profiles.levelId, levels.id))
+        .orderBy(desc(users.createdAt));
+
+      const result = await query;
+      
+      // Get quiz session stats for each user
+      const userStats = await Promise.all(
+        result.map(async (user) => {
+          try {
+            if (!user.profileId) return { quizzesCompleted: 0, averageScore: 0 };
+            
+            const sessionsResult = await db
+              .select({
+                count: sql`count(*)`,
+                avgScore: sql`avg(case when total_questions > 0 then (correct_answers::float / total_questions * 100) else 0 end)`
+              })
+              .from(quizSessions)
+              .where(and(
+                eq(quizSessions.profileId, user.profileId),
+                eq(quizSessions.completed, true)
+              ));
+              
+            return {
+              quizzesCompleted: Number(sessionsResult[0]?.count || 0),
+              averageScore: Math.round(Number(sessionsResult[0]?.avgScore || 0))
+            };
+          } catch (error) {
+            console.error('Error getting user stats:', error);
+            return { quizzesCompleted: 0, averageScore: 0 };
+          }
+        })
+      );
+      
+      // Transform the data to match the expected format
+      return result.map((user, index) => {
+        const userStat = userStats[index];
+        
+        const status = user.isActive 
+          ? (user.lastActivity && new Date(user.lastActivity) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) ? 'active' : 'inactive')
+          : 'suspended';
+          
+        const lastActive = user.lastActivity 
+          ? this.formatTimeAgo(new Date(user.lastActivity))
+          : 'Never';
+
+        const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Unknown User';
+
+        return {
+          id: user.id,
+          name: fullName,
+          email: user.email || 'No email',
+          avatar: user.profileImageUrl || '',
+          status,
+          examSystem: user.examSystemName || 'Not Set',
+          level: user.levelTitle || 'Not Set',
+          sparks: user.sparks || 0,
+          streak: user.currentStreak || 0,
+          quizzesCompleted: userStat.quizzesCompleted,
+          averageScore: userStat.averageScore,
+          joinedAt: user.createdAt,
+          lastActive,
+          profileId: user.profileId,
+          isPremium: user.isPremium
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching admin user list:', error);
+      return [];
+    }
+  }
+
+  async getAdminUserStats(): Promise<any> {
+    try {
+      // Get total users count
+      const totalUsersResult = await db.select({ count: sql`count(*)` }).from(users);
+      const totalUsers = Number(totalUsersResult[0]?.count || 0);
+
+      // Get active users this week (users with profile activity in last 7 days)
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const activeUsersResult = await db
+        .select({ count: sql`count(distinct ${profiles.userId})` })
+        .from(profiles)
+        .where(and(
+          sql`${profiles.lastActivity} > ${oneWeekAgo}`,
+          eq(profiles.isActive, true)
+        ));
+      const activeUsers = Number(activeUsersResult[0]?.count || 0);
+
+      // Get new signups this month
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      const newSignupsResult = await db
+        .select({ count: sql`count(*)` })
+        .from(users)
+        .where(sql`${users.createdAt} > ${oneMonthAgo}`);
+      const newSignups = Number(newSignupsResult[0]?.count || 0);
+
+      // Get average sparks (from profiles)
+      const avgSparksResult = await db
+        .select({ avg: sql`avg(${profiles.sparks})` })
+        .from(profiles)
+        .where(eq(profiles.isActive, true));
+      const averageSparks = Math.round(Number(avgSparksResult[0]?.avg || 0));
+
+      return {
+        totalUsers,
+        activeUsers,
+        newSignups,
+        averageSparks,
+        engagementRate: totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100 * 10) / 10 : 0
+      };
+    } catch (error) {
+      console.error('Error fetching admin user stats:', error);
+      return {
+        totalUsers: 0,
+        activeUsers: 0,
+        newSignups: 0,
+        averageSparks: 0,
+        engagementRate: 0
+      };
+    }
+  }
+
+  private formatTimeAgo(date: Date): string {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 60) {
+      return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+    } else if (diffDays < 7) {
+      return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+    } else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+    } else {
+      return date.toLocaleDateString();
     }
   }
 

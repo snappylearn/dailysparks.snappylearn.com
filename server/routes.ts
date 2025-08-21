@@ -514,6 +514,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin user management routes
+  app.get('/api/admin/users', isAuthenticated, async (req: any, res) => {
+    try {
+      const users = await storage.getAdminUserList(req.query);
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching admin users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.get('/api/admin/user-stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const stats = await storage.getAdminUserStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching admin user stats:", error);
+      res.status(500).json({ message: "Failed to fetch user stats" });
+    }
+  });
+
   // ===== END ADMIN ROUTES =====
 
   // Get quiz types
