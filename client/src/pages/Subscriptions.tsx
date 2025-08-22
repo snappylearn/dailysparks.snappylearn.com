@@ -181,8 +181,8 @@ export default function Subscriptions() {
         description: `Subscription: ${plan.name}`,
       });
 
-      // For testing, let's use a small fixed amount in kobo (100 NGN = 10000 kobo)
-      const amountInKobo = 10000; // 100 NGN for testing
+      // Use actual plan price in KES cents (multiply by 100)
+      const amountInCents = parseFloat(plan.price) * 100; // Convert KES to cents
       const reference = `DS_${Date.now()}_${transaction.id}`;
 
       if (!window.PaystackPop) {
@@ -198,13 +198,14 @@ export default function Subscriptions() {
       const paystackKey = "pk_test_a011e6944b1013f457c3164066c77fd4b489d7bc";
       console.log("Paystack Key Available:", !!paystackKey);
       console.log("Payment Details:", { 
-        amount: amountInKobo, 
+        amount: amountInCents, 
         email: user.email, 
         ref: reference,
+        currency: 'KES',
         emailValid: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)
       });
 
-      if (!paystackKey || paystackKey === 'undefined') {
+      if (!paystackKey) {
         toast({ 
           title: "Configuration Error", 
           description: "Paystack public key not configured. Please contact support.",
@@ -216,9 +217,9 @@ export default function Subscriptions() {
       const handler = window.PaystackPop.setup({
         key: paystackKey,
         email: user.email,
-        amount: amountInKobo,
+        amount: amountInCents,
         ref: reference,
-        currency: 'NGN',
+        currency: 'KES',
         // Simplified metadata
         metadata: {
           plan_name: plan.name,
