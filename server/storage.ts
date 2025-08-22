@@ -159,6 +159,19 @@ export interface IStorage {
   // Today's leaderboard
   getTodayLeaderboard(): Promise<any[]>;
   
+  // Enhanced Analytics Operations
+  getTotalUsersCount(): Promise<number>;
+  getTotalQuizzesCount(): Promise<number>;
+  getTotalSessionsCount(): Promise<number>;
+  getAverageScore(): Promise<number>;
+  getQuizActivityByDay(): Promise<any[]>;
+  getSubjectDistribution(): Promise<any[]>;
+  getDailyTopPerformers(): Promise<any[]>;
+  getWeeklyTopPerformers(): Promise<any[]>;
+  getMonthlyTopPerformers(): Promise<any[]>;
+  getEngagementMetrics(): Promise<any>;
+  getPerformanceMetrics(): Promise<any>;
+  
   // Topic management operations
   getAdminTopicList(filters?: any): Promise<any[]>;
   createTopic(topicData: InsertTopic): Promise<Topic>;
@@ -962,6 +975,271 @@ export class DatabaseStorage implements IStorage {
     }, 0);
     
     return Math.round(totalScore / completedSessions.length);
+  }
+
+  async getQuizActivityByDay(): Promise<any[]> {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const activities = await db
+      .select({
+        date: sql<string>`DATE(${quizSessions.startedAt})`,
+        count: sql<number>`count(*)`,
+      })
+      .from(quizSessions)
+      .where(gte(quizSessions.startedAt, sevenDaysAgo))
+      .groupBy(sql`DATE(${quizSessions.startedAt})`)
+      .orderBy(sql`DATE(${quizSessions.startedAt})`);
+
+    // Fill in missing days with 0 count
+    const result = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+      
+      const activity = activities.find(a => a.date === dateStr);
+      result.push({
+        name: dayName,
+        quizzes: activity ? activity.count : 0,
+        date: dateStr
+      });
+    }
+    
+    return result;
+  }
+
+  async getSubjectDistribution(): Promise<any[]> {
+    const distribution = await db
+      .select({
+        subjectName: subjects.name,
+        count: sql<number>`count(*)`,
+      })
+      .from(quizSessions)
+      .leftJoin(subjects, eq(quizSessions.subjectId, subjects.id))
+      .where(eq(quizSessions.completed, true))
+      .groupBy(subjects.name, subjects.id)
+      .orderBy(sql`count(*) DESC`)
+      .limit(5);
+
+    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00'];
+    
+    return distribution.map((item, index) => ({
+      name: item.subjectName || 'Unknown',
+      value: item.count,
+      color: colors[index] || '#8884d8'
+    }));
+  }
+
+  async getDailyTopPerformers(): Promise<any[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const performers = await db
+      .select({
+        userId: profiles.userId,
+        profileId: profiles.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        sparks: sql<number>`COALESCE(SUM(${quizSessions.sparksEarned}), 0)`,
+        quizCount: sql<number>`COUNT(${quizSessions.id})`,
+        avgScore: sql<number>`COALESCE(AVG(CAST(${quizSessions.correctAnswers} AS FLOAT) / NULLIF(${quizSessions.totalQuestions}, 0) * 100), 0)`,
+      })
+      .from(quizSessions)
+      .leftJoin(profiles, eq(quizSessions.profileId, profiles.id))
+      .leftJoin(users, eq(profiles.userId, users.id))
+      .where(
+        and(
+          gte(quizSessions.completedAt, today),
+          lte(quizSessions.completedAt, tomorrow),
+          eq(quizSessions.completed, true)
+        )
+      )
+      .groupBy(profiles.userId, profiles.id, users.firstName, users.lastName)
+      .orderBy(sql`COALESCE(SUM(${quizSessions.sparksEarned}), 0) DESC`)
+      .limit(10);
+
+    return performers.map((p, index) => ({
+      rank: index + 1,
+      name: `${p.firstName || 'Student'} ${p.lastName || ''}`.trim(),
+      sparks: p.sparks || 0,
+      quizCount: p.quizCount || 0,
+      avgScore: Math.round(p.avgScore || 0),
+      period: 'daily'
+    }));
+  }
+
+  async getWeeklyTopPerformers(): Promise<any[]> {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    weekAgo.setHours(0, 0, 0, 0);
+
+    const performers = await db
+      .select({
+        userId: profiles.userId,
+        profileId: profiles.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        sparks: sql<number>`COALESCE(SUM(${quizSessions.sparksEarned}), 0)`,
+        quizCount: sql<number>`COUNT(${quizSessions.id})`,
+        avgScore: sql<number>`COALESCE(AVG(CAST(${quizSessions.correctAnswers} AS FLOAT) / NULLIF(${quizSessions.totalQuestions}, 0) * 100), 0)`,
+      })
+      .from(quizSessions)
+      .leftJoin(profiles, eq(quizSessions.profileId, profiles.id))
+      .leftJoin(users, eq(profiles.userId, users.id))
+      .where(
+        and(
+          gte(quizSessions.completedAt, weekAgo),
+          eq(quizSessions.completed, true)
+        )
+      )
+      .groupBy(profiles.userId, profiles.id, users.firstName, users.lastName)
+      .orderBy(sql`COALESCE(SUM(${quizSessions.sparksEarned}), 0) DESC`)
+      .limit(10);
+
+    return performers.map((p, index) => ({
+      rank: index + 1,
+      name: `${p.firstName || 'Student'} ${p.lastName || ''}`.trim(),
+      sparks: p.sparks || 0,
+      quizCount: p.quizCount || 0,
+      avgScore: Math.round(p.avgScore || 0),
+      period: 'weekly'
+    }));
+  }
+
+  async getMonthlyTopPerformers(): Promise<any[]> {
+    const monthAgo = new Date();
+    monthAgo.setDate(monthAgo.getDate() - 30);
+    monthAgo.setHours(0, 0, 0, 0);
+
+    const performers = await db
+      .select({
+        userId: profiles.userId,
+        profileId: profiles.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        sparks: sql<number>`COALESCE(SUM(${quizSessions.sparksEarned}), 0)`,
+        quizCount: sql<number>`COUNT(${quizSessions.id})`,
+        avgScore: sql<number>`COALESCE(AVG(CAST(${quizSessions.correctAnswers} AS FLOAT) / NULLIF(${quizSessions.totalQuestions}, 0) * 100), 0)`,
+      })
+      .from(quizSessions)
+      .leftJoin(profiles, eq(quizSessions.profileId, profiles.id))
+      .leftJoin(users, eq(profiles.userId, users.id))
+      .where(
+        and(
+          gte(quizSessions.completedAt, monthAgo),
+          eq(quizSessions.completed, true)
+        )
+      )
+      .groupBy(profiles.userId, profiles.id, users.firstName, users.lastName)
+      .orderBy(sql`COALESCE(SUM(${quizSessions.sparksEarned}), 0) DESC`)
+      .limit(10);
+
+    return performers.map((p, index) => ({
+      rank: index + 1,
+      name: `${p.firstName || 'Student'} ${p.lastName || ''}`.trim(),
+      sparks: p.sparks || 0,
+      quizCount: p.quizCount || 0,
+      avgScore: Math.round(p.avgScore || 0),
+      period: 'monthly'
+    }));
+  }
+
+  async getEngagementMetrics(): Promise<any> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const [todayUsers, yesterdayUsers, weeklyUsers, totalUsers] = await Promise.all([
+      // Users active today
+      db.select({ count: sql<number>`count(DISTINCT ${quizSessions.userId})` })
+        .from(quizSessions)
+        .where(gte(quizSessions.startedAt, today)),
+      
+      // Users active yesterday
+      db.select({ count: sql<number>`count(DISTINCT ${quizSessions.userId})` })
+        .from(quizSessions)
+        .where(and(gte(quizSessions.startedAt, yesterday), lte(quizSessions.startedAt, today))),
+      
+      // Users active this week
+      db.select({ count: sql<number>`count(DISTINCT ${quizSessions.userId})` })
+        .from(quizSessions)
+        .where(gte(quizSessions.startedAt, weekAgo)),
+      
+      // Total users
+      db.select({ count: sql<number>`count(*)` }).from(users)
+    ]);
+
+    const todayCount = todayUsers[0].count;
+    const yesterdayCount = yesterdayUsers[0].count;
+    const weeklyCount = weeklyUsers[0].count;
+    const totalCount = totalUsers[0].count;
+
+    return {
+      dailyActiveUsers: todayCount,
+      weeklyActiveUsers: weeklyCount,
+      totalUsers: totalCount,
+      dailyGrowth: yesterdayCount > 0 ? Math.round(((todayCount - yesterdayCount) / yesterdayCount) * 100) : 0,
+      weeklyEngagementRate: totalCount > 0 ? Math.round((weeklyCount / totalCount) * 100) : 0
+    };
+  }
+
+  async getPerformanceMetrics(): Promise<any> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const [completedSessions, avgSessionTime, topSubjects] = await Promise.all([
+      // Completion rate this week
+      db.select({
+        total: sql<number>`count(*)`,
+        completed: sql<number>`count(CASE WHEN ${quizSessions.completed} = true THEN 1 END)`
+      })
+      .from(quizSessions)
+      .where(gte(quizSessions.startedAt, weekAgo)),
+      
+      // Average session time
+      db.select({
+        avgTime: sql<number>`AVG(${quizSessions.timeSpent})`
+      })
+      .from(quizSessions)
+      .where(and(
+        eq(quizSessions.completed, true),
+        gte(quizSessions.completedAt, weekAgo)
+      )),
+      
+      // Most popular subjects
+      db.select({
+        subjectName: subjects.name,
+        sessionCount: sql<number>`count(*)`
+      })
+      .from(quizSessions)
+      .leftJoin(subjects, eq(quizSessions.subjectId, subjects.id))
+      .where(gte(quizSessions.startedAt, weekAgo))
+      .groupBy(subjects.name)
+      .orderBy(sql`count(*) DESC`)
+      .limit(3)
+    ]);
+
+    const sessionData = completedSessions[0];
+    const timeData = avgSessionTime[0];
+    
+    return {
+      completionRate: sessionData.total > 0 ? Math.round((sessionData.completed / sessionData.total) * 100) : 0,
+      averageSessionTime: Math.round((timeData.avgTime || 0) / 60), // Convert to minutes
+      topSubjects: topSubjects.map(s => ({
+        name: s.subjectName || 'Unknown',
+        sessions: s.sessionCount
+      })),
+      weeklyQuizzes: sessionData.total
+    };
   }
 
   async getAdminQuizList(filters: any): Promise<any[]> {

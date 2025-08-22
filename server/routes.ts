@@ -226,17 +226,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin analytics and metrics
   app.get('/api/admin/metrics', isAuthenticated, async (req: any, res) => {
     try {
-      // Basic metrics for admin dashboard
-      const totalUsers = await storage.getTotalUsersCount();
-      const totalQuizzes = await storage.getTotalQuizzesCount();
-      const totalSessions = await storage.getTotalSessionsCount();
-      const avgScore = await storage.getAverageScore();
+      // Enhanced metrics for admin dashboard
+      const [
+        totalUsers,
+        totalQuizzes,
+        totalSessions,
+        avgScore,
+        engagementMetrics,
+        performanceMetrics
+      ] = await Promise.all([
+        storage.getTotalUsersCount(),
+        storage.getTotalQuizzesCount(),
+        storage.getTotalSessionsCount(),
+        storage.getAverageScore(),
+        storage.getEngagementMetrics(),
+        storage.getPerformanceMetrics()
+      ]);
       
       res.json({
         totalUsers,
         totalQuizzes, 
         totalSessions,
-        avgScore
+        avgScore,
+        dailyActiveUsers: engagementMetrics.dailyActiveUsers,
+        weeklyActiveUsers: engagementMetrics.weeklyActiveUsers,
+        completionRate: performanceMetrics.completionRate,
+        averageSessionTime: performanceMetrics.averageSessionTime,
+        dailyGrowth: engagementMetrics.dailyGrowth,
+        weeklyEngagementRate: engagementMetrics.weeklyEngagementRate
       });
     } catch (error) {
       console.error("Error fetching admin metrics:", error);
@@ -466,6 +483,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching admin leaderboard:", error);
       res.status(500).json({ message: "Failed to fetch leaderboard" });
+    }
+  });
+
+  // Enhanced analytics endpoints
+  app.get('/api/admin/analytics', isAuthenticated, async (req: any, res) => {
+    try {
+      const [
+        quizActivity,
+        subjectDistribution,
+        engagementMetrics,
+        performanceMetrics
+      ] = await Promise.all([
+        storage.getQuizActivityByDay(),
+        storage.getSubjectDistribution(),
+        storage.getEngagementMetrics(),
+        storage.getPerformanceMetrics()
+      ]);
+
+      res.json({
+        quizActivity,
+        subjectDistribution,
+        engagement: engagementMetrics,
+        performance: performanceMetrics
+      });
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // Top performers by period (daily/weekly/monthly)
+  app.get('/api/admin/top-performers/:period', isAuthenticated, async (req: any, res) => {
+    try {
+      const { period } = req.params;
+      let performers;
+
+      switch (period) {
+        case 'daily':
+          performers = await storage.getDailyTopPerformers();
+          break;
+        case 'weekly':
+          performers = await storage.getWeeklyTopPerformers();
+          break;
+        case 'monthly':
+          performers = await storage.getMonthlyTopPerformers();
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid period. Use daily, weekly, or monthly" });
+      }
+
+      res.json(performers);
+    } catch (error) {
+      console.error(`Error fetching ${req.params.period} top performers:`, error);
+      res.status(500).json({ message: `Failed to fetch ${req.params.period} top performers` });
     }
   });
 

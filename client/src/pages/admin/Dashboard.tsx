@@ -2,27 +2,40 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Users, BookOpen, TrendingUp, Award, Clock, Target } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { Users, BookOpen, TrendingUp, Award, Clock, Target, Activity, Trophy, Calendar, Timer } from "lucide-react";
 
 export default function AdminDashboard() {
   const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: ["/api/admin/metrics"],
   });
 
+  const { data: analytics, isLoading: analyticsLoading } = useQuery({
+    queryKey: ["/api/admin/analytics"],
+  });
+
   const { data: recentActivity, isLoading: activityLoading } = useQuery({
     queryKey: ["/api/admin/recent-activity"],
   });
 
-  const { data: leaderboard, isLoading: leaderboardLoading } = useQuery({
-    queryKey: ["/api/admin/leaderboard"],
+  const { data: dailyTopPerformers, isLoading: dailyLoading } = useQuery({
+    queryKey: ["/api/admin/top-performers", "daily"],
   });
 
-  if (metricsLoading || activityLoading || leaderboardLoading) {
+  const { data: weeklyTopPerformers, isLoading: weeklyLoading } = useQuery({
+    queryKey: ["/api/admin/top-performers", "weekly"],
+  });
+
+  const { data: monthlyTopPerformers, isLoading: monthlyLoading } = useQuery({
+    queryKey: ["/api/admin/top-performers", "monthly"],
+  });
+
+  if (metricsLoading || analyticsLoading || activityLoading || dailyLoading || weeklyLoading || monthlyLoading) {
     return (
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
+          {[...Array(8)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div className="h-4 bg-gray-200 rounded w-24"></div>
@@ -39,23 +52,9 @@ export default function AdminDashboard() {
     );
   }
 
-  const chartData = [
-    { name: "Mon", quizzes: 24 },
-    { name: "Tue", quizzes: 35 },
-    { name: "Wed", quizzes: 28 },
-    { name: "Thu", quizzes: 42 },
-    { name: "Fri", quizzes: 38 },
-    { name: "Sat", quizzes: 31 },
-    { name: "Sun", quizzes: 27 },
-  ];
-
-  const subjectData = [
-    { name: "Mathematics", value: 35, color: "#8884d8" },
-    { name: "English", value: 25, color: "#82ca9d" },
-    { name: "Science", value: 20, color: "#ffc658" },
-    { name: "History", value: 12, color: "#ff7300" },
-    { name: "Geography", value: 8, color: "#00ff00" },
-  ];
+  // Use real data from analytics API
+  const chartData = analytics?.quizActivity || [];
+  const subjectData = analytics?.subjectDistribution || [];
 
   return (
     <div className="space-y-6">
@@ -67,22 +66,22 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.totalUsers || 2,847}</div>
+            <div className="text-2xl font-bold">{metrics?.totalUsers?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              +12% from last month
+              {metrics?.dailyGrowth ? `${metrics.dailyGrowth > 0 ? '+' : ''}${metrics.dailyGrowth}% daily growth` : 'Registered users'}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Quizzes</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Daily Active Users</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.totalQuizzes || 142}</div>
+            <div className="text-2xl font-bold">{metrics?.dailyActiveUsers?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              +8 new this week
+              {metrics?.weeklyEngagementRate ? `${metrics.weeklyEngagementRate}% weekly engagement` : 'Active today'}
             </p>
           </CardContent>
         </Card>
@@ -93,9 +92,9 @@ export default function AdminDashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.totalSessions || 18,435}</div>
+            <div className="text-2xl font-bold">{metrics?.totalSessions?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              +18% completion rate
+              {metrics?.completionRate ? `${metrics.completionRate}% completion rate` : 'Total sessions'}
             </p>
           </CardContent>
         </Card>
@@ -106,10 +105,57 @@ export default function AdminDashboard() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.avgScore || 78}%</div>
+            <div className="text-2xl font-bold">{metrics?.avgScore || 0}%</div>
             <p className="text-xs text-muted-foreground">
-              +2.5% from last week
+              {metrics?.averageSessionTime ? `${metrics.averageSessionTime} min avg session` : 'Overall accuracy'}
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Additional Key Metrics */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Quizzes</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics?.totalQuizzes?.toLocaleString() || '0'}</div>
+            <p className="text-xs text-muted-foreground">Available quizzes</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Weekly Active</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics?.weeklyActiveUsers?.toLocaleString() || '0'}</div>
+            <p className="text-xs text-muted-foreground">Users this week</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+            <Trophy className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics?.completionRate || 0}%</div>
+            <p className="text-xs text-muted-foreground">Quiz completion rate</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg. Session</CardTitle>
+            <Timer className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics?.averageSessionTime || 0}</div>
+            <p className="text-xs text-muted-foreground">Minutes per session</p>
           </CardContent>
         </Card>
       </div>
