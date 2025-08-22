@@ -181,9 +181,8 @@ export default function Subscriptions() {
         description: `Subscription: ${plan.name}`,
       });
 
-      // Convert KES to NGN (approximate exchange rate: 1 KES = 2.6 NGN)
-      const amountInNGN = parseFloat(plan.price) * 2.6;
-      const amountInKobo = Math.round(amountInNGN * 100); // Convert to kobo
+      // For testing, let's use a small fixed amount in kobo (100 NGN = 10000 kobo)
+      const amountInKobo = 10000; // 100 NGN for testing
       const reference = `DS_${Date.now()}_${transaction.id}`;
 
       if (!window.PaystackPop) {
@@ -198,7 +197,12 @@ export default function Subscriptions() {
       // Hardcode the key temporarily for testing
       const paystackKey = "pk_test_a011e6944b1013f457c3164066c77fd4b489d7bc";
       console.log("Paystack Key Available:", !!paystackKey);
-      console.log("Payment Details:", { amount: amountInKobo, email: user.email, ref: reference });
+      console.log("Payment Details:", { 
+        amount: amountInKobo, 
+        email: user.email, 
+        ref: reference,
+        emailValid: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)
+      });
 
       if (!paystackKey || paystackKey === 'undefined') {
         toast({ 
@@ -213,12 +217,12 @@ export default function Subscriptions() {
         key: paystackKey,
         email: user.email,
         amount: amountInKobo,
-        currency: 'NGN', // Paystack only supports NGN
         ref: reference,
+        currency: 'NGN',
+        // Simplified metadata
         metadata: {
-          userId: user.id,
-          planId: plan.id,
-          transactionId: transaction.id,
+          plan_name: plan.name,
+          user_id: user.id
         },
         callback: function(response: any) {
           console.log("Payment callback:", response);
