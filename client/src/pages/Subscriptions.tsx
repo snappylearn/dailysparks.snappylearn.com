@@ -77,7 +77,7 @@ interface UserSubscription {
 }
 
 export default function Subscriptions() {
-  const [topUpAmount, setTopUpAmount] = useState("");
+  const [topUpAmount, setTopUpAmount] = useState("20.00");
   const [billingPeriod, setBillingPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -184,6 +184,21 @@ export default function Subscriptions() {
       toast({ title: "Payment successful! Subscription activated." });
       queryClient.invalidateQueries({ queryKey: ["/api/subscription/current"] });
       queryClient.invalidateQueries({ queryKey: ["/api/payment/history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
+    },
+  });
+
+  const confirmCreditTopupMutation = useMutation({
+    mutationFn: (data: { transactionId: string; paystackReference: string; amount: number }) =>
+      fetch("/api/payment/confirm-topup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then(res => res.json()),
+    onSuccess: () => {
+      toast({ title: "Credit top-up successful!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/payment/history"] });
     },
   });
 
@@ -275,6 +290,90 @@ export default function Subscriptions() {
     }
   };
 
+  const initiateTopUpPayment = async () => {
+    if (!user?.email) {
+      toast({ title: "Error", description: "User email not found", variant: "destructive" });
+      return;
+    }
+
+    const amount = parseFloat(topUpAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({ title: "Error", description: "Please enter a valid amount", variant: "destructive" });
+      return;
+    }
+
+    try {
+      // Create payment transaction record
+      const transaction = await createPaymentTransactionMutation.mutateAsync({
+        amount: amount,
+        planId: null,
+        type: 'credit_topup',
+        description: `Credit Top-up: $${amount}`,
+      });
+
+      const amountInCents = Math.round(amount * 100); // Convert USD to cents
+      const reference = `DS_TOPUP_${Date.now()}_${transaction.id}`;
+
+      if (!window.PaystackPop) {
+        toast({ 
+          title: "Payment Error", 
+          description: "Paystack not loaded. Please refresh the page and try again.",
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      const paystackKey = "pk_test_a011e6944b1013f457c3164066c77fd4b489d7bc";
+
+      if (!paystackKey) {
+        toast({ 
+          title: "Configuration Error", 
+          description: "Paystack public key not configured. Please contact support.",
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      const handler = window.PaystackPop.setup({
+        key: paystackKey,
+        email: user.email,
+        amount: amountInCents,
+        ref: reference,
+        currency: 'USD',
+        metadata: {
+          type: 'credit_topup',
+          amount: amount,
+          user_id: user.id
+        },
+        callback: function(response: any) {
+          console.log("Credit top-up payment callback:", response);
+          toast({ title: "Processing credit top-up..." });
+          confirmCreditTopupMutation.mutate({
+            transactionId: transaction.id,
+            paystackReference: response.reference,
+            amount: amount
+          });
+        },
+        onClose: function() {
+          console.log("Credit top-up payment modal closed");
+          toast({ 
+            title: "Payment cancelled", 
+            description: "You can try again anytime",
+            variant: "destructive" 
+          });
+        },
+      });
+
+      handler.openIframe();
+    } catch (error: any) {
+      toast({ 
+        title: "Credit top-up setup failed", 
+        description: error.message || "Please try again",
+        variant: "destructive" 
+      });
+    }
+  };
+
   const planIcons = {
     basic: <Coins className="h-6 w-6" />,
     premium: <Crown className="h-6 w-6" />,
@@ -336,14 +435,32 @@ export default function Subscriptions() {
                   Your current subscription status and available credits
                 </CardDescription>
               </div>
-              <Button 
-                variant="outline" 
-                onClick={() => toast({ title: "Top up feature coming soon!" })}
-                data-testid="button-topup-credits"
-              >
-                <Coins className="h-4 w-4 mr-2" />
-                Top Up Credits
-              </Button>
+              <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="topup-amount" className="text-sm">$</Label>
+                  <Input
+                    id="topup-amount"
+                    type="number"
+                    value={topUpAmount}
+                    onChange={(e) => setTopUpAmount(e.target.value)}
+                    placeholder="20.00"
+                    min="1"
+                    max="1000"
+                    step="0.01"
+                    className="w-24"
+                    data-testid="input-topup-amount"
+                  />
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={initiateTopUpPayment}
+                  disabled={confirmCreditTopupMutation.isPending}
+                  data-testid="button-topup-credits"
+                >
+                  <Coins className="h-4 w-4 mr-2" />
+                  {confirmCreditTopupMutation.isPending ? "Processing..." : "Top Up Credits"}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-3">
@@ -370,7 +487,7 @@ export default function Subscriptions() {
                   <div className="flex items-center gap-2">
                     <Coins className="h-4 w-4 text-yellow-600" />
                     <span className="text-2xl font-bold">
-                      KES {userCredits?.credits?.toFixed(2) || '0.00'}
+${userCredits?.credits?.toFixed(2) || '0.00'}
                     </span>
                   </div>
                 </div>

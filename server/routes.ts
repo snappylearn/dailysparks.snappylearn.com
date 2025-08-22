@@ -2076,7 +2076,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         type,
         amount: amount.toFixed(2),
-        currency: 'KES',
+        currency: 'USD',
         status: 'pending',
         description,
         planId: planId,
@@ -2138,6 +2138,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error confirming payment:", error);
       res.status(500).json({ message: "Failed to confirm payment" });
+    }
+  });
+
+  // Confirm credit top-up payment transaction
+  app.post('/api/payment/confirm-topup', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { transactionId, paystackReference, amount } = req.body;
+
+      // Update transaction status
+      const updatedTransaction = await storage.updatePaymentTransaction(transactionId, {
+        status: 'success',
+        paystackReference,
+        processedAt: new Date(),
+      });
+
+      // Add credits to user account
+      await storage.addCredits(
+        userId, 
+        parseFloat(amount), 
+        `Credit Top-up via Paystack: $${amount}`,
+        transactionId
+      );
+
+      res.json({ 
+        message: 'Credit top-up confirmed successfully', 
+        transaction: updatedTransaction,
+        creditsAdded: amount 
+      });
+    } catch (error) {
+      console.error("Error confirming credit top-up:", error);
+      res.status(500).json({ message: "Failed to confirm credit top-up" });
     }
   });
 
