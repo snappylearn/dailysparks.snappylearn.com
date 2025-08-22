@@ -291,8 +291,8 @@ Generate exactly ${params.questionCount} questions following this format.`;
         levelId: params.levelId,
         subjectId: params.subjectId,
         quizType: params.quizType,
-        topicId: params.topicId,
-        termId: params.termId,
+        topicId: params.topicId || null,
+        termId: params.termId || null,
         questions: questionsSnapshot, // JSONB snapshot
         totalQuestions: params.questionCount,
         timeLimit: params.timeLimit,
