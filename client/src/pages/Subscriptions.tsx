@@ -195,9 +195,9 @@ export default function Subscriptions() {
         return;
       }
 
-      const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
+      // Hardcode the key temporarily for testing
+      const paystackKey = "pk_test_a011e6944b1013f457c3164066c77fd4b489d7bc";
       console.log("Paystack Key Available:", !!paystackKey);
-      console.log("Paystack Key Value:", paystackKey);
       console.log("Payment Details:", { amount: amountInKobo, email: user.email, ref: reference });
 
       if (!paystackKey || paystackKey === 'undefined') {
