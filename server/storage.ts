@@ -1566,10 +1566,32 @@ export class DatabaseStorage implements IStorage {
   // Get quiz with questions and choices
   async getQuizWithQuestions(quizId: string): Promise<any> {
     try {
-      // Get quiz details with JSONB questions
+      // Get quiz details with related data for edit form
       const [quiz] = await db
-        .select()
+        .select({
+          id: quizzes.id,
+          title: quizzes.title,
+          description: quizzes.description,
+          examinationSystemId: quizzes.examinationSystemId,
+          levelId: quizzes.levelId,
+          subjectId: quizzes.subjectId,
+          topicId: quizzes.topicId,
+          termId: quizzes.termId,
+          quizType: quizzes.quizType,
+          timeLimit: quizzes.timeLimit,
+          totalQuestions: quizzes.totalQuestions,
+          questions: quizzes.questions,
+          createdAt: quizzes.createdAt,
+          updatedAt: quizzes.updatedAt,
+          // Join related data for display names
+          examinationSystemName: examinationSystems.name,
+          levelTitle: levels.title,
+          subjectName: subjects.name
+        })
         .from(quizzes)
+        .leftJoin(examinationSystems, eq(quizzes.examinationSystemId, examinationSystems.id))
+        .leftJoin(levels, eq(quizzes.levelId, levels.id))
+        .leftJoin(subjects, eq(quizzes.subjectId, subjects.id))
         .where(eq(quizzes.id, quizId));
 
       if (!quiz) {

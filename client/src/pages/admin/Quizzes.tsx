@@ -1178,6 +1178,10 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
   const editQuizSchema = z.object({
     title: z.string().min(1, "Title is required"),
     description: z.string().optional(),
+    examinationSystemId: z.string().min(1, "Examination system is required"),
+    levelId: z.string().min(1, "Level is required"),
+    subjectId: z.string().min(1, "Subject is required"),
+    quizType: z.string().min(1, "Quiz type is required"),
     timeLimit: z.number().min(5).max(120),
     totalQuestions: z.number().min(1).max(50)
   });
@@ -1185,12 +1189,32 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
   const form = useForm({
     resolver: zodResolver(editQuizSchema),
     defaultValues: {
-      title: (fullQuizData?.title || quiz.title) || "",
-      description: (fullQuizData?.description || quiz.description) || "",
-      timeLimit: (fullQuizData?.timeLimit || quiz.timeLimit) || 30,
-      totalQuestions: (fullQuizData?.totalQuestions || quiz.totalQuestions) || questions.length
+      title: "",
+      description: "",
+      examinationSystemId: "",
+      levelId: "",
+      subjectId: "",
+      quizType: "",
+      timeLimit: 30,
+      totalQuestions: 15
     }
   });
+
+  // Update form values when quiz data loads
+  useEffect(() => {
+    if (fullQuizData) {
+      form.reset({
+        title: fullQuizData.title || "",
+        description: fullQuizData.description || "",
+        examinationSystemId: fullQuizData.examinationSystemId || "",
+        levelId: fullQuizData.levelId || "",
+        subjectId: fullQuizData.subjectId || "",
+        quizType: fullQuizData.quizType || "",
+        timeLimit: fullQuizData.timeLimit || 30,
+        totalQuestions: fullQuizData.totalQuestions || questions.length
+      });
+    }
+  }, [fullQuizData, form, questions.length]);
 
   const updateQuizMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -1337,7 +1361,7 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Examination System *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select exam system" />
@@ -1362,7 +1386,7 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Level *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select level" />
@@ -1387,7 +1411,7 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Subject *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select subject" />
@@ -1412,7 +1436,7 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Quiz Type *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select quiz type" />
