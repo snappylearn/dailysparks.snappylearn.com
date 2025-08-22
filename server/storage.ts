@@ -566,32 +566,17 @@ export class DatabaseStorage implements IStorage {
     const subjectsWithCounts = await Promise.all(
       subjectList.map(async (subject) => {
         try {
-          let countQuery;
-          if (levelId) {
-            // Count questions filtered by subject, examination system, and level
-            countQuery = sql`
-              SELECT COUNT(*) as count 
-              FROM questions q
-              JOIN topics t ON q.topic_id = t.id
-              WHERE t.subject_id = ${subject.id} 
-                AND t.level_id = ${levelId}
-            `;
-          } else {
-            // Count all questions for the subject
-            countQuery = sql`
-              SELECT COUNT(*) as count 
-              FROM questions q
-              JOIN topics t ON q.topic_id = t.id
-              WHERE t.subject_id = ${subject.id}
-            `;
-          }
+          // Count actual quizzes for this subject
+          const quizCountResult = await db
+            .select({ count: sql`count(*)` })
+            .from(quizzes)
+            .where(eq(quizzes.subjectId, subject.id));
           
-          const countResult = await db.execute(countQuery);
-          const questionCount = countResult.rows[0]?.count || 0;
+          const quizCount = Number(quizCountResult[0]?.count || 0);
           
           return {
             ...subject,
-            quizCount: Math.floor(Number(questionCount) / 10) // Assuming 10 questions per quiz
+            quizCount: quizCount
           };
         } catch (error) {
           console.error(`Error counting questions for subject ${subject.id}:`, error);
