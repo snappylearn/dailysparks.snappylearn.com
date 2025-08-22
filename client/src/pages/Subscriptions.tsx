@@ -78,9 +78,30 @@ interface UserSubscription {
 
 export default function Subscriptions() {
   const [topUpAmount, setTopUpAmount] = useState("");
+  const [billingPeriod, setBillingPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  // Price calculation functions
+  const calculatePrice = (basePrice: number, period: 'weekly' | 'monthly' | 'yearly') => {
+    switch (period) {
+      case 'weekly':
+        return (basePrice / 4.33).toFixed(2); // Monthly price / 4.33 weeks
+      case 'yearly':
+        return (basePrice * 10).toFixed(2); // 10 months for yearly (2 months free)
+      default:
+        return basePrice.toFixed(2);
+    }
+  };
+
+  const getPeriodLabel = (period: 'weekly' | 'monthly' | 'yearly') => {
+    switch (period) {
+      case 'weekly': return '/week';
+      case 'yearly': return '/year';
+      default: return '/month';
+    }
+  };
 
   // Load Paystack inline script
   useEffect(() => {
@@ -181,8 +202,9 @@ export default function Subscriptions() {
         description: `Subscription: ${plan.name}`,
       });
 
-      // Use actual plan price in KES cents (multiply by 100)
-      const amountInCents = parseFloat(plan.price) * 100; // Convert KES to cents
+      // Calculate price based on billing period and convert to cents
+      const periodPrice = calculatePrice(parseFloat(plan.price), billingPeriod);
+      const amountInCents = Math.round(parseFloat(periodPrice) * 100); // Convert USD to cents
       const reference = `DS_${Date.now()}_${transaction.id}`;
 
       if (!window.PaystackPop) {
@@ -201,7 +223,7 @@ export default function Subscriptions() {
         amount: amountInCents, 
         email: user.email, 
         ref: reference,
-        currency: 'KES',
+        currency: 'USD',
         emailValid: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)
       });
 
@@ -219,7 +241,7 @@ export default function Subscriptions() {
         email: user.email,
         amount: amountInCents,
         ref: reference,
-        currency: 'KES',
+        currency: 'USD',
         // Simplified metadata
         metadata: {
           plan_name: plan.name,
@@ -397,11 +419,53 @@ export default function Subscriptions() {
 
           {/* Subscription Plans Section */}
           <div className="space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-4">
               <h2 className="text-2xl font-bold">Subscription Plans</h2>
               <p className="text-muted-foreground">
                 Choose the perfect plan for your learning journey
               </p>
+              
+              {/* Billing Period Toggle */}
+              <div className="flex justify-center">
+                <div className="flex items-center space-x-1 bg-muted p-1 rounded-lg">
+                  <button
+                    onClick={() => setBillingPeriod('weekly')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      billingPeriod === 'weekly' 
+                        ? 'bg-background text-foreground shadow-sm' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    data-testid="billing-period-weekly"
+                  >
+                    Weekly
+                  </button>
+                  <button
+                    onClick={() => setBillingPeriod('monthly')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      billingPeriod === 'monthly' 
+                        ? 'bg-background text-foreground shadow-sm' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    data-testid="billing-period-monthly"
+                  >
+                    Monthly
+                  </button>
+                  <button
+                    onClick={() => setBillingPeriod('yearly')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      billingPeriod === 'yearly' 
+                        ? 'bg-background text-foreground shadow-sm' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    data-testid="billing-period-yearly"
+                  >
+                    Yearly
+                    <span className="ml-1 text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
+                      Save 17%
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
@@ -425,9 +489,14 @@ export default function Subscriptions() {
                       <CardTitle className="text-2xl">{plan.name}</CardTitle>
                       <div className="space-y-1">
                         <div className="text-3xl font-bold">
-                          KES {plan.price}
-                          <span className="text-sm font-normal text-muted-foreground">/week</span>
+                          ${calculatePrice(parseFloat(plan.price), billingPeriod)}
+                          <span className="text-sm font-normal text-muted-foreground">{getPeriodLabel(billingPeriod)}</span>
                         </div>
+                        {billingPeriod === 'yearly' && (
+                          <div className="text-sm text-green-600 font-medium">
+                            Save ${(parseFloat(plan.price) * 2).toFixed(2)} per year
+                          </div>
+                        )}
                         <CardDescription>{plan.description}</CardDescription>
                       </div>
                     </div>
