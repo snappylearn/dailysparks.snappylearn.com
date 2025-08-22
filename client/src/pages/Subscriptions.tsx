@@ -181,7 +181,9 @@ export default function Subscriptions() {
         description: `Subscription: ${plan.name}`,
       });
 
-      const amountInKobo = parseFloat(plan.price) * 100; // Convert to kobo
+      // Convert KES to NGN (approximate exchange rate: 1 KES = 2.6 NGN)
+      const amountInNGN = parseFloat(plan.price) * 2.6;
+      const amountInKobo = Math.round(amountInNGN * 100); // Convert to kobo
       const reference = `DS_${Date.now()}_${transaction.id}`;
 
       if (!window.PaystackPop) {
@@ -195,13 +197,23 @@ export default function Subscriptions() {
 
       const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
       console.log("Paystack Key Available:", !!paystackKey);
+      console.log("Paystack Key Value:", paystackKey);
       console.log("Payment Details:", { amount: amountInKobo, email: user.email, ref: reference });
+
+      if (!paystackKey || paystackKey === 'undefined') {
+        toast({ 
+          title: "Configuration Error", 
+          description: "Paystack public key not configured. Please contact support.",
+          variant: "destructive" 
+        });
+        return;
+      }
 
       const handler = window.PaystackPop.setup({
         key: paystackKey,
         email: user.email,
         amount: amountInKobo,
-        currency: 'NGN',
+        currency: 'NGN', // Paystack only supports NGN
         ref: reference,
         metadata: {
           userId: user.id,
