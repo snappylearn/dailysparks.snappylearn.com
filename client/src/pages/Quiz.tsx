@@ -139,8 +139,12 @@ export default function Quiz() {
         setSelectedAnswer("");
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Quiz start failed:', error);
+      if (error.message?.includes('subscription required') || error.message?.includes('Active subscription required')) {
+        setLocation('/subscriptions');
+        return;
+      }
       alert('Failed to start quiz: ' + error.message);
     },
   });
@@ -164,8 +168,12 @@ export default function Quiz() {
       setSelectedAnswer("");
       setShowResumeModal(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Resume quiz failed:', error);
+      if (error.message?.includes('subscription required') || error.message?.includes('Active subscription required')) {
+        setLocation('/subscriptions');
+        return;
+      }
       alert('Failed to resume quiz: ' + error.message);
     },
   });
@@ -193,8 +201,12 @@ export default function Quiz() {
       setSelectedAnswer("");
       setShowResumeModal(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Start fresh quiz failed:', error);
+      if (error.message?.includes('subscription required') || error.message?.includes('Active subscription required')) {
+        setLocation('/subscriptions');
+        return;
+      }
       alert('Failed to start fresh quiz: ' + error.message);
     },
   });

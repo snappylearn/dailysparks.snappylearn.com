@@ -139,6 +139,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeLimit = 30 
       } = req.body;
 
+      // Check if user has active subscription
+      const subscription = await storage.getCurrentUserSubscription(userId);
+      if (!subscription || subscription.status !== 'active') {
+        return res.status(403).json({ 
+          message: "Active subscription required", 
+          requiresSubscription: true 
+        });
+      }
+
       // Get user's active profile
       const profiles = await storage.getUserProfiles(userId);
       const currentProfile = profiles.find(p => p.isDefault) || profiles[0];
@@ -685,6 +694,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const { profileId, subjectId, quizType, topicId, termId } = req.body;
+      
+      // Check if user has active subscription
+      const subscription = await storage.getCurrentUserSubscription(userId);
+      if (!subscription || subscription.status !== 'active') {
+        return res.status(403).json({ 
+          message: "Active subscription required", 
+          requiresSubscription: true 
+        });
+      }
       
       // Get profile to access examination system and level
       const profile = await storage.getProfile(profileId);
