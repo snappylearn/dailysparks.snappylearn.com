@@ -52,9 +52,9 @@ export default function AdminDashboard() {
     );
   }
 
-  // Use real data from analytics API
-  const chartData = analytics?.quizActivity || [];
-  const subjectData = analytics?.subjectDistribution || [];
+  // Use real data from analytics API with type safety
+  const chartData = (analytics as any)?.quizActivity || [];
+  const subjectData = (analytics as any)?.subjectDistribution || [];
 
   return (
     <div className="space-y-6">
@@ -66,9 +66,9 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.totalUsers?.toLocaleString() || '0'}</div>
+            <div className="text-2xl font-bold">{(metrics as any)?.totalUsers?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              {metrics?.dailyGrowth ? `${metrics.dailyGrowth > 0 ? '+' : ''}${metrics.dailyGrowth}% daily growth` : 'Registered users'}
+              {(metrics as any)?.dailyGrowth ? `${(metrics as any).dailyGrowth > 0 ? '+' : ''}${(metrics as any).dailyGrowth}% daily growth` : 'Registered users'}
             </p>
           </CardContent>
         </Card>
@@ -79,9 +79,9 @@ export default function AdminDashboard() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.dailyActiveUsers?.toLocaleString() || '0'}</div>
+            <div className="text-2xl font-bold">{(metrics as any)?.dailyActiveUsers?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              {metrics?.weeklyEngagementRate ? `${metrics.weeklyEngagementRate}% weekly engagement` : 'Active today'}
+              {(metrics as any)?.weeklyEngagementRate ? `${(metrics as any).weeklyEngagementRate}% weekly engagement` : 'Active today'}
             </p>
           </CardContent>
         </Card>
@@ -92,9 +92,9 @@ export default function AdminDashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.totalSessions?.toLocaleString() || '0'}</div>
+            <div className="text-2xl font-bold">{(metrics as any)?.totalSessions?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">
-              {metrics?.completionRate ? `${metrics.completionRate}% completion rate` : 'Total sessions'}
+              {(metrics as any)?.completionRate ? `${(metrics as any).completionRate}% completion rate` : 'Total sessions'}
             </p>
           </CardContent>
         </Card>
@@ -105,9 +105,9 @@ export default function AdminDashboard() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.avgScore || 0}%</div>
+            <div className="text-2xl font-bold">{(metrics as any)?.avgScore || 0}%</div>
             <p className="text-xs text-muted-foreground">
-              {metrics?.averageSessionTime ? `${metrics.averageSessionTime} min avg session` : 'Overall accuracy'}
+              {(metrics as any)?.averageSessionTime ? `${(metrics as any).averageSessionTime} min avg session` : 'Overall accuracy'}
             </p>
           </CardContent>
         </Card>
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.totalQuizzes?.toLocaleString() || '0'}</div>
+            <div className="text-2xl font-bold">{(metrics as any)?.totalQuizzes?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">Available quizzes</p>
           </CardContent>
         </Card>
@@ -132,7 +132,7 @@ export default function AdminDashboard() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.weeklyActiveUsers?.toLocaleString() || '0'}</div>
+            <div className="text-2xl font-bold">{(metrics as any)?.weeklyActiveUsers?.toLocaleString() || '0'}</div>
             <p className="text-xs text-muted-foreground">Users this week</p>
           </CardContent>
         </Card>
@@ -143,7 +143,7 @@ export default function AdminDashboard() {
             <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.completionRate || 0}%</div>
+            <div className="text-2xl font-bold">{(metrics as any)?.completionRate || 0}%</div>
             <p className="text-xs text-muted-foreground">Quiz completion rate</p>
           </CardContent>
         </Card>
@@ -258,7 +258,7 @@ export default function AdminDashboard() {
             <CardDescription>Students with highest scores this week</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {leaderboard?.slice(0, 5).map((student: any, index: number) => (
+            {weeklyTopPerformers?.slice(0, 5).map((student: any, index: number) => (
               <div key={index} className="flex items-center space-x-4">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold">
                   {index + 1}

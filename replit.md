@@ -6,11 +6,13 @@ Daily Sparks is an AI-powered revision platform specifically designed for Kenyan
 
 The application offers gamified quiz experiences where students can take random quizzes, topical quizzes, or term-specific quizzes. The AI engine analyzes user performance to optimize question difficulty, schedule reviews, and provide personalized explanations. Students earn "sparks" (points) and maintain learning streaks to encourage consistent study habits.
 
-**Recent Updates (August 21, 2025):**
-- Implemented comprehensive Platform Settings with live database integration
-- Added configurable sparks calculation system (now defaults to 5 per correct answer instead of hardcoded 15)
-- Created three-tab admin interface for General, Quiz, and Notification settings management
-- Established comprehensive Business Requirements Document (README_BRD.md) detailing platform specifications
+**Recent Updates (August 22, 2025):**
+- **Currency Migration:** Converted entire platform from KES to USD, including credits display, payment processing, and payment history
+- **Credit Top-up System:** Implemented Paystack-integrated credit top-up functionality with default $20 amount and custom input
+- **Subscription Validation:** Enhanced quiz access control to require active subscriptions, with automatic redirection to subscription page
+- **Subject Cards Enhancement:** Added real-time quiz count display on dashboard subject cards showing available quizzes per subject
+- **Admin Dashboard Fix:** Resolved TypeScript errors and undefined variable issues (leaderboard, metrics properties) with proper type casting
+- **Payment Integration:** Updated Paystack integration to process USD payments with proper amount conversion and callback handling
 
 ## User Preferences
 
