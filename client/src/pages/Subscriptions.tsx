@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { MainLayout } from "@/components/MainLayout";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Check, 
   Crown, 
@@ -22,6 +23,26 @@ import {
   CheckCircle,
   XCircle
 } from "lucide-react";
+
+// Paystack type declarations
+declare global {
+  interface Window {
+    PaystackPop: {
+      setup: (options: {
+        key: string;
+        email: string;
+        amount: number;
+        currency: string;
+        ref: string;
+        callback: (response: any) => void;
+        onClose: () => void;
+        metadata?: any;
+      }) => {
+        openIframe: () => void;
+      };
+    };
+  }
+}
 
 interface SubscriptionPlan {
   id: string;
@@ -59,6 +80,19 @@ export default function Subscriptions() {
   const [topUpAmount, setTopUpAmount] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  // Load Paystack inline script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const { data: plans, isLoading: plansLoading } = useQuery<SubscriptionPlan[]>({
     queryKey: ["/api/subscription/plans"],
@@ -109,13 +143,82 @@ export default function Subscriptions() {
     }
   };
 
-  const initiatePaystackPayment = (plan: SubscriptionPlan) => {
-    // This would integrate with Paystack popup
-    toast({ 
-      title: "Paystack Integration", 
-      description: "Direct payment integration coming soon. Please use credits for now.",
-      variant: "destructive" 
-    });
+  const createPaymentTransactionMutation = useMutation({
+    mutationFn: (data: { amount: number; planId: string; type: string; description: string }) =>
+      fetch("/api/payment/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then(res => res.json()),
+  });
+
+  const confirmPaymentMutation = useMutation({
+    mutationFn: (data: { transactionId: string; paystackReference: string }) =>
+      fetch("/api/payment/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then(res => res.json()),
+    onSuccess: () => {
+      toast({ title: "Payment successful! Subscription activated." });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription/current"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/payment/history"] });
+    },
+  });
+
+  const initiatePaystackPayment = async (plan: SubscriptionPlan) => {
+    if (!user?.email) {
+      toast({ title: "Error", description: "User email not found", variant: "destructive" });
+      return;
+    }
+
+    try {
+      // Create payment transaction record
+      const transaction = await createPaymentTransactionMutation.mutateAsync({
+        amount: parseFloat(plan.price),
+        planId: plan.id,
+        type: 'subscription',
+        description: `Subscription: ${plan.name}`,
+      });
+
+      const amountInKobo = parseFloat(plan.price) * 100; // Convert to kobo
+      const reference = `DS_${Date.now()}_${transaction.id}`;
+
+      const handler = window.PaystackPop.setup({
+        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_default',
+        email: user.email,
+        amount: amountInKobo,
+        currency: 'NGN', // Paystack uses NGN, but we can convert KES
+        ref: reference,
+        metadata: {
+          userId: user.id,
+          planId: plan.id,
+          transactionId: transaction.id,
+        },
+        callback: function(response: any) {
+          // Payment successful
+          confirmPaymentMutation.mutate({
+            transactionId: transaction.id,
+            paystackReference: response.reference,
+          });
+        },
+        onClose: function() {
+          toast({ 
+            title: "Payment cancelled", 
+            description: "You can try again anytime",
+            variant: "destructive" 
+          });
+        },
+      });
+
+      handler.openIframe();
+    } catch (error: any) {
+      toast({ 
+        title: "Payment setup failed", 
+        description: error.message || "Please try again",
+        variant: "destructive" 
+      });
+    }
   };
 
   const planIcons = {

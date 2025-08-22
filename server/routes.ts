@@ -2071,6 +2071,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Confirm payment transaction (after successful Paystack payment)
+  app.post('/api/payment/confirm', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { transactionId, paystackReference } = req.body;
+
+      // Update transaction status
+      const updatedTransaction = await storage.updatePaymentTransaction(transactionId, {
+        status: 'success',
+        paystackReference,
+        processedAt: new Date(),
+      });
+
+      // Get transaction details to create subscription
+      const [paymentHistory] = await Promise.all([
+        storage.getPaymentHistory(userId),
+      ]);
+
+      const transaction = paymentHistory.find(t => t.id === transactionId);
+      if (!transaction) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+
+      // Create subscription if payment was for subscription
+      if (transaction.type === 'subscription' && transaction.subscriptionId) {
+        const plans = await storage.getSubscriptionPlans();
+        const plan = plans.find(p => p.id === transaction.subscriptionId);
+        
+        if (plan) {
+          const startDate = new Date();
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + 7); // 7 days for weekly billing
+
+          await storage.createSubscription({
+            userId,
+            planId: plan.id,
+            status: 'active',
+            startDate,
+            endDate,
+            paymentMethod: 'paystack',
+            autoRenew: true,
+          });
+        }
+      }
+
+      res.json({ message: 'Payment confirmed successfully', transaction: updatedTransaction });
+    } catch (error) {
+      console.error("Error confirming payment:", error);
+      res.status(500).json({ message: "Failed to confirm payment" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
