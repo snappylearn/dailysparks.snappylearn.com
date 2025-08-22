@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { MainLayout } from "@/components/MainLayout";
 import { 
   Check, 
   Crown, 
@@ -54,7 +55,7 @@ interface UserSubscription {
   supportLevel: string;
 }
 
-export default function Subscriptions() {
+function SubscriptionsContent() {
   const [topUpAmount, setTopUpAmount] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -71,7 +72,7 @@ export default function Subscriptions() {
     queryKey: ["/api/user/credits"],
   });
 
-  const { data: paymentHistory, isLoading: historyLoading } = useQuery({
+  const { data: paymentHistory, isLoading: historyLoading } = useQuery<any[]>({
     queryKey: ["/api/payment/history"],
   });
 
@@ -150,7 +151,7 @@ export default function Subscriptions() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>
         <p className="text-muted-foreground">
@@ -392,7 +393,7 @@ export default function Subscriptions() {
                     </div>
                   ))}
                 </div>
-              ) : paymentHistory?.length > 0 ? (
+              ) : paymentHistory && paymentHistory.length > 0 ? (
                 <div className="space-y-3">
                   {paymentHistory.map((transaction: any, index: number) => (
                     <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
@@ -452,5 +453,13 @@ export default function Subscriptions() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function Subscriptions() {
+  return (
+    <MainLayout>
+      <SubscriptionsContent />
+    </MainLayout>
   );
 }
