@@ -55,7 +55,7 @@ interface UserSubscription {
   supportLevel: string;
 }
 
-function SubscriptionsContent() {
+export default function Subscriptions() {
   const [topUpAmount, setTopUpAmount] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -151,13 +151,14 @@ function SubscriptionsContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>
-        <p className="text-muted-foreground">
-          Choose a plan that fits your learning needs
-        </p>
-      </div>
+    <MainLayout>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">Subscriptions</h1>
+          <p className="text-muted-foreground">
+            Choose a plan that fits your learning needs
+          </p>
+        </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
@@ -452,14 +453,7 @@ function SubscriptionsContent() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-export default function Subscriptions() {
-  return (
-    <MainLayout>
-      <SubscriptionsContent />
+      </div>
     </MainLayout>
   );
 }
