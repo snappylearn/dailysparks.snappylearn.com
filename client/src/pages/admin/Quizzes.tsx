@@ -908,7 +908,11 @@ export default function AdminQuizzes() {
                         {quiz.type || 'topical'}
                       </Badge>
                     </TableCell>
-                    <TableCell>{quiz.questions || 0}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono">
+                        {Array.isArray(quiz.questions) ? quiz.questions.length : quiz.questions || 0}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
                         <BarChart3 className="h-4 w-4 text-blue-500" />

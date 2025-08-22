@@ -1278,11 +1278,18 @@ export class DatabaseStorage implements IStorage {
     // Get actual question counts and session counts
     const quizList = await Promise.all(
       quizTemplates.map(async (quiz) => {
-        // Count actual questions from quiz_questions table
-        const [questionCount] = await db
-          .select({ count: count() })
-          .from(quizQuestions)
-          .where(eq(quizQuestions.quizId, quiz.id));
+        // Get the full quiz data including JSONB questions
+        const [fullQuiz] = await db
+          .select({
+            questions: quizzes.questions,
+            quizType: quizzes.quizType
+          })
+          .from(quizzes)
+          .where(eq(quizzes.id, quiz.id));
+
+        // Count questions from JSONB field
+        const questionsArray = fullQuiz?.questions as any[] || [];
+        const questionCount = questionsArray.length;
 
         // Count sessions using this quiz template
         const [sessionCount] = await db
@@ -1296,8 +1303,8 @@ export class DatabaseStorage implements IStorage {
           subject: quiz.subjectName || 'Unknown',
           examination_system: quiz.examinationSystemName || 'Unknown',
           level: quiz.levelTitle || 'Unknown',
-          type: 'topical', // Default for now
-          questions: questionCount?.count || 0, // Use actual count from quiz_questions
+          type: fullQuiz?.quizType || 'topical',
+          questions: questionCount, // Use actual count from JSONB questions array
           sessions: sessionCount?.count || 0,
           users: sessionCount?.count || 0,
           created: quiz.createdAt,
