@@ -275,12 +275,9 @@ Generate exactly ${params.questionCount} questions following this format.`;
       }))
     }));
 
-    // Generate quiz title based on context
-    let title = `${params.quizType.charAt(0).toUpperCase() + params.quizType.slice(1)} Quiz`;
-    if (params.topicId) {
-      const [topic] = await db.select().from(topics).where(eq(topics.id, params.topicId));
-      title = `${topic?.title || 'Topic'} Quiz`;
-    }
+    // Generate intelligent quiz title based on context  
+    const contextData = await this.fetchContextData(params);
+    let title = this.generateQuizTitle(contextData, params, generatedQuestions);
 
     const [quiz] = await db
       .insert(quizzes)
@@ -301,6 +298,85 @@ Generate exactly ${params.questionCount} questions following this format.`;
       .returning();
 
     return quiz.id;
+  }
+
+  /**
+   * Generate intelligent quiz titles based on context and content
+   */
+  private static generateQuizTitle(contextData: any, params: QuizGenerationParams, questions: GeneratedQuestion[]): string {
+    const { examinationSystem, level, subject, term, topic } = contextData;
+    
+    // Try to extract thematic patterns from generated questions for smart title
+    const questionTopics = this.extractQuestionThemes(questions);
+    
+    // Build contextual title components
+    let titleParts: string[] = [];
+    
+    if (topic?.title) {
+      titleParts.push(topic.title);
+    } else if (term?.title && subject?.name) {
+      titleParts.push(`${subject.name} - ${term.title}`);
+    } else if (subject?.name) {
+      titleParts.push(subject.name);
+    }
+    
+    if (level?.title) {
+      titleParts.push(level.title);
+    }
+    
+    // Add quiz type context
+    const quizTypeLabels = {
+      'random': 'Mixed Topics',
+      'topical': 'Topic Focus',  
+      'term': 'Term Review'
+    };
+    
+    const typeLabel = quizTypeLabels[params.quizType as keyof typeof quizTypeLabels] || 'Quiz';
+    
+    // Create intelligent title
+    if (titleParts.length > 0) {
+      if (questionTopics.length > 0) {
+        return `${titleParts.join(' ')} - ${questionTopics[0]} ${typeLabel}`;
+      }
+      return `${titleParts.join(' ')} ${typeLabel}`;
+    }
+    
+    // Fallback to question theme if available
+    if (questionTopics.length > 0) {
+      return `${questionTopics[0]} ${typeLabel}`;
+    }
+    
+    return `${examinationSystem?.title || 'General'} ${typeLabel}`;
+  }
+
+  /**
+   * Extract common themes from generated questions for smarter titles
+   */
+  private static extractQuestionThemes(questions: GeneratedQuestion[]): string[] {
+    const themes: string[] = [];
+    
+    // Simple keyword extraction from first few questions
+    const sampleQuestions = questions.slice(0, 3);
+    const commonKeywords: { [key: string]: number } = {};
+    
+    sampleQuestions.forEach(q => {
+      const words = q.question.toLowerCase()
+        .replace(/[^\w\s]/g, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 4 && !['which', 'what', 'where', 'when', 'following'].includes(word));
+        
+      words.forEach(word => {
+        commonKeywords[word] = (commonKeywords[word] || 0) + 1;
+      });
+    });
+    
+    // Get top themes
+    const sortedThemes = Object.entries(commonKeywords)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 2)
+      .map(([word]) => word.charAt(0).toUpperCase() + word.slice(1));
+      
+    return sortedThemes;
   }
 
   /**
@@ -464,26 +540,7 @@ Generate exactly ${params.questionCount} questions following this format.`;
     };
   }
 
-  /**
-   * Generate appropriate quiz title
-   */
-  private static generateQuizTitle(quizType: string, contextData: any): string {
-    const subject = contextData.subject?.title || 'Mixed Subjects';
-    const level = contextData.level?.title || 'General';
-    
-    switch (quizType) {
-      case 'random':
-        return `${subject} Random Quiz - ${level}`;
-      case 'topical':
-        const topic = contextData.topic?.title || 'General Topics';
-        return `${subject} - ${topic} (${level})`;
-      case 'term':
-        const term = contextData.term?.title || 'General Term';
-        return `${subject} - ${term} Quiz (${level})`;
-      default:
-        return `${subject} Quiz - ${level}`;
-    }
-  }
+
 
   /**
    * Calculate sparks based on difficulty and correctness
