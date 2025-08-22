@@ -19,7 +19,8 @@ import {
   LogOut,
   ChevronDown,
   Zap,
-  Award
+  Award,
+  CreditCard
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -128,6 +129,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     { icon: Trophy, label: 'Leaderboard', path: '/leaderboard', active: location === '/leaderboard' },
     { icon: Award, label: 'Badges & Trophies', path: '/badges-trophies', active: location === '/badges-trophies' },
     { icon: Target, label: 'Quiz History', path: '/quiz-history', active: location === '/quiz-history' },
+    { icon: CreditCard, label: 'Subscriptions', path: '/subscriptions', active: location === '/subscriptions' },
     { icon: User, label: 'Profile', path: '/profile', active: location === '/profile' },
   ];
 

@@ -1936,6 +1936,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== SUBSCRIPTION ROUTES =====
+  
+  // Get subscription plans
+  app.get('/api/subscription/plans', async (req, res) => {
+    try {
+      const plans = await storage.getSubscriptionPlans();
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error);
+      res.status(500).json({ message: "Failed to fetch subscription plans" });
+    }
+  });
+
+  // Get user's current subscription
+  app.get('/api/subscription/current', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const subscription = await storage.getUserSubscription(userId);
+      res.json(subscription);
+    } catch (error) {
+      console.error("Error fetching user subscription:", error);
+      res.status(500).json({ message: "Failed to fetch subscription" });
+    }
+  });
+
+  // Get user credits
+  app.get('/api/user/credits', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const credits = await storage.getUserCredits(userId);
+      res.json({ credits });
+    } catch (error) {
+      console.error("Error fetching user credits:", error);
+      res.status(500).json({ message: "Failed to fetch credits" });
+    }
+  });
+
+  // Create subscription with credits
+  app.post('/api/subscription/create-with-credits', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { planId, paymentMethod } = req.body;
+
+      // Get plan details
+      const plans = await storage.getSubscriptionPlans();
+      const plan = plans.find(p => p.id === planId);
+      
+      if (!plan) {
+        return res.status(404).json({ message: "Plan not found" });
+      }
+
+      if (paymentMethod === 'credits') {
+        // Check if user has enough credits
+        const userCredits = await storage.getUserCredits(userId);
+        const planPrice = parseFloat(plan.price);
+
+        if (userCredits < planPrice) {
+          return res.status(400).json({ 
+            message: "Insufficient credits", 
+            required: planPrice, 
+            available: userCredits 
+          });
+        }
+
+        // Deduct credits
+        await storage.deductCredits(userId, planPrice, `Subscription: ${plan.name}`);
+      }
+
+      // Create subscription
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 7); // 7 days for weekly billing
+
+      const subscription = await storage.createSubscription({
+        userId,
+        planId,
+        status: 'active',
+        startDate,
+        endDate,
+        paymentMethod: paymentMethod || 'credits',
+        autoRenew: true,
+      });
+
+      res.json(subscription);
+    } catch (error) {
+      console.error("Error creating subscription:", error);
+      res.status(500).json({ message: "Failed to create subscription: " + error.message });
+    }
+  });
+
+  // Get payment history
+  app.get('/api/payment/history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const [paymentHistory, creditTransactions] = await Promise.all([
+        storage.getPaymentHistory(userId),
+        storage.getCreditTransactions(userId),
+      ]);
+
+      // Combine and sort by date
+      const allTransactions = [
+        ...paymentHistory.map(t => ({ ...t, source: 'payment' })),
+        ...creditTransactions.map(t => ({ ...t, source: 'credit' })),
+      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      res.json(allTransactions);
+    } catch (error) {
+      console.error("Error fetching payment history:", error);
+      res.status(500).json({ message: "Failed to fetch payment history" });
+    }
+  });
+
+  // Create payment transaction (for Paystack integration)
+  app.post('/api/payment/create', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { amount, type, description, planId } = req.body;
+
+      const transaction = await storage.createPaymentTransaction({
+        userId,
+        type,
+        amount: amount.toFixed(2),
+        currency: 'KES',
+        status: 'pending',
+        description,
+        subscriptionId: planId,
+      });
+
+      res.json(transaction);
+    } catch (error) {
+      console.error("Error creating payment transaction:", error);
+      res.status(500).json({ message: "Failed to create payment transaction" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

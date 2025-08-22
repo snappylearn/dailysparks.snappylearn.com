@@ -1,0 +1,78 @@
+# Daily Sparks - Subscription Integration Instructions
+
+## Overview
+Integrate subscription management and payment functionality into the Daily Sparks platform to allow users to purchase and manage subscription plans.
+
+## 1. Navigation Updates
+- Add "Subscriptions" menu item in the sidebar
+- Position it between "Quiz History" and  "Profile"
+- Ensure proper navigation routing to the new subscriptions page
+
+## 2. Subscriptions Page Structure
+Create a new page with two main tabs:
+
+### Tab 1: Overview
+*Billing Overview Section Card Full Width:*
+- Display current subscription plan status
+- Show available credits balance
+- Include relevant billing information (next billing date, plan benefits, etc.)
+- Add "Top Up Credits" button in the top-right corner of this section
+
+*Subscription Plans Section Below the above :*
+- Display three plan cards side by side:
+  - **Basic Plan**: KES 100/week, 10 daily quizzes, 4K questions, Basic support
+  - **Premium Plan**: KES 150/week, Unlimited quizzes, 7K questions, AI Personalization, Priority support
+  - **Premium Plus Plan**: KES 200/week, Unlimited quizzes, 10K+ questions, Advanced AI Personalization, 24/7 Premium support
+- Each card should have a "Subscribe" button
+- Highlight current plan if user has an active subscription
+
+### Tab 2: Payment History
+- List all subscription payments chronologically
+- Include credit top-up transactions
+- Show payment date, amount, description, and status for each transaction
+
+## 3. Payment Flow
+**For Subscribe Button:**
+- Check if user has sufficient credits for the plan
+- If sufficient credits exist:
+  - Offer option to pay with credits OR pay directly
+  - If paying with credits, deduct amount and activate subscription
+- If insufficient credits OR user chooses direct payment:
+  - Integrate with Paystack payment gateway (Paystack sdk )
+  - Handle payment success/failure appropriately
+- Upon successful payment, activate the chosen subscription plan with all its benefits
+
+**For Top Up Credits:**
+- Allow user to specify credit amount to purchase
+- Process payment through Paystack
+- Add credits to user account upon successful payment
+- Record transaction in payment history
+
+## 4. User Experience Requirements
+- Display clear messaging about plan benefits and limitations
+- Show loading states during payment processing
+- Provide confirmation messages for successful transactions
+- Handle error states gracefully with helpful error messages
+
+## 5. Subscription Management
+- Track active subscription status and expiration dates
+- Automatically restrict access to premium features when subscription expires
+- Send appropriate notifications for subscription renewals
+- Allow users to upgrade/downgrade plans mid-cycle with prorated billing
+
+## 6. Integration Points
+- Connect with existing user profile system
+- Update quiz access limitations based on active subscription
+- Integrate with existing gamification system (maintain sparks/points)
+- Ensure admin dashboard can track subscription metrics
+
+## Success Criteria
+- Users can view and purchase subscription plans seamlessly
+- Payment processing works reliably through Paystack
+- Credits system functions properly for both top-ups and subscription payments
+- Payment history accurately tracks all transactions
+- Subscription benefits are properly applied to user accounts
+- The interface is intuitive and matches the existing app design
+
+## Notes
+- Follow existing app styling and component patterns

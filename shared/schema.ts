@@ -35,6 +35,7 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   defaultProfileId: varchar("default_profile_id"),
   isPremium: boolean("is_premium").default(false),
+  credits: decimal("credits", { precision: 10, scale: 2 }).default("0.00"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -830,6 +831,95 @@ export const insertNotificationSettingsSchema = createInsertSchema(notificationS
   updatedAt: true,
 });
 
+// Subscription Plans Table
+export const subscriptionPlans = pgTable("subscription_plans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(), // Basic, Premium, Premium Plus
+  code: varchar("code").notNull().unique(), // basic, premium, premium_plus
+  description: text("description"),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(), // Weekly price in KES
+  currency: varchar("currency").default("KES"),
+  billingCycle: varchar("billing_cycle").default("weekly"), // weekly, monthly, yearly
+  dailyQuizLimit: integer("daily_quiz_limit"), // null for unlimited
+  questionBankSize: integer("question_bank_size"), // total questions available
+  features: jsonb("features"), // JSON array of features
+  hasAIPersonalization: boolean("has_ai_personalization").default(false),
+  supportLevel: varchar("support_level").default("basic"), // basic, priority, premium
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User Subscriptions Table
+export const userSubscriptions = pgTable("user_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  planId: varchar("plan_id").notNull().references(() => subscriptionPlans.id),
+  status: varchar("status").notNull().default("active"), // active, expired, cancelled, pending
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  autoRenew: boolean("auto_renew").default(true),
+  paymentMethod: varchar("payment_method"), // paystack, credits
+  paystackCustomerCode: varchar("paystack_customer_code"),
+  paystackSubscriptionCode: varchar("paystack_subscription_code"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Payment Transactions Table
+export const paymentTransactions = pgTable("payment_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: varchar("type").notNull(), // subscription, credit_topup
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency").default("KES"),
+  status: varchar("status").notNull().default("pending"), // pending, success, failed, cancelled
+  description: text("description"),
+  paystackReference: varchar("paystack_reference"),
+  paystackTransactionId: varchar("paystack_transaction_id"),
+  subscriptionId: varchar("subscription_id").references(() => userSubscriptions.id),
+  metadata: jsonb("metadata"), // Additional transaction data
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Credit Transactions Table (for tracking credit usage and top-ups)
+export const creditTransactions = pgTable("credit_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: varchar("type").notNull(), // topup, deduction, refund
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  description: text("description"),
+  paymentTransactionId: varchar("payment_transaction_id").references(() => paymentTransactions.id),
+  balanceBefore: decimal("balance_before", { precision: 10, scale: 2 }).notNull(),
+  balanceAfter: decimal("balance_after", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Insert schemas for subscription tables
+export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPaymentTransactionSchema = createInsertSchema(paymentTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCreditTransactionSchema = createInsertSchema(creditTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Type exports for settings
 export type GeneralSettings = typeof generalSettings.$inferSelect;
 export type QuizSettings = typeof quizSettings.$inferSelect;
@@ -837,3 +927,14 @@ export type NotificationSettings = typeof notificationSettings.$inferSelect;
 export type InsertGeneralSettings = z.infer<typeof insertGeneralSettingsSchema>;
 export type InsertQuizSettings = z.infer<typeof insertQuizSettingsSchema>;
 export type InsertNotificationSettings = z.infer<typeof insertNotificationSettingsSchema>;
+
+// Subscription types
+export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
+export type UserSubscription = typeof userSubscriptions.$inferSelect;
+export type PaymentTransaction = typeof paymentTransactions.$inferSelect;
+export type CreditTransaction = typeof creditTransactions.$inferSelect;
+
+export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
+export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
+export type InsertPaymentTransaction = z.infer<typeof insertPaymentTransactionSchema>;
+export type InsertCreditTransaction = z.infer<typeof insertCreditTransactionSchema>;

@@ -29,6 +29,10 @@ import {
   generalSettings,
   quizSettings,
   notificationSettings,
+  subscriptionPlans,
+  userSubscriptions,
+  paymentTransactions,
+  creditTransactions,
   type User,
   type UpsertUser,
   type ExaminationSystem,
@@ -77,6 +81,15 @@ import {
   type InsertGeneralSettings,
   type InsertQuizSettings,
   type InsertNotificationSettings,
+  // Subscription types
+  type SubscriptionPlan,
+  type UserSubscription,
+  type PaymentTransaction,
+  type CreditTransaction,
+  type InsertSubscriptionPlan,
+  type InsertUserSubscription,
+  type InsertPaymentTransaction,
+  type InsertCreditTransaction,
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, sql, count, avg, gte, lte, inArray, or, isNull } from "drizzle-orm";
@@ -171,6 +184,19 @@ export interface IStorage {
   getMonthlyTopPerformers(): Promise<any[]>;
   getEngagementMetrics(): Promise<any>;
   getPerformanceMetrics(): Promise<any>;
+
+  // Subscription Management Operations
+  getSubscriptionPlans(): Promise<any[]>;
+  getUserSubscription(userId: string): Promise<any>;
+  createSubscription(subscription: any): Promise<any>;
+  updateSubscription(subscriptionId: string, data: any): Promise<any>;
+  getUserCredits(userId: string): Promise<number>;
+  addCredits(userId: string, amount: number, description: string): Promise<any>;
+  deductCredits(userId: string, amount: number, description: string): Promise<any>;
+  createPaymentTransaction(transaction: any): Promise<any>;
+  updatePaymentTransaction(transactionId: string, data: any): Promise<any>;
+  getPaymentHistory(userId: string): Promise<any[]>;
+  getCreditTransactions(userId: string): Promise<any[]>;
   
   // Topic management operations
   getAdminTopicList(filters?: any): Promise<any[]>;
@@ -2486,6 +2512,160 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return updatedSettings;
     }
+  }
+
+  // Subscription Management Methods
+  async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return await db
+      .select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.isActive, true))
+      .orderBy(subscriptionPlans.sortOrder);
+  }
+
+  async getUserSubscription(userId: string): Promise<any> {
+    const subscription = await db
+      .select({
+        id: userSubscriptions.id,
+        planId: userSubscriptions.planId,
+        status: userSubscriptions.status,
+        startDate: userSubscriptions.startDate,
+        endDate: userSubscriptions.endDate,
+        autoRenew: userSubscriptions.autoRenew,
+        paymentMethod: userSubscriptions.paymentMethod,
+        planName: subscriptionPlans.name,
+        planCode: subscriptionPlans.code,
+        planPrice: subscriptionPlans.price,
+        planFeatures: subscriptionPlans.features,
+        dailyQuizLimit: subscriptionPlans.dailyQuizLimit,
+        questionBankSize: subscriptionPlans.questionBankSize,
+        hasAIPersonalization: subscriptionPlans.hasAIPersonalization,
+        supportLevel: subscriptionPlans.supportLevel,
+      })
+      .from(userSubscriptions)
+      .leftJoin(subscriptionPlans, eq(userSubscriptions.planId, subscriptionPlans.id))
+      .where(
+        and(
+          eq(userSubscriptions.userId, userId),
+          eq(userSubscriptions.status, 'active')
+        )
+      )
+      .orderBy(desc(userSubscriptions.createdAt))
+      .limit(1);
+
+    return subscription[0] || null;
+  }
+
+  async createSubscription(subscription: InsertUserSubscription): Promise<UserSubscription> {
+    const result = await db.insert(userSubscriptions).values(subscription).returning();
+    return result[0];
+  }
+
+  async updateSubscription(subscriptionId: string, data: Partial<UserSubscription>): Promise<UserSubscription> {
+    const result = await db
+      .update(userSubscriptions)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(userSubscriptions.id, subscriptionId))
+      .returning();
+    return result[0];
+  }
+
+  async getUserCredits(userId: string): Promise<number> {
+    const user = await db
+      .select({ credits: users.credits })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    
+    return parseFloat(user[0]?.credits || '0');
+  }
+
+  async addCredits(userId: string, amount: number, description: string, paymentTransactionId?: string): Promise<CreditTransaction> {
+    const currentBalance = await this.getUserCredits(userId);
+    const newBalance = currentBalance + amount;
+
+    // Update user credits
+    await db
+      .update(users)
+      .set({ credits: newBalance.toFixed(2), updatedAt: new Date() })
+      .where(eq(users.id, userId));
+
+    // Record credit transaction
+    const creditTransaction = await db
+      .insert(creditTransactions)
+      .values({
+        userId,
+        type: 'topup',
+        amount: amount.toFixed(2),
+        description,
+        paymentTransactionId,
+        balanceBefore: currentBalance.toFixed(2),
+        balanceAfter: newBalance.toFixed(2),
+      })
+      .returning();
+
+    return creditTransaction[0];
+  }
+
+  async deductCredits(userId: string, amount: number, description: string): Promise<CreditTransaction> {
+    const currentBalance = await this.getUserCredits(userId);
+    
+    if (currentBalance < amount) {
+      throw new Error('Insufficient credits');
+    }
+
+    const newBalance = currentBalance - amount;
+
+    // Update user credits
+    await db
+      .update(users)
+      .set({ credits: newBalance.toFixed(2), updatedAt: new Date() })
+      .where(eq(users.id, userId));
+
+    // Record credit transaction
+    const creditTransaction = await db
+      .insert(creditTransactions)
+      .values({
+        userId,
+        type: 'deduction',
+        amount: amount.toFixed(2),
+        description,
+        balanceBefore: currentBalance.toFixed(2),
+        balanceAfter: newBalance.toFixed(2),
+      })
+      .returning();
+
+    return creditTransaction[0];
+  }
+
+  async createPaymentTransaction(transaction: InsertPaymentTransaction): Promise<PaymentTransaction> {
+    const result = await db.insert(paymentTransactions).values(transaction).returning();
+    return result[0];
+  }
+
+  async updatePaymentTransaction(transactionId: string, data: Partial<PaymentTransaction>): Promise<PaymentTransaction> {
+    const result = await db
+      .update(paymentTransactions)
+      .set(data)
+      .where(eq(paymentTransactions.id, transactionId))
+      .returning();
+    return result[0];
+  }
+
+  async getPaymentHistory(userId: string): Promise<PaymentTransaction[]> {
+    return await db
+      .select()
+      .from(paymentTransactions)
+      .where(eq(paymentTransactions.userId, userId))
+      .orderBy(desc(paymentTransactions.createdAt));
+  }
+
+  async getCreditTransactions(userId: string): Promise<CreditTransaction[]> {
+    return await db
+      .select()
+      .from(creditTransactions)
+      .where(eq(creditTransactions.userId, userId))
+      .orderBy(desc(creditTransactions.createdAt));
   }
 }
 

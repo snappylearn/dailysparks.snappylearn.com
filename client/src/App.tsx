@@ -29,6 +29,7 @@ import PlatformSettings from "@/pages/admin/PlatformSettings";
 import QuizPreview from "@/pages/QuizPreview";
 import BadgesAndTrophies from "@/pages/BadgesAndTrophies";
 import Challenges from "@/pages/Challenges";
+import Subscriptions from "@/pages/Subscriptions";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -140,6 +141,9 @@ function Router() {
       </Route>
       <Route path="/challenges">
         <Challenges />
+      </Route>
+      <Route path="/subscriptions">
+        <Subscriptions />
       </Route>
       <Route component={NotFound} />
     </Switch>
