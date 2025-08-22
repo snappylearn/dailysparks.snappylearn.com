@@ -15,7 +15,7 @@ import { z } from "zod";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Edit, Eye, Users, BarChart3, Filter } from "lucide-react";
+import { Plus, Search, Edit, Eye, Users, BarChart3, Filter, FileText } from "lucide-react";
 
 const generateQuizSchema = z.object({
   examinationSystemId: z.string().min(1, "Examination system is required"),
@@ -63,6 +63,7 @@ export default function AdminQuizzes() {
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [questionsDialogOpen, setQuestionsDialogOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
 
   const { toast } = useToast();
@@ -930,6 +931,17 @@ export default function AdminQuizzes() {
                           size="sm"
                           onClick={() => {
                             setSelectedQuiz(quiz);
+                            setQuestionsDialogOpen(true);
+                          }}
+                          title="View questions"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedQuiz(quiz);
                             setEditDialogOpen(true);
                           }}
                         >
@@ -961,6 +973,19 @@ export default function AdminQuizzes() {
         </CardContent>
       </Card>
 
+      {/* View Questions Dialog */}
+      <Dialog open={questionsDialogOpen} onOpenChange={setQuestionsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Quiz Questions</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              {selectedQuiz?.title || 'Untitled Quiz'} • {selectedQuiz?.questions?.length || 0} questions
+            </p>
+          </DialogHeader>
+          {selectedQuiz && <QuizQuestionsView quiz={selectedQuiz} />}
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Quiz Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -970,6 +995,119 @@ export default function AdminQuizzes() {
           {selectedQuiz && <EditQuizForm quiz={selectedQuiz} onClose={() => setEditDialogOpen(false)} />}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// Quiz Questions View Component
+function QuizQuestionsView({ quiz }: { quiz: any }) {
+  const questions = quiz.questions || [];
+  
+  if (!questions.length) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <p>No questions found in this quiz.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {questions.map((question: any, index: number) => (
+        <Card key={question.id || index} className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className="text-base font-medium">
+                  Question {index + 1}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {question.marks || 1} {(question.marks || 1) === 1 ? 'mark' : 'marks'} • {question.difficulty || 'Medium'}
+                </p>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {question.questionType || 'MCQ'}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-sm leading-relaxed">
+              {question.content || question.questionText || 'No question text'}
+            </div>
+            
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Options:</p>
+              <div className="grid gap-2">
+                {question.choices?.map((choice: any, choiceIndex: number) => (
+                  <div 
+                    key={choice.id || choiceIndex}
+                    className={`flex items-center gap-3 p-3 rounded-lg border ${
+                      choice.isCorrect 
+                        ? 'bg-green-50 border-green-200 text-green-800' 
+                        : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-medium ${
+                      choice.isCorrect 
+                        ? 'border-green-500 bg-green-100 text-green-700' 
+                        : 'border-gray-300 text-gray-600'
+                    }`}>
+                      {String.fromCharCode(65 + choiceIndex)}
+                    </div>
+                    <span className="flex-1 text-sm">{choice.content || choice.text || 'No option text'}</span>
+                    {choice.isCorrect && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                        Correct
+                      </Badge>
+                    )}
+                  </div>
+                )) || (
+                  // Fallback for old format with optionA, optionB, etc.
+                  ['optionA', 'optionB', 'optionC', 'optionD'].map((optionKey, choiceIndex) => {
+                    const optionText = question[optionKey];
+                    const isCorrect = question.correctAnswer === String.fromCharCode(65 + choiceIndex);
+                    
+                    if (!optionText) return null;
+                    
+                    return (
+                      <div 
+                        key={optionKey}
+                        className={`flex items-center gap-3 p-3 rounded-lg border ${
+                          isCorrect 
+                            ? 'bg-green-50 border-green-200 text-green-800' 
+                            : 'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-medium ${
+                          isCorrect 
+                            ? 'border-green-500 bg-green-100 text-green-700' 
+                            : 'border-gray-300 text-gray-600'
+                        }`}>
+                          {String.fromCharCode(65 + choiceIndex)}
+                        </div>
+                        <span className="flex-1 text-sm">{optionText}</span>
+                        {isCorrect && (
+                          <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                            Correct
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+            
+            {question.explanation && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm font-medium text-blue-800 mb-2">Explanation</p>
+                <p className="text-sm text-blue-700 leading-relaxed">{question.explanation}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
