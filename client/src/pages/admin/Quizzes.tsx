@@ -1182,6 +1182,8 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
     levelId: z.string().min(1, "Level is required"),
     subjectId: z.string().min(1, "Subject is required"),
     quizType: z.string().min(1, "Quiz type is required"),
+    topicId: z.string().optional(),
+    termId: z.string().optional(),
     timeLimit: z.number().min(5).max(120),
     totalQuestions: z.number().min(1).max(50)
   });
@@ -1195,6 +1197,8 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
       levelId: "",
       subjectId: "",
       quizType: "",
+      topicId: "",
+      termId: "",
       timeLimit: 30,
       totalQuestions: 15
     }
@@ -1210,11 +1214,23 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
         levelId: fullQuizData.levelId || "",
         subjectId: fullQuizData.subjectId || "",
         quizType: fullQuizData.quizType || "",
+        topicId: fullQuizData.topicId || "",
+        termId: fullQuizData.termId || "",
         timeLimit: fullQuizData.timeLimit || 30,
         totalQuestions: fullQuizData.totalQuestions || questions.length
       });
     }
   }, [fullQuizData, form, questions.length]);
+
+  // Filter terms by selected examination system
+  const filteredTerms = terms?.filter((term: any) => 
+    term.examinationSystemId === form.watch("examinationSystemId")
+  ) || [];
+
+  // Filter topics by selected subject
+  const filteredTopics = topics?.filter((topic: any) => 
+    topic.subjectId === form.watch("subjectId")
+  ) || [];
 
   const updateQuizMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -1463,14 +1479,14 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Topic</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select topic" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {topics?.map((topic: any) => (
+                      {filteredTopics?.map((topic: any) => (
                         <SelectItem key={topic.id} value={topic.id}>
                           {topic.title}
                         </SelectItem>
@@ -1490,14 +1506,14 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Term</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select term" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {terms?.map((term: any) => (
+                      {filteredTerms?.map((term: any) => (
                         <SelectItem key={term.id} value={term.id}>
                           {term.title}
                         </SelectItem>
