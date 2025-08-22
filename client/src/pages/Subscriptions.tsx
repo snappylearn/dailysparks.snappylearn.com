@@ -678,7 +678,7 @@ ${userCredits?.credits?.toFixed(2) || '0.00'}
                       {(userCredits?.credits || 0) < parseFloat(plan.price) && currentSubscription?.planCode !== plan.code && (
                         <Alert>
                           <AlertDescription className="text-xs">
-                            Insufficient credits. Need KES {(parseFloat(plan.price) - (userCredits?.credits || 0)).toFixed(2)} more.
+                            Insufficient credits. Need ${(parseFloat(plan.price) - (userCredits?.credits || 0)).toFixed(2)} more.
                           </AlertDescription>
                         </Alert>
                       )}
@@ -745,7 +745,7 @@ ${userCredits?.credits?.toFixed(2) || '0.00'}
                           transaction.type === 'topup' || transaction.type === 'subscription' 
                             ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {transaction.type === 'deduction' ? '-' : '+'}KES {Math.abs(parseFloat(transaction.amount)).toFixed(2)}
+                          {transaction.type === 'deduction' ? '-' : '+'}${Math.abs(parseFloat(transaction.amount)).toFixed(2)}
                         </p>
                         <div className="flex items-center gap-1">
                           {transaction.status === 'success' ? (
