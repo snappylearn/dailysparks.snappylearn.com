@@ -184,11 +184,24 @@ export default function Subscriptions() {
       const amountInKobo = parseFloat(plan.price) * 100; // Convert to kobo
       const reference = `DS_${Date.now()}_${transaction.id}`;
 
+      if (!window.PaystackPop) {
+        toast({ 
+          title: "Payment Error", 
+          description: "Paystack not loaded. Please refresh the page and try again.",
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      const paystackKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
+      console.log("Paystack Key Available:", !!paystackKey);
+      console.log("Payment Details:", { amount: amountInKobo, email: user.email, ref: reference });
+
       const handler = window.PaystackPop.setup({
-        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_default',
+        key: paystackKey,
         email: user.email,
         amount: amountInKobo,
-        currency: 'NGN', // Paystack uses NGN, but we can convert KES
+        currency: 'NGN',
         ref: reference,
         metadata: {
           userId: user.id,
@@ -196,13 +209,15 @@ export default function Subscriptions() {
           transactionId: transaction.id,
         },
         callback: function(response: any) {
-          // Payment successful
+          console.log("Payment callback:", response);
+          toast({ title: "Processing payment..." });
           confirmPaymentMutation.mutate({
             transactionId: transaction.id,
             paystackReference: response.reference,
           });
         },
         onClose: function() {
+          console.log("Payment modal closed");
           toast({ 
             title: "Payment cancelled", 
             description: "You can try again anytime",

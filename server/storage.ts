@@ -2639,7 +2639,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPaymentTransaction(transaction: InsertPaymentTransaction): Promise<PaymentTransaction> {
-    const result = await db.insert(paymentTransactions).values(transaction).returning();
+    // Remove subscriptionId if it exists and add planId handling
+    const { subscriptionId, ...transactionData } = transaction as any;
+    const result = await db.insert(paymentTransactions).values(transactionData).returning();
     return result[0];
   }
 

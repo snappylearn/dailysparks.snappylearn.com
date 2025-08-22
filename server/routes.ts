@@ -2061,7 +2061,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currency: 'KES',
         status: 'pending',
         description,
-        subscriptionId: planId,
+        planId: planId,
       });
 
       res.json(transaction);
@@ -2095,9 +2095,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create subscription if payment was for subscription
-      if (transaction.type === 'subscription' && transaction.subscriptionId) {
+      if (transaction.type === 'subscription' && transaction.planId) {
         const plans = await storage.getSubscriptionPlans();
-        const plan = plans.find(p => p.id === transaction.subscriptionId);
+        const plan = plans.find(p => p.id === transaction.planId);
         
         if (plan) {
           const startDate = new Date();
