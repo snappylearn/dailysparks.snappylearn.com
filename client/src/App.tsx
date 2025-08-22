@@ -142,9 +142,7 @@ function Router() {
       <Route path="/challenges">
         <Challenges />
       </Route>
-      <Route path="/subscriptions">
-        <Subscriptions />
-      </Route>
+      <Route path="/subscriptions" component={Subscriptions} />
       <Route component={NotFound} />
     </Switch>
   );
