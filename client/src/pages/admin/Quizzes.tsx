@@ -1207,6 +1207,7 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
   // Update form values when quiz data loads
   useEffect(() => {
     if (fullQuizData) {
+      console.log("Quiz data loaded:", fullQuizData);
       form.reset({
         title: fullQuizData.title || "",
         description: fullQuizData.description || "",
@@ -1223,9 +1224,15 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
   }, [fullQuizData, form, questions.length]);
 
   // Filter terms by selected examination system
+  const currentExamSystemId = form.watch("examinationSystemId");
   const filteredTerms = terms?.filter((term: any) => 
-    term.examinationSystemId === form.watch("examinationSystemId")
+    term.examinationSystemId === currentExamSystemId
   ) || [];
+  
+  console.log("Current exam system:", currentExamSystemId);
+  console.log("All terms:", terms);
+  console.log("Filtered terms:", filteredTerms);
+  console.log("Current termId:", form.watch("termId"));
 
   // Filter topics by selected subject
   const filteredTopics = topics?.filter((topic: any) => 
@@ -1513,11 +1520,15 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {filteredTerms?.map((term: any) => (
-                        <SelectItem key={term.id} value={term.id}>
-                          {term.title}
-                        </SelectItem>
-                      ))}
+                      {filteredTerms?.length === 0 ? (
+                        <SelectItem value="" disabled>No terms available for this system</SelectItem>
+                      ) : (
+                        filteredTerms?.map((term: any) => (
+                          <SelectItem key={term.id} value={term.id}>
+                            {term.title}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
