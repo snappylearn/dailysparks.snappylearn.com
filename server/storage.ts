@@ -129,6 +129,7 @@ export interface IStorage {
   createTopic(topic: InsertTopic): Promise<Topic>;
   
   // Question operations
+  getAllQuestions(): Promise<Question[]>;
   getQuestionsByTopic(topicId: string, limit?: number): Promise<Question[]>;
   getRandomQuestions(subjectId: string, levelId: string, limit?: number): Promise<Question[]>;
   getTermQuestions(subjectId: string, levelId: string, termId: string, limit?: number): Promise<Question[]>;
@@ -621,6 +622,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Question operations
+  async getAllQuestions(): Promise<Question[]> {
+    return await db.select().from(questions);
+  }
+
   async getQuestionsByTopic(topicId: string, limit: number = 30): Promise<Question[]> {
     return await db.select().from(questions)
       .where(eq(questions.topicId, topicId))
