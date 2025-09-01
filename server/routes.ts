@@ -104,6 +104,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateData = req.body;
       const userId = req.user.claims.sub;
       
+      // Handle empty levelId - remove it from update data to avoid constraint violation
+      if (updateData.levelId === '') {
+        delete updateData.levelId;
+      }
+      
       console.log('Updating profile:', id, 'with data:', updateData);
       
       // First verify the profile belongs to the user
