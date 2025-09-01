@@ -140,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } = req.body;
 
       // Check if user has active subscription
-      const subscription = await storage.getCurrentUserSubscription(userId);
+      const subscription = await storage.getUserSubscription(userId);
       if (!subscription || subscription.status !== 'active') {
         return res.status(403).json({ 
           message: "Active subscription required", 
@@ -696,7 +696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { profileId, subjectId, quizType, topicId, termId } = req.body;
       
       // Check if user has active subscription
-      const subscription = await storage.getCurrentUserSubscription(userId);
+      const subscription = await storage.getUserSubscription(userId);
       if (!subscription || subscription.status !== 'active') {
         return res.status(403).json({ 
           message: "Active subscription required", 
