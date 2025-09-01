@@ -713,8 +713,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get available quizzes based on filters  
       const availableQuizzes = await storage.getQuizzesBySubject(subjectId);
 
+      // If no admin quizzes found, fallback to generating from question bank
       if (!availableQuizzes || availableQuizzes.length === 0) {
-        return res.status(404).json({ message: "No quizzes available for this subject" });
+        console.log('No admin quizzes found, generating from question bank...');
+        
+        // Get questions from database - use all available questions for now
+        const allQuestions = await storage.getAllQuestions();
+        
+        if (!allQuestions || allQuestions.length === 0) {
+          return res.status(404).json({ message: "No questions available for quiz generation" });
+        }
+
+        // Filter physics-related questions (basic keyword matching for now)
+        const physicsKeywords = ['force', 'energy', 'motion', 'physics', 'newton', 'gravity', 'electrical', 'mechanical', 'wave', 'light'];
+        const relevantQuestions = allQuestions.filter(q => 
+          physicsKeywords.some(keyword => 
+            q.question_text?.toLowerCase().includes(keyword) ||
+            q.explanation?.toLowerCase().includes(keyword)
+          )
+        );
+
+        if (relevantQuestions.length === 0) {
+          return res.status(404).json({ message: "No relevant questions available for this subject" });
+        }
+
+        // Shuffle and take 10 questions
+        const shuffledQuestions = relevantQuestions.sort(() => 0.5 - Math.random()).slice(0, 10);
+        
+        // Convert to quiz format and create session
+        const quizQuestions = shuffledQuestions.map(q => ({
+          id: q.id,
+          content: q.question_text,
+          choices: [
+            { id: `${q.id}_a`, content: q.option_a, isCorrect: q.correct_answer === 'A', orderIndex: 1 },
+            { id: `${q.id}_b`, content: q.option_b, isCorrect: q.correct_answer === 'B', orderIndex: 2 },
+            { id: `${q.id}_c`, content: q.option_c, isCorrect: q.correct_answer === 'C', orderIndex: 3 },
+            { id: `${q.id}_d`, content: q.option_d, isCorrect: q.correct_answer === 'D', orderIndex: 4 }
+          ],
+          explanation: q.explanation
+        }));
+
+        // Create quiz session with generated questions
+        const sessionId = await storage.createQuizSession(
+          profileId,
+          subjectId,
+          quizType,
+          quizQuestions,
+          quizQuestions.length
+        );
+
+        const sessionQuestions = quizQuestions.map(q => ({
+          id: q.id,
+          questionText: q.content,
+          optionA: q.choices[0]?.content || '',
+          optionB: q.choices[1]?.content || '',
+          optionC: q.choices[2]?.content || '',
+          optionD: q.choices[3]?.content || '',
+          correctAnswer: q.choices.find(c => c.isCorrect) ? 
+            String.fromCharCode(65 + q.choices.findIndex(c => c.isCorrect)) : 'A',
+          explanation: q.explanation
+        }));
+
+        return res.json({
+          sessionId,
+          questions: sessionQuestions,
+          totalQuestions: sessionQuestions.length,
+          currentQuestionIndex: 0
+        });
       }
 
       // Filter to only include quizzes that have questions
@@ -1169,42 +1234,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Profile ID and Subject ID are required" });
       }
 
-      // Test quiz questions with proper structure
-      const testQuestions = [
-        {
-          id: "physics_q1",
-          content: "What is the SI unit of force?",
-          choices: [
-            { id: "physics_q1_c1", content: "Newton", isCorrect: true, orderIndex: 1 },
-            { id: "physics_q1_c2", content: "Joule", isCorrect: false, orderIndex: 2 },
-            { id: "physics_q1_c3", content: "Watt", isCorrect: false, orderIndex: 3 },
-            { id: "physics_q1_c4", content: "Pascal", isCorrect: false, orderIndex: 4 }
-          ],
-          explanation: "The SI unit of force is the Newton (N), named after Sir Isaac Newton."
-        },
-        {
-          id: "physics_q2", 
-          content: "What is the acceleration due to gravity on Earth?",
-          choices: [
-            { id: "physics_q2_c1", content: "9.8 m/s²", isCorrect: true, orderIndex: 1 },
-            { id: "physics_q2_c2", content: "10 m/s²", isCorrect: false, orderIndex: 2 },
-            { id: "physics_q2_c3", content: "8.9 m/s²", isCorrect: false, orderIndex: 3 },
-            { id: "physics_q2_c4", content: "11.2 m/s²", isCorrect: false, orderIndex: 4 }
-          ],
-          explanation: "The standard acceleration due to gravity on Earth is approximately 9.8 m/s²."
-        },
-        {
-          id: "physics_q3",
-          content: "Which law states that for every action, there is an equal and opposite reaction?",
-          choices: [
-            { id: "physics_q3_c1", content: "Newton's First Law", isCorrect: false, orderIndex: 1 },
-            { id: "physics_q3_c2", content: "Newton's Second Law", isCorrect: false, orderIndex: 2 },
-            { id: "physics_q3_c3", content: "Newton's Third Law", isCorrect: true, orderIndex: 3 },
-            { id: "physics_q3_c4", content: "Law of Universal Gravitation", isCorrect: false, orderIndex: 4 }
-          ],
-          explanation: "Newton's Third Law states that for every action, there is an equal and opposite reaction."
+      // Get questions from database - fallback from admin quizzes to question bank
+      let testQuestions = [];
+      
+      try {
+        // Try to get all questions from database and filter relevant ones
+        const allQuestions = await storage.getAllQuestions();
+        
+        if (allQuestions && allQuestions.length > 0) {
+          // Filter physics-related questions (basic keyword matching)
+          const physicsKeywords = ['force', 'energy', 'motion', 'physics', 'newton', 'gravity', 'electrical', 'mechanical', 'wave', 'light'];
+          const relevantQuestions = allQuestions.filter(q => 
+            physicsKeywords.some(keyword => 
+              q.question_text?.toLowerCase().includes(keyword) ||
+              q.explanation?.toLowerCase().includes(keyword)
+            )
+          );
+
+          if (relevantQuestions.length > 0) {
+            // Shuffle and take 10 questions
+            const shuffledQuestions = relevantQuestions.sort(() => 0.5 - Math.random()).slice(0, 10);
+            
+            // Convert to quiz format
+            testQuestions = shuffledQuestions.map(q => ({
+              id: q.id,
+              content: q.question_text,
+              choices: [
+                { id: `${q.id}_a`, content: q.option_a, isCorrect: q.correct_answer === 'A', orderIndex: 1 },
+                { id: `${q.id}_b`, content: q.option_b, isCorrect: q.correct_answer === 'B', orderIndex: 2 },
+                { id: `${q.id}_c`, content: q.option_c, isCorrect: q.correct_answer === 'C', orderIndex: 3 },
+                { id: `${q.id}_d`, content: q.option_d, isCorrect: q.correct_answer === 'D', orderIndex: 4 }
+              ],
+              explanation: q.explanation
+            }));
+          }
         }
-      ];
+      } catch (error) {
+        console.error('Error fetching questions from database:', error);
+      }
+      
+      // Fallback to hardcoded questions if database query failed
+      if (testQuestions.length === 0) {
+        testQuestions = [
+          {
+            id: "physics_q1",
+            content: "What is the SI unit of force?",
+            choices: [
+              { id: "physics_q1_c1", content: "Newton", isCorrect: true, orderIndex: 1 },
+              { id: "physics_q1_c2", content: "Joule", isCorrect: false, orderIndex: 2 },
+              { id: "physics_q1_c3", content: "Watt", isCorrect: false, orderIndex: 3 },
+              { id: "physics_q1_c4", content: "Pascal", isCorrect: false, orderIndex: 4 }
+            ],
+            explanation: "The SI unit of force is the Newton (N), named after Sir Isaac Newton."
+          },
+          {
+            id: "physics_q2", 
+            content: "What is the acceleration due to gravity on Earth?",
+            choices: [
+              { id: "physics_q2_c1", content: "9.8 m/s²", isCorrect: true, orderIndex: 1 },
+              { id: "physics_q2_c2", content: "10 m/s²", isCorrect: false, orderIndex: 2 },
+              { id: "physics_q2_c3", content: "8.9 m/s²", isCorrect: false, orderIndex: 3 },
+              { id: "physics_q2_c4", content: "11.2 m/s²", isCorrect: false, orderIndex: 4 }
+            ],
+            explanation: "The standard acceleration due to gravity on Earth is approximately 9.8 m/s²."
+          },
+          {
+            id: "physics_q3",
+            content: "Which law states that for every action, there is an equal and opposite reaction?",
+            choices: [
+              { id: "physics_q3_c1", content: "Newton's First Law", isCorrect: false, orderIndex: 1 },
+              { id: "physics_q3_c2", content: "Newton's Second Law", isCorrect: false, orderIndex: 2 },
+              { id: "physics_q3_c3", content: "Newton's Third Law", isCorrect: true, orderIndex: 3 },
+              { id: "physics_q3_c4", content: "Law of Universal Gravitation", isCorrect: false, orderIndex: 4 }
+            ],
+            explanation: "Newton's Third Law states that for every action, there is an equal and opposite reaction."
+          }
+        ];
+      }
 
       console.log('Creating new quiz session with test questions:', testQuestions.length);
       console.log('Test questions structure:', testQuestions.map(q => ({ id: q.id, content: q.content, choicesCount: q.choices.length })));
