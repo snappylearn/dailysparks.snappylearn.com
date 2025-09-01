@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateQuestions } from "./aiService";
-import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers } from "@shared/schema";
+import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
@@ -724,10 +724,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!availableQuizzes || availableQuizzes.length === 0) {
         console.log('No admin quizzes found, generating with AI...');
         
-        // Get subject and level info for AI generation
-        const [subjectInfo] = await storage.getSubjects().then(subjects => 
-          subjects.filter(s => s.id === subjectId)
-        );
+        // Get subject info for AI generation
+        const [subjectInfo] = await db
+          .select()
+          .from(subjects)
+          .where(eq(subjects.id, subjectId));
         
         if (!subjectInfo) {
           return res.status(404).json({ message: "Subject not found" });
