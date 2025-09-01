@@ -754,13 +754,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }));
 
         // Create quiz session with generated questions
-        const sessionId = await storage.createQuizSession(
+        const userId = req.user.claims.sub;
+        const quizSession = await storage.createQuizSession({
+          userId,
           profileId,
           subjectId,
           quizType,
-          quizQuestions,
-          quizQuestions.length
-        );
+          totalQuestions: quizQuestions.length,
+          currentQuestionIndex: 0,
+          quizQuestions: quizQuestions,
+        });
 
         const sessionQuestions = quizQuestions.map(q => ({
           id: q.id,
@@ -775,7 +778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }));
 
         return res.json({
-          sessionId,
+          sessionId: quizSession.id,
           questions: sessionQuestions,
           totalQuestions: sessionQuestions.length,
           currentQuestionIndex: 0
@@ -814,6 +817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quizSession = incompleteSession;
       } else {
         // Create new quiz session with questions snapshot
+        const userId = req.user.claims.sub;
         quizSession = await storage.createQuizSession({
           userId,
           profileId,
