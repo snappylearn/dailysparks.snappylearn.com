@@ -735,12 +735,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         try {
-          // Generate questions with AI
+          // Generate questions with AI - be more specific about Physics
+          const levelInfo = profile.levelId ? `Form 3` : 'Secondary';
           const generatedQuestions = await generateQuestions({
-            subject: subjectInfo.title,
-            level: profile.levelId ? `Form ${profile.levelId}` : 'Secondary',
-            topics: [],
-            term: null,
+            subject: `${subjectInfo.title} - ${levelInfo}`,
+            level: levelInfo,
+            topics: quizType === 'topical' && topicId ? ['Physics mechanics', 'Forces', 'Energy', 'Electricity'] : [],
+            term: quizType === 'termly' && termId ? 'Term 1' : null,
             quizType: quizType || 'random',
             questionCount: 10
           });
