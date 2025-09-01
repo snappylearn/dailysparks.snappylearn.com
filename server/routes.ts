@@ -1264,10 +1264,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               id: q.id,
               content: q.question_text,
               choices: [
-                { id: `${q.id}_a`, content: q.option_a, isCorrect: q.correct_answer === 'A', orderIndex: 1 },
-                { id: `${q.id}_b`, content: q.option_b, isCorrect: q.correct_answer === 'B', orderIndex: 2 },
-                { id: `${q.id}_c`, content: q.option_c, isCorrect: q.correct_answer === 'C', orderIndex: 3 },
-                { id: `${q.id}_d`, content: q.option_d, isCorrect: q.correct_answer === 'D', orderIndex: 4 }
+                { id: `${q.id}_a`, content: q.option_a || 'Option A', isCorrect: q.correct_answer === 'A', orderIndex: 1 },
+                { id: `${q.id}_b`, content: q.option_b || 'Option B', isCorrect: q.correct_answer === 'B', orderIndex: 2 },
+                { id: `${q.id}_c`, content: q.option_c || 'Option C', isCorrect: q.correct_answer === 'C', orderIndex: 3 },
+                { id: `${q.id}_d`, content: q.option_d || 'Option D', isCorrect: q.correct_answer === 'D', orderIndex: 4 }
               ],
               explanation: q.explanation
             }));
