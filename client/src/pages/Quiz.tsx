@@ -84,7 +84,7 @@ export default function Quiz() {
   // Get terms for term-based quizzes
   const { data: terms } = useQuery<Term[]>({
     queryKey: ['/api/terms'],
-    enabled: selectedQuizType === 'term',
+    enabled: selectedQuizType === 'termly',
   });
 
   // Get topics for topical quizzes
@@ -270,12 +270,32 @@ export default function Quiz() {
       alert('No profile found - please set up your profile first');
       return;
     }
+
+    if (!selectedQuizType) {
+      alert('Please select a quiz type');
+      return;
+    }
+
+    // Handle different quiz types
+    if (selectedQuizType === 'topical') {
+      if (!selectedTopic) {
+        setShowTopicModal(true);
+        return;
+      }
+    } else if (selectedQuizType === 'termly') {
+      if (!selectedTerm) {
+        setShowTermModal(true);
+        return;
+      }
+    }
     
-    // Simplified - no need for complex quiz type selection
+    // Prepare quiz data
     const data = {
-      quizType: 'random',
+      quizType: selectedQuizType,
       subjectId,
-      profileId: currentProfile.id
+      profileId: currentProfile.id,
+      ...(selectedQuizType === 'topical' && selectedTopic && { topicId: selectedTopic }),
+      ...(selectedQuizType === 'termly' && selectedTerm && { termId: selectedTerm }),
     };
 
     console.log('Starting quiz with data:', data);
@@ -521,30 +541,136 @@ export default function Quiz() {
           <p className="text-gray-600">Ready to test your knowledge? Let's get started!</p>
         </div>
 
-        {/* Simple Quiz Card */}
-        <Card className="mb-8">
-          <CardContent className="p-8 text-center">
-            <div className="mx-auto p-6 rounded-full bg-blue-100 w-fit mb-6">
-              <BookOpen className="h-12 w-12 text-blue-600" />
-            </div>
-            <h3 className="font-semibold text-xl mb-2">Practice Quiz</h3>
-            <p className="text-gray-600 mb-6">
-              We'll randomly select questions from your {subjectName} curriculum to help you practice and learn.
-            </p>
-            <div className="space-y-2 text-sm text-gray-500">
-              <p>• Questions tailored to your level</p>
-              <p>• Immediate feedback and explanations</p>
-              <p>• Earn sparks for correct answers</p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Quiz Type Selection */}
+        <div className="grid gap-6 mb-8">
+          {/* Random Quiz */}
+          <Card className={`cursor-pointer transition-all ${selectedQuizType === 'random' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'}`} onClick={() => setSelectedQuizType('random')}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-full bg-orange-100">
+                  <Shuffle className="h-8 w-8 text-orange-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1">Random Quiz</h3>
+                  <p className="text-gray-600 text-sm mb-2">
+                    We'll randomly select questions from your {subjectName} curriculum
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    • Mixed difficulty questions • Immediate feedback • Earn sparks
+                  </div>
+                </div>
+                {selectedQuizType === 'random' && (
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-4 w-4 text-white" />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Topical Quiz */}
+          <Card className={`cursor-pointer transition-all ${selectedQuizType === 'topical' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'}`} onClick={() => {
+            setSelectedQuizType('topical');
+            if (!selectedTopic) {
+              setShowTopicModal(true);
+            }
+          }}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-full bg-green-100">
+                  <Target className="h-8 w-8 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1">Topical Quiz</h3>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Focus on a specific topic to master particular concepts
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    • Topic-focused questions • Deep understanding • Targeted practice
+                  </div>
+                  {selectedQuizType === 'topical' && selectedTopicName && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">
+                        Selected: {selectedTopicName}
+                      </Badge>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-6 text-xs px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowTopicModal(true);
+                        }}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                {selectedQuizType === 'topical' && (
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-4 w-4 text-white" />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Termly Quiz */}
+          <Card className={`cursor-pointer transition-all ${selectedQuizType === 'termly' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'}`} onClick={() => {
+            setSelectedQuizType('termly');
+            if (!selectedTerm) {
+              setShowTermModal(true);
+            }
+          }}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-full bg-purple-100">
+                  <Calendar className="h-8 w-8 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1">Termly Quiz</h3>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Test your knowledge on content covered in a specific term
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    • Term-based curriculum • Comprehensive review • Exam preparation
+                  </div>
+                  {selectedQuizType === 'termly' && selectedTermName && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">
+                        Selected: {selectedTermName}
+                      </Badge>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-6 text-xs px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowTermModal(true);
+                        }}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                {selectedQuizType === 'termly' && (
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                    <CheckCircle className="h-4 w-4 text-white" />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
 
 
         {/* Start Quiz Button */}
         <Button
           onClick={handleStartQuiz}
-          disabled={startQuizMutation.isPending}
+          disabled={startQuizMutation.isPending || !selectedQuizType}
           className="w-full h-12 text-lg"
         >
           {startQuizMutation.isPending ? (
@@ -552,9 +678,100 @@ export default function Quiz() {
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               Loading Questions...
             </div>
-          ) : "Start Quiz"}
+          ) : selectedQuizType ? `Start ${selectedQuizType === 'termly' ? 'Termly' : selectedQuizType === 'topical' ? 'Topical' : 'Random'} Quiz` : "Select Quiz Type"}
         </Button>
       </div>
+
+      {/* Topic Selection Modal */}
+      <Dialog open={showTopicModal} onOpenChange={setShowTopicModal}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-green-500" />
+              Select Topic
+            </DialogTitle>
+            <DialogDescription>
+              Choose a topic to focus your quiz on. Topics are filtered based on your current examination system and level.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-96">
+            {topicsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
+                <span className="ml-2 text-sm text-gray-600">Loading topics...</span>
+              </div>
+            ) : topics && topics.length > 0 ? (
+              <div className="space-y-2">
+                {topics.map((topic) => (
+                  <Button
+                    key={topic.id}
+                    variant="ghost"
+                    className="w-full justify-start h-auto py-3 px-4"
+                    onClick={() => handleTopicSelect(topic)}
+                  >
+                    <div className="text-left">
+                      <div className="font-medium">{topic.title}</div>
+                      {topic.description && (
+                        <div className="text-sm text-gray-500 mt-1">{topic.description}</div>
+                      )}
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No topics found for your current level and examination system.</p>
+                <p className="text-sm text-gray-400 mt-2">Please check your profile settings or try a different subject.</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Term Selection Modal */}
+      <Dialog open={showTermModal} onOpenChange={setShowTermModal}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-purple-500" />
+              Select Term
+            </DialogTitle>
+            <DialogDescription>
+              Choose a term to test your knowledge on content covered during that period.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-96">
+            {terms && terms.length > 0 ? (
+              <div className="space-y-2">
+                {terms
+                  .filter(term => term.examinationSystemId === currentProfile?.examinationSystemId)
+                  .map((term) => (
+                  <Button
+                    key={term.id}
+                    variant="ghost"
+                    className="w-full justify-start h-auto py-3 px-4"
+                    onClick={() => handleTermSelect(term)}
+                  >
+                    <div className="text-left">
+                      <div className="font-medium">{term.title}</div>
+                      {term.description && (
+                        <div className="text-sm text-gray-500 mt-1">{term.description}</div>
+                      )}
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No terms found for your examination system.</p>
+                <p className="text-sm text-gray-400 mt-2">Please check your profile settings.</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Resume Quiz Modal */}
       <Dialog open={showResumeModal} onOpenChange={setShowResumeModal}>
