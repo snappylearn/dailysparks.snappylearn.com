@@ -79,7 +79,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       
       console.log('Updating profile with data:', updateData);
       
-      return apiRequest(`/api/profiles/${currentProfile.id}`, 'PATCH', updateData);
+      return apiRequest('PATCH', `/api/profiles/${currentProfile.id}`, updateData);
     },
     onSuccess: () => {
       toast({
