@@ -720,76 +720,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get available quizzes based on filters  
       const availableQuizzes = await storage.getQuizzesBySubject(subjectId);
 
-      // If no admin quizzes found, fallback to generating from question bank
+      // If no admin quizzes found, use AI to generate questions
       if (!availableQuizzes || availableQuizzes.length === 0) {
-        console.log('No admin quizzes found, generating from question bank...');
+        console.log('No admin quizzes found, generating with AI...');
         
-        // Get questions from database - use all available questions for now
-        const allQuestions = await storage.getAllQuestions();
-        
-        if (!allQuestions || allQuestions.length === 0) {
-          return res.status(404).json({ message: "No questions available for quiz generation" });
-        }
-
-        // Filter physics-related questions (basic keyword matching for now)
-        const physicsKeywords = ['force', 'energy', 'motion', 'physics', 'newton', 'gravity', 'electrical', 'mechanical', 'wave', 'light'];
-        const relevantQuestions = allQuestions.filter(q => 
-          physicsKeywords.some(keyword => 
-            q.question_text?.toLowerCase().includes(keyword) ||
-            q.explanation?.toLowerCase().includes(keyword)
-          )
+        // Get subject and level info for AI generation
+        const [subjectInfo] = await storage.getSubjects().then(subjects => 
+          subjects.filter(s => s.id === subjectId)
         );
-
-        if (relevantQuestions.length === 0) {
-          return res.status(404).json({ message: "No relevant questions available for this subject" });
+        
+        if (!subjectInfo) {
+          return res.status(404).json({ message: "Subject not found" });
         }
 
-        // Shuffle and take 10 questions
-        const shuffledQuestions = relevantQuestions.sort(() => 0.5 - Math.random()).slice(0, 10);
-        
-        // Convert to quiz format and create session
-        const quizQuestions = shuffledQuestions.map(q => ({
-          id: q.id,
-          content: q.question_text,
-          choices: [
-            { id: `${q.id}_a`, content: q.option_a, isCorrect: q.correct_answer === 'A', orderIndex: 1 },
-            { id: `${q.id}_b`, content: q.option_b, isCorrect: q.correct_answer === 'B', orderIndex: 2 },
-            { id: `${q.id}_c`, content: q.option_c, isCorrect: q.correct_answer === 'C', orderIndex: 3 },
-            { id: `${q.id}_d`, content: q.option_d, isCorrect: q.correct_answer === 'D', orderIndex: 4 }
-          ],
-          explanation: q.explanation
-        }));
+        try {
+          // Generate questions with AI
+          const generatedQuestions = await generateQuestions({
+            subject: subjectInfo.title,
+            level: profile.levelId ? `Form ${profile.levelId}` : 'Secondary',
+            topics: [],
+            term: null,
+            quizType: quizType || 'random',
+            questionCount: 10
+          });
 
-        // Create quiz session with generated questions
-        const userId = req.user.claims.sub;
-        const quizSession = await storage.createQuizSession({
-          userId,
-          profileId,
-          subjectId,
-          quizType,
-          totalQuestions: quizQuestions.length,
-          currentQuestionIndex: 0,
-          quizQuestions: quizQuestions,
-        });
+          if (!generatedQuestions || generatedQuestions.length === 0) {
+            return res.status(500).json({ message: "Failed to generate questions" });
+          }
 
-        const sessionQuestions = quizQuestions.map(q => ({
-          id: q.id,
-          questionText: q.content,
-          optionA: q.choices[0]?.content || '',
-          optionB: q.choices[1]?.content || '',
-          optionC: q.choices[2]?.content || '',
-          optionD: q.choices[3]?.content || '',
-          correctAnswer: q.choices.find(c => c.isCorrect) ? 
-            String.fromCharCode(65 + q.choices.findIndex(c => c.isCorrect)) : 'A',
-          explanation: q.explanation
-        }));
+          // Convert AI questions to our format
+          const quizQuestions = generatedQuestions.map((q, index) => ({
+            id: `ai_${Date.now()}_${index}`,
+            content: q.questionText,
+            choices: [
+              { id: `ai_${Date.now()}_${index}_a`, content: q.optionA, isCorrect: q.correctAnswer === 'A', orderIndex: 1 },
+              { id: `ai_${Date.now()}_${index}_b`, content: q.optionB, isCorrect: q.correctAnswer === 'B', orderIndex: 2 },
+              { id: `ai_${Date.now()}_${index}_c`, content: q.optionC, isCorrect: q.correctAnswer === 'C', orderIndex: 3 },
+              { id: `ai_${Date.now()}_${index}_d`, content: q.optionD, isCorrect: q.correctAnswer === 'D', orderIndex: 4 }
+            ],
+            explanation: q.explanation
+          }));
 
-        return res.json({
-          sessionId: quizSession.id,
-          questions: sessionQuestions,
-          totalQuestions: sessionQuestions.length,
-          currentQuestionIndex: 0
-        });
+          // Create quiz session with AI-generated questions
+          const quizSession = await storage.createQuizSession({
+            userId,
+            profileId,
+            subjectId,
+            quizType,
+            totalQuestions: quizQuestions.length,
+            currentQuestionIndex: 0,
+            quizQuestions: quizQuestions,
+          });
+
+          const sessionQuestions = quizQuestions.map(q => ({
+            id: q.id,
+            questionText: q.content,
+            optionA: q.choices[0]?.content || '',
+            optionB: q.choices[1]?.content || '',
+            optionC: q.choices[2]?.content || '',
+            optionD: q.choices[3]?.content || '',
+            correctAnswer: q.choices.find(c => c.isCorrect) ? 
+              String.fromCharCode(65 + q.choices.findIndex(c => c.isCorrect)) : 'A',
+            explanation: q.explanation
+          }));
+
+          return res.json({
+            sessionId: quizSession.id,
+            questions: sessionQuestions,
+            totalQuestions: sessionQuestions.length,
+            currentQuestionIndex: 0
+          });
+        } catch (error) {
+          console.error('AI question generation failed:', error);
+          return res.status(500).json({ message: "Failed to generate quiz questions" });
+        }
       }
 
       // Filter to only include quizzes that have questions
