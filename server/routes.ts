@@ -745,7 +745,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             questionCount: 10
           });
 
-          if (!generatedQuestions || generatedQuestions.length === 0) {
+          console.log('Generated questions result:', generatedQuestions);
+          
+          if (!generatedQuestions || !Array.isArray(generatedQuestions) || generatedQuestions.length === 0) {
+            console.error('Invalid generated questions:', generatedQuestions);
             return res.status(500).json({ message: "Failed to generate questions" });
           }
 

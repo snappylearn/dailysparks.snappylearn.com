@@ -73,16 +73,20 @@ export async function generateQuestions(params: QuestionGenerationParams): Promi
 - Level: ${level}
 - Context: ${topicContext}
 
-Return a JSON array where each question has this exact structure:
+Return a JSON object with a "questions" array where each question has this exact structure:
 {
-  "questionText": "The question text here",
-  "optionA": "First option",
-  "optionB": "Second option", 
-  "optionC": "Third option",
-  "optionD": "Fourth option",
-  "correctAnswer": "A" | "B" | "C" | "D",
-  "explanation": "Clear explanation of why the answer is correct",
-  "difficulty": "easy" | "medium" | "hard"
+  "questions": [
+    {
+      "questionText": "The question text here",
+      "optionA": "First option",
+      "optionB": "Second option", 
+      "optionC": "Third option",
+      "optionD": "Fourth option",
+      "correctAnswer": "A" | "B" | "C" | "D",
+      "explanation": "Clear explanation of why the answer is correct",
+      "difficulty": "easy" | "medium" | "hard"
+    }
+  ]
 }`;
 
   // Try Gemini first, fallback to OpenAI
@@ -136,10 +140,20 @@ Return a JSON array where each question has this exact structure:
       temperature: 0.7,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{"questions": []}');
-    const questions = result.questions || result;
-    console.log(`Generated ${questions.length} questions with OpenAI`);
-    return questions;
+    const responseContent = response.choices[0].message.content;
+    console.log('OpenAI raw response:', responseContent);
+    
+    if (!responseContent) {
+      console.error('OpenAI returned empty response');
+      return [];
+    }
+    
+    const result = JSON.parse(responseContent);
+    console.log('Parsed OpenAI result:', result);
+    
+    const questions = result.questions || (Array.isArray(result) ? result : []);
+    console.log(`Generated ${questions?.length || 0} questions with OpenAI`);
+    return questions || [];
   } catch (error) {
     console.error('Both AI services failed:', error);
     throw new Error('Failed to generate questions with both AI services');
