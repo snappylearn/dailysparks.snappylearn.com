@@ -55,6 +55,7 @@ export default function Quiz() {
   const [selectedTermName, setSelectedTermName] = useState<string>("");
   const [showTopicModal, setShowTopicModal] = useState(false);
   const [showTermModal, setShowTermModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   
   // Quiz session states
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -141,8 +142,8 @@ export default function Quiz() {
     },
     onError: (error: any) => {
       console.error('Quiz start failed:', error);
-      if (error.message?.includes('subscription required') || error.message?.includes('Active subscription required')) {
-        setLocation('/subscriptions');
+      if (error.message?.includes('subscription required') || error.message?.includes('Active subscription required') || error.message?.includes('403')) {
+        setShowSubscriptionModal(true);
         return;
       }
       alert('Failed to start quiz: ' + error.message);
@@ -704,6 +705,39 @@ export default function Quiz() {
                 <p className="text-sm text-gray-400 mt-2">Please check your profile settings.</p>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Subscription Required Modal */}
+      <Dialog open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-yellow-500" />
+              Subscription Required
+            </DialogTitle>
+            <DialogDescription>
+              You need an active subscription to take quizzes. Subscribe now to unlock unlimited access to all quiz features and start your learning journey!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 pt-4">
+            <Button
+              onClick={() => {
+                setLocation('/subscriptions');
+              }}
+              className="w-full"
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              View Subscription Plans
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowSubscriptionModal(false)}
+              className="w-full"
+            >
+              Cancel
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
