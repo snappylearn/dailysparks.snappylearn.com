@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateQuestions } from "./aiService";
-import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects } from "@shared/schema";
+import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects, levels, terms } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
@@ -735,13 +735,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         try {
-          // Generate questions with AI - be more specific about Physics
-          const levelInfo = profile.levelId ? `Form 3` : 'Secondary';
+          // Get the actual level information
+          let levelInfo = 'Secondary';
+          if (profile.levelId) {
+            const [level] = await db
+              .select()
+              .from(levels)
+              .where(eq(levels.id, profile.levelId));
+            levelInfo = level ? level.title : 'Secondary';
+          }
+
+          // Get topics for the subject if this is a topical quiz
+          let topicsList = [];
+          if (quizType === 'topical' && topicId) {
+            const [topic] = await db
+              .select()
+              .from(topics)
+              .where(eq(topics.id, topicId));
+            if (topic) {
+              topicsList = [topic.title];
+            }
+          }
+
+          // Get term information if this is a termly quiz
+          let termInfo = null;
+          if (quizType === 'termly' && termId) {
+            const [term] = await db
+              .select()
+              .from(terms)
+              .where(eq(terms.id, termId));
+            termInfo = term ? term.title : null;
+          }
+
           const generatedQuestions = await generateQuestions({
-            subject: `${subjectInfo.title} - ${levelInfo}`,
+            subject: subjectInfo.title,
             level: levelInfo,
-            topics: quizType === 'topical' && topicId ? ['Physics mechanics', 'Forces', 'Energy', 'Electricity'] : [],
-            term: quizType === 'termly' && termId ? 'Term 1' : null,
+            topics: topicsList,
+            term: termInfo,
             quizType: quizType || 'random',
             questionCount: 10
           });
