@@ -253,65 +253,39 @@ export default function Quiz() {
     },
   });
 
-  const handleStartQuiz = () => {
-    console.log('=== STARTING QUIZ DEBUG ===');
-    console.log('Subject ID:', subjectId);
-    console.log('Current Profile:', currentProfile);
-    console.log('Selected Quiz Type:', selectedQuizType);
-    console.log('Selected Topic:', selectedTopic);
-    console.log('Selected Term:', selectedTerm);
-    
-    if (!subjectId) {
-      alert('Missing subject ID - please go back to home and select a subject');
-      return;
-    }
-    
-    if (!currentProfile) {
-      alert('No profile found - please set up your profile first');
-      return;
-    }
-
-    if (!selectedQuizType) {
-      alert('Please select a quiz type');
-      return;
-    }
-
-    // Handle different quiz types
-    if (selectedQuizType === 'topical') {
-      if (!selectedTopic) {
-        setShowTopicModal(true);
-        return;
-      }
-    } else if (selectedQuizType === 'termly') {
-      if (!selectedTerm) {
-        setShowTermModal(true);
-        return;
-      }
-    }
-    
-    // Prepare quiz data
-    const data = {
-      quizType: selectedQuizType,
-      subjectId,
-      profileId: currentProfile.id,
-      ...(selectedQuizType === 'topical' && selectedTopic && { topicId: selectedTopic }),
-      ...(selectedQuizType === 'termly' && selectedTerm && { termId: selectedTerm }),
-    };
-
-    console.log('Starting quiz with data:', data);
-    startQuizMutation.mutate(data);
-  };
 
   const handleTopicSelect = (topic: Topic) => {
     setSelectedTopic(topic.id);
     setSelectedTopicName(topic.title);
     setShowTopicModal(false);
+    
+    // Start topical quiz immediately
+    if (subjectId && currentProfile) {
+      const data = {
+        quizType: 'topical',
+        subjectId,
+        profileId: currentProfile.id,
+        topicId: topic.id
+      };
+      startQuizMutation.mutate(data);
+    }
   };
 
   const handleTermSelect = (term: Term) => {
     setSelectedTerm(term.id);
     setSelectedTermName(term.title);
     setShowTermModal(false);
+    
+    // Start termly quiz immediately
+    if (subjectId && currentProfile) {
+      const data = {
+        quizType: 'termly',
+        subjectId,
+        profileId: currentProfile.id,
+        termId: term.id
+      };
+      startQuizMutation.mutate(data);
+    }
   };
 
   const handleAnswerSubmit = () => {
@@ -554,12 +528,28 @@ export default function Quiz() {
                 Mixed questions from your {subjectName} curriculum
               </p>
               <Button
-                onClick={() => setSelectedQuizType('random')}
-                variant={selectedQuizType === 'random' ? 'default' : 'outline'}
+                onClick={() => {
+                  setSelectedQuizType('random');
+                  // Start random quiz immediately
+                  if (subjectId && currentProfile) {
+                    const data = {
+                      quizType: 'random',
+                      subjectId,
+                      profileId: currentProfile.id
+                    };
+                    startQuizMutation.mutate(data);
+                  }
+                }}
                 className="w-full"
                 data-testid="button-select-random"
+                disabled={startQuizMutation.isPending}
               >
-                {selectedQuizType === 'random' ? 'Selected' : 'Select Random'}
+                {startQuizMutation.isPending && selectedQuizType === 'random' ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Loading...
+                  </div>
+                ) : 'Start Random Quiz'}
               </Button>
             </CardContent>
           </Card>
@@ -586,11 +576,10 @@ export default function Quiz() {
                   setSelectedQuizType('topical');
                   setShowTopicModal(true);
                 }}
-                variant={selectedQuizType === 'topical' ? 'default' : 'outline'}
                 className="w-full"
                 data-testid="button-select-topical"
               >
-                {selectedQuizType === 'topical' && selectedTopicName ? 'Change Topic' : 'Select Topical'}
+                Start Topical Quiz
               </Button>
             </CardContent>
           </Card>
@@ -617,30 +606,15 @@ export default function Quiz() {
                   setSelectedQuizType('termly');
                   setShowTermModal(true);
                 }}
-                variant={selectedQuizType === 'termly' ? 'default' : 'outline'}
                 className="w-full"
                 data-testid="button-select-termly"
               >
-                {selectedQuizType === 'termly' && selectedTermName ? 'Change Term' : 'Select Termly'}
+                Start Termly Quiz
               </Button>
             </CardContent>
           </Card>
         </div>
 
-        {/* Start Quiz Button */}
-        <Button
-          onClick={handleStartQuiz}
-          disabled={startQuizMutation.isPending || !selectedQuizType}
-          className="w-full h-12 text-lg"
-          data-testid="button-start-quiz"
-        >
-          {startQuizMutation.isPending ? (
-            <div className="flex items-center gap-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              Loading Questions...
-            </div>
-          ) : selectedQuizType ? `Start ${selectedQuizType === 'termly' ? 'Termly' : selectedQuizType === 'topical' ? 'Topical' : 'Random'} Quiz` : "Select Quiz Type"}
-        </Button>
       </div>
 
       {/* Topic Selection Modal */}
