@@ -1,0 +1,179 @@
+{
+  "subject": "Mathematics",
+  "subjectId": "mathematics-kcse",
+  "examinationSystem": "KCSE",
+  "levels": [
+    {
+      "level": "Form 1",
+      "levelId": "form-1",
+      "topics": [
+        {
+          "title": "Numbers and Operations",
+          "description": "Covers whole numbers, fractions, decimals, and their operations, including place values, rounding off, and significant figures. Also includes divisibility tests.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Algebra I",
+          "description": "Introduction to algebraic expressions, substitution, and simplification of linear equations. Includes brackets and factorization.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Measurements",
+          "description": "Covers length, mass, time, temperature, and money. Includes conversions and calculations involving area and volume of basic shapes.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Geometry I",
+          "description": "Introduction to basic geometric concepts: points, lines, angles, and shapes. Includes constructions using ruler and compasses.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Ratio, Proportion, and Rate",
+          "description": "Explains the concepts of ratio, direct and inverse proportion, and rate. Includes practical applications like currency exchange rates.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Percentages",
+          "description": "Covers percentage increase and decrease, profit and loss, and simple interest.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Commercial Arithmetic I",
+          "description": "Introduces basic financial mathematics concepts like discounts, commissions, salaries, and wages.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Integers",
+          "description": "Covers positive and negative numbers, their representation on a number line, and operations involving them.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 2",
+      "levelId": "form-2",
+      "topics": [
+        {
+          "title": "Geometry II",
+          "description": "Expands on Form 1 geometry, covering properties of triangles, quadrilaterals, and other polygons. Also includes angle properties of parallel lines.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Measurements II",
+          "description": "Focuses on the area of curved surfaces and the volume of cones, cylinders, and pyramids.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Algebra II",
+          "description": "Covers algebraic expressions and formulas, factorization of quadratic expressions, and solving linear inequalities.",
+          "termId": "term-1"
+        },
+        {
+          "title": "The Circle",
+          "description": "Properties of chords and tangents to a circle. Includes calculations of arc length and sector area.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Commercial Arithmetic II",
+          "description": "Deals with compound interest, hire purchase, and income tax.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Indices and Logarithms",
+          "description": "Explains the laws of indices and their applications. Introduces logarithms and their use in calculations.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Coordinates and Graphs",
+          "description": "Covers Cartesian coordinates, plotting points, and drawing linear graphs. Includes finding the gradient of a line.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 3",
+      "levelId": "form-3",
+      "topics": [
+        {
+          "title": "Quadratic Equations",
+          "description": "Solving quadratic equations using factorization, completing the square, and the quadratic formula. 
+
+[Image of a quadratic formula]
+",
+          "termId": "term-1"
+        },
+        {
+          "title": "Approximation and Errors",
+          "description": "Discusses rounding off numbers and calculating absolute and relative errors. Includes the concept of error propagation.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Trigonometry I",
+          "description": "Introduction to sine, cosine, and tangent ratios for right-angled triangles. Includes solving problems involving angles of elevation and depression.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Commercial Arithmetic III",
+          "description": "Deals with foreign exchange, compound interest (further), and other commercial transactions.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Surds and Logarithms",
+          "description": "Covers simplification of surds and solving logarithmic equations. Connects logarithms to indices.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Vectors I",
+          "description": "Introduction to vectors, their representation, addition, and subtraction. Includes position vectors.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Statistics I",
+          "description": "Covers collection and organization of data, measures of central tendency (mean, median, and mode), and graphical representation of data.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 4",
+      "levelId": "form-4",
+      "topics": [
+        {
+          "title": "Trigonometry II",
+          "description": "Expands on Form 3, covering trigonometric identities, graphs of trigonometric functions, and solving trigonometric equations.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Vectors II",
+          "description": "Focuses on column vectors and their use in transformations. Includes applications in geometry.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Matrices and Transformations",
+          "description": "Introduces matrices, their operations, and their use in representing linear transformations like translation, rotation, and reflection.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Statistics II",
+          "description": "Covers measures of dispersion (variance and standard deviation), and graphical representation of data using histograms and frequency polygons.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Probability",
+          "description": "Explains the concepts of probability, combined events, and mutually exclusive events. Includes probability trees.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Linear Programming",
+          "description": "Solving optimization problems by graphing linear inequalities and identifying feasible regions.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Calculus (Differentiation and Integration)",
+          "description": "Introduction to differentiation, finding the gradient of a curve, and applications in kinematics. Also covers the basics of integration.",
+          "termId": "term-3"
+        }
+      ]
+    }
+  ]
+}
