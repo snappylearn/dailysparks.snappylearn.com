@@ -491,7 +491,7 @@ Generate exactly ${params.questionCount} questions following this format.`;
     console.log(`Question choices:`, question.choices);
     
     // Calculate sparks
-    const sparks = await this.calculateSparks(question.difficulty, isCorrect, storage);
+    const sparks = this.calculateSparks(question.difficulty, isCorrect);
 
     // For now, store answer info in a simple way (we can create answers table later if needed)
     // Update session progress
@@ -560,28 +560,16 @@ Generate exactly ${params.questionCount} questions following this format.`;
   /**
    * Calculate sparks based on difficulty and correctness
    */
-  private static async calculateSparks(difficulty: string, isCorrect: boolean, storage?: any): Promise<number> {
+  private static calculateSparks(difficulty: string, isCorrect: boolean): number {
     if (!isCorrect) return 0;
     
-    // Get base sparks from quiz settings
-    let baseSparks = 5; // default
-    if (storage) {
-      try {
-        const quizSettings = await storage.getQuizSettings();
-        baseSparks = quizSettings?.sparksPerCorrectAnswer || 5;
-      } catch (error) {
-        console.log('Using default sparks value:', error);
-      }
-    }
-    
     const difficultyMultipliers = {
-      easy: 1,
-      medium: 1.5,
-      hard: 2
+      easy: 5,
+      medium: 10,
+      hard: 15
     };
     
-    const multiplier = difficultyMultipliers[difficulty as keyof typeof difficultyMultipliers] || 1;
-    return Math.round(baseSparks * multiplier);
+    return difficultyMultipliers[difficulty as keyof typeof difficultyMultipliers] || 10;
   }
 
   /**
