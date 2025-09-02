@@ -40,15 +40,6 @@ async function comparePasswords(supplied: string, stored: string): Promise<boole
   }
 }
 
-// Admin session store configuration
-const PostgresSessionStore = connectPgSimple(session);
-
-const adminSessionStore = new PostgresSessionStore({
-  pool: pool,
-  tableName: "admin_sessions",
-  createTableIfMissing: true,
-});
-
 // Login schema validation
 const adminLoginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -56,23 +47,12 @@ const adminLoginSchema = z.object({
 });
 
 export function setupAdminAuth(app: Express) {
-  // Admin session middleware - separate from regular user sessions
-  app.use('/admin', session({
-    name: 'admin.sid', // Different session name from regular users
-    secret: process.env.SESSION_SECRET || 'admin-secret-key',
-    store: adminSessionStore,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    },
-  }));
+  // Use the existing session middleware - no need for separate admin sessions
 
   // Admin login route
   app.post("/admin/api/login", async (req, res) => {
     try {
+      console.log("Admin login attempt:", req.body.email);
       const { email, password } = adminLoginSchema.parse(req.body);
       
       const adminUser = await storage.getAdminByEmail(email);
@@ -88,15 +68,24 @@ export function setupAdminAuth(app: Express) {
       // Update last login
       await storage.updateAdminLastLogin(adminUser.id);
 
-      // Set admin session
-      req.adminSession = {
-        adminId: adminUser.id,
-        isAdminAuthenticated: true,
-      };
+      // Set admin session using the Express session
+      (req.session as any).adminId = adminUser.id;
+      (req.session as any).isAdminAuthenticated = true;
 
-      // Return admin user without password
-      const { password: _, ...adminUserWithoutPassword } = adminUser;
-      res.json(adminUserWithoutPassword);
+      console.log("Session set:", { adminId: adminUser.id, sessionId: req.sessionID });
+
+      // Save the session explicitly
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Session save failed" });
+        }
+        
+        console.log("Session saved successfully");
+        // Return admin user without password
+        const { password: _, ...adminUserWithoutPassword } = adminUser;
+        res.json(adminUserWithoutPassword);
+      });
     } catch (error) {
       console.error("Admin login error:", error);
       res.status(500).json({ message: "Login failed" });
@@ -105,7 +94,8 @@ export function setupAdminAuth(app: Express) {
 
   // Admin logout route
   app.post("/admin/api/logout", (req, res) => {
-    req.adminSession = undefined;
+    (req.session as any).adminId = undefined;
+    (req.session as any).isAdminAuthenticated = false;
     req.session.destroy((err) => {
       if (err) {
         console.error("Admin logout error:", err);
@@ -119,7 +109,7 @@ export function setupAdminAuth(app: Express) {
   // Get current admin user
   app.get("/admin/api/user", isAdminAuthenticated, async (req, res) => {
     try {
-      const adminId = req.adminSession?.adminId;
+      const adminId = (req.session as any).adminId;
       if (!adminId) {
         return res.status(401).json({ message: "Not authenticated" });
       }
@@ -168,7 +158,14 @@ export function setupAdminAuth(app: Express) {
 
 // Admin authentication middleware
 export const isAdminAuthenticated: RequestHandler = (req, res, next) => {
-  if (req.adminSession?.isAdminAuthenticated && req.adminSession?.adminId) {
+  const session = req.session as any;
+  console.log("Admin auth check:", { 
+    sessionID: req.sessionID, 
+    isAdminAuthenticated: session.isAdminAuthenticated, 
+    adminId: session.adminId 
+  });
+  
+  if (session.isAdminAuthenticated && session.adminId) {
     return next();
   }
   
