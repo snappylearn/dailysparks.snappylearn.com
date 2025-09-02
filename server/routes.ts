@@ -719,10 +719,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get available quizzes based on filters  
       const availableQuizzes = await storage.getQuizzesBySubject(subjectId);
+      console.log('Available quizzes for subject:', availableQuizzes);
 
-      // If no admin quizzes found, use AI to generate questions
-      if (!availableQuizzes || availableQuizzes.length === 0) {
-        console.log('No admin quizzes found, generating with AI...');
+      // Filter quizzes that have actual questions in them
+      const quizzesWithQuestions = availableQuizzes.filter(quiz => {
+        const questions = quiz.questions;
+        return questions && Array.isArray(questions) && questions.length > 0;
+      });
+
+      console.log('Quizzes with questions:', quizzesWithQuestions.length);
+
+      // If we have admin quizzes with questions, use them
+      if (quizzesWithQuestions.length > 0) {
+        // Pick a random quiz from available ones
+        const selectedQuiz = quizzesWithQuestions[Math.floor(Math.random() * quizzesWithQuestions.length)];
+        console.log('Selected admin quiz:', selectedQuiz.title);
+
+        // Get questions from the selected quiz
+        const quizQuestions = selectedQuiz.questions.map((q: any, index: number) => ({
+          id: q.id,
+          content: q.content,
+          choices: q.choices,
+          explanation: q.explanation
+        }));
+
+        // Create quiz session with admin quiz questions
+        const quizSession = await storage.createQuizSession({
+          userId,
+          profileId,
+          subjectId,
+          quizType,
+          totalQuestions: quizQuestions.length,
+          currentQuestionIndex: 0,
+          quizQuestions: quizQuestions,
+        });
+
+        const sessionQuestions = quizQuestions.map(q => ({
+          id: q.id,
+          questionText: q.content,
+          optionA: q.choices[0]?.content || '',
+          optionB: q.choices[1]?.content || '',
+          optionC: q.choices[2]?.content || '',
+          optionD: q.choices[3]?.content || '',
+          correctAnswer: q.choices.find(c => c.isCorrect) ? 
+            String.fromCharCode(65 + q.choices.findIndex(c => c.isCorrect)) : 'A',
+          explanation: q.explanation
+        }));
+
+        return res.json({
+          sessionId: quizSession.id,
+          questions: sessionQuestions,
+          source: 'admin'
+        });
+      }
+
+      // If no admin quizzes with questions found, use AI to generate questions
+      if (!availableQuizzes || availableQuizzes.length === 0 || quizzesWithQuestions.length === 0) {
+        console.log('No admin quizzes with questions found, generating with AI...');
         
         // Get subject info for AI generation
         const [subjectInfo] = await db
@@ -830,84 +883,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ message: "Failed to generate quiz questions" });
         }
       }
-
-      // Filter to only include quizzes that have questions
-      const quizzesWithQuestions = [];
-      for (const quiz of availableQuizzes) {
-        const quizWithQuestions = await storage.getQuizWithQuestions(quiz.id);
-        if (quizWithQuestions.questions && quizWithQuestions.questions.length > 0) {
-          quizzesWithQuestions.push(quiz);
-        }
-      }
-
-      if (quizzesWithQuestions.length === 0) {
-        return res.status(404).json({ message: "No quizzes with questions available for this subject" });
-      }
-
-      // Select a random quiz from available quizzes that have questions
-      const selectedQuiz = quizzesWithQuestions[Math.floor(Math.random() * quizzesWithQuestions.length)];
-
-      // Get quiz questions
-      const quizWithQuestions = await storage.getQuizWithQuestions(selectedQuiz.id);
-
-      if (!quizWithQuestions.questions || quizWithQuestions.questions.length === 0) {
-        return res.status(404).json({ message: "No questions found in selected quiz" });
-      }
-
-      // Check if user has an incomplete quiz session for this subject
-      const incompleteSession = await storage.getIncompleteQuizSession(profileId, subjectId);
-      
-      let quizSession;
-      if (incompleteSession) {
-        // Return existing incomplete session
-        quizSession = incompleteSession;
-      } else {
-        // Create new quiz session with questions snapshot
-        const userId = req.user.claims.sub;
-        quizSession = await storage.createQuizSession({
-          userId,
-          profileId,
-          subjectId,
-          quizType: 'random',
-          totalQuestions: quizWithQuestions.questions.length,
-          currentQuestionIndex: 0,
-          quizQuestions: quizWithQuestions.questions, // Save questions snapshot
-        });
-      }
-
-      // Get questions - use session questions if resuming, otherwise use new ones
-      let questionsToUse;
-      if (incompleteSession && quizSession.quizQuestions) {
-        questionsToUse = quizSession.quizQuestions;
-      } else {
-        questionsToUse = quizWithQuestions.questions;
-        // If this is a new session, save questions snapshot
-        if (!incompleteSession) {
-          await db.update(quizSessions)
-            .set({ quizQuestions: quizWithQuestions.questions })
-            .where(eq(quizSessions.id, quizSession.id));
-        }
-      }
-      
-      // Transform questions to expected format
-      const questions = questionsToUse.map((q: any) => ({
-        id: q.id,
-        questionText: q.content,
-        optionA: q.choices[0]?.content || 'Option A',
-        optionB: q.choices[1]?.content || 'Option B', 
-        optionC: q.choices[2]?.content || 'Option C',
-        optionD: q.choices[3]?.content || 'Option D',
-        correctAnswer: q.choices.find((c: any) => c.isCorrect)?.content.charAt(0) || 'A',
-        explanation: q.explanation
-      }));
-
-      res.json({
-        sessionId: quizSession.id,
-        questions: questions,
-        totalQuestions: questions.length,
-        currentQuestionIndex: quizSession.currentQuestionIndex || 0,
-        isResuming: !!incompleteSession
-      });
     } catch (error) {
       console.error("Error starting quiz:", error);
       res.status(500).json({ message: "Failed to start quiz: " + error.message });
