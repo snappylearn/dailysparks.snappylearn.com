@@ -1283,152 +1283,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Start a quiz session - use test questions for now
-  app.post('/api/quiz/start', isAuthenticated, async (req: any, res) => {
+  // Resume an existing quiz session
+  app.post('/api/quiz/resume/:sessionId', isAuthenticated, async (req: any, res) => {
     try {
-      const { profileId, subjectId, quizType, topicId, term } = req.body;
-
-      if (!profileId || !subjectId) {
-        return res.status(400).json({ message: "Profile ID and Subject ID are required" });
+      const { sessionId } = req.params;
+      const session = await storage.getQuizSession(sessionId);
+      
+      if (!session || !session.quizQuestions) {
+        return res.status(404).json({ message: "Quiz session not found" });
       }
 
-      // Get questions from database - fallback from admin quizzes to question bank
-      let testQuestions = [];
-      
-      try {
-        // Try to get all questions from database and filter relevant ones
-        const allQuestions = await storage.getAllQuestions();
-        
-        if (allQuestions && allQuestions.length > 0) {
-          // Filter physics-related questions (basic keyword matching)
-          const physicsKeywords = ['force', 'energy', 'motion', 'physics', 'newton', 'gravity', 'electrical', 'mechanical', 'wave', 'light'];
-          const relevantQuestions = allQuestions.filter(q => 
-            physicsKeywords.some(keyword => 
-              q.question_text?.toLowerCase().includes(keyword) ||
-              q.explanation?.toLowerCase().includes(keyword)
-            )
-          );
-
-          if (relevantQuestions.length > 0) {
-            // Shuffle and take 10 questions
-            const shuffledQuestions = relevantQuestions.sort(() => 0.5 - Math.random()).slice(0, 10);
-            
-            // Convert to quiz format
-            testQuestions = shuffledQuestions.map(q => ({
-              id: q.id,
-              content: q.question_text,
-              choices: [
-                { id: `${q.id}_a`, content: q.option_a || 'Option A', isCorrect: q.correct_answer === 'A', orderIndex: 1 },
-                { id: `${q.id}_b`, content: q.option_b || 'Option B', isCorrect: q.correct_answer === 'B', orderIndex: 2 },
-                { id: `${q.id}_c`, content: q.option_c || 'Option C', isCorrect: q.correct_answer === 'C', orderIndex: 3 },
-                { id: `${q.id}_d`, content: q.option_d || 'Option D', isCorrect: q.correct_answer === 'D', orderIndex: 4 }
-              ],
-              explanation: q.explanation
-            }));
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching questions from database:', error);
-      }
-      
-      // Fallback to hardcoded questions if database query failed
-      if (testQuestions.length === 0) {
-        testQuestions = [
-          {
-            id: "physics_q1",
-            content: "What is the SI unit of force?",
-            choices: [
-              { id: "physics_q1_c1", content: "Newton", isCorrect: true, orderIndex: 1 },
-              { id: "physics_q1_c2", content: "Joule", isCorrect: false, orderIndex: 2 },
-              { id: "physics_q1_c3", content: "Watt", isCorrect: false, orderIndex: 3 },
-              { id: "physics_q1_c4", content: "Pascal", isCorrect: false, orderIndex: 4 }
-            ],
-            explanation: "The SI unit of force is the Newton (N), named after Sir Isaac Newton."
-          },
-          {
-            id: "physics_q2", 
-            content: "What is the acceleration due to gravity on Earth?",
-            choices: [
-              { id: "physics_q2_c1", content: "9.8 m/s²", isCorrect: true, orderIndex: 1 },
-              { id: "physics_q2_c2", content: "10 m/s²", isCorrect: false, orderIndex: 2 },
-              { id: "physics_q2_c3", content: "8.9 m/s²", isCorrect: false, orderIndex: 3 },
-              { id: "physics_q2_c4", content: "11.2 m/s²", isCorrect: false, orderIndex: 4 }
-            ],
-            explanation: "The standard acceleration due to gravity on Earth is approximately 9.8 m/s²."
-          },
-          {
-            id: "physics_q3",
-            content: "Which law states that for every action, there is an equal and opposite reaction?",
-            choices: [
-              { id: "physics_q3_c1", content: "Newton's First Law", isCorrect: false, orderIndex: 1 },
-              { id: "physics_q3_c2", content: "Newton's Second Law", isCorrect: false, orderIndex: 2 },
-              { id: "physics_q3_c3", content: "Newton's Third Law", isCorrect: true, orderIndex: 3 },
-              { id: "physics_q3_c4", content: "Law of Universal Gravitation", isCorrect: false, orderIndex: 4 }
-            ],
-            explanation: "Newton's Third Law states that for every action, there is an equal and opposite reaction."
-          }
-        ];
-      }
-
-      console.log('Creating new quiz session with test questions:', testQuestions.length);
-      console.log('Test questions structure:', testQuestions.map(q => ({ id: q.id, content: q.content, choicesCount: q.choices.length })));
-      console.log('Full test questions array being passed to storage:', JSON.stringify(testQuestions, null, 2));
-      console.log('totalQuestions being set to:', testQuestions.length);
-
-      // Check for incomplete sessions first
-      const incompleteSession = await storage.getIncompleteQuizSession(profileId, subjectId);
-      
-      // If there's an incomplete session, return it for user to decide
-      if (incompleteSession && incompleteSession.quizQuestions && incompleteSession.quizQuestions.length > 0) {
-        const sessionQuestions = incompleteSession.quizQuestions.map((q: any) => ({
-          id: q.id,
-          questionText: q.content,
-          optionA: q.choices[0]?.content || 'Option A',
-          optionB: q.choices[1]?.content || 'Option B', 
-          optionC: q.choices[2]?.content || 'Option C',
-          optionD: q.choices[3]?.content || 'Option D',
-          correctAnswer: q.choices.find((c: any) => c.isCorrect)?.content || 'A',
-          explanation: q.explanation
-        }));
-
-        return res.json({
-          hasIncompleteSession: true,
-          incompleteSession: {
-            sessionId: incompleteSession.id,
-            questions: sessionQuestions,
-            totalQuestions: sessionQuestions.length,
-            currentQuestionIndex: incompleteSession.currentQuestionIndex || 0,
-            startedAt: incompleteSession.startedAt
-          }
-        });
-      }
-
-      // No incomplete session, create new one
-      const userId = req.user.claims.sub;
-      
-      console.log('=== BEFORE CALLING STORAGE ===');
-      console.log('Input to createQuizSession - quizQuestions length:', testQuestions.length);
-      console.log('Input to createQuizSession - totalQuestions:', testQuestions.length);
-      console.log('First question in array:', JSON.stringify(testQuestions[0], null, 2));
-      console.log('Second question in array:', JSON.stringify(testQuestions[1], null, 2));
-      console.log('Third question in array:', JSON.stringify(testQuestions[2], null, 2));
-      
-      const quizSession = await storage.createQuizSession({
-        userId,
-        profileId,
-        subjectId,
-        quizType: 'random',
-        totalQuestions: testQuestions.length,
-        currentQuestionIndex: 0,
-        quizQuestions: testQuestions,
-      });
-      console.log('=== AFTER STORAGE RETURNS ===');
-      console.log('Created new quiz session:', quizSession.id);
-      console.log('Returned quizQuestions length:', quizSession.quizQuestions ? quizSession.quizQuestions.length : 'undefined');
-      console.log('Returned totalQuestions:', quizSession.totalQuestions);
-
-      // Transform questions to frontend format
-      const questions = testQuestions.map((q: any) => ({
+      // Transform questions to frontend format  
+      const questions = session.quizQuestions.map((q: any) => ({
         id: q.id,
         questionText: q.content,
         optionA: q.choices[0]?.content || 'Option A',
@@ -1440,16 +1306,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       res.json({
-        hasIncompleteSession: false,
-        sessionId: quizSession.id,
+        sessionId: session.id,
         questions: questions,
         totalQuestions: questions.length,
-        currentQuestionIndex: 0,
-        isResuming: false
+        currentQuestionIndex: session.currentQuestionIndex || 0,
+        isResuming: true
       });
     } catch (error) {
-      console.error("Error starting quiz:", error);
-      res.status(500).json({ message: "Failed to start quiz: " + error.message });
+      console.error("Error resuming quiz:", error);
+      res.status(500).json({ message: "Failed to resume quiz" });
+    }
+  });
+
+  // Get topics for a subject and level
+  app.get('/api/subjects/:subjectId/topics/:levelId', async (req, res) => {
+    try {
+      const { subjectId, levelId } = req.params;
+      const { term } = req.query;
+      
+      const topics = await storage.getTopicsBySubjectAndLevel(subjectId, levelId, term as string);
+      res.json(topics);
+    } catch (error) {
+      console.error("Error fetching topics:", error);
+      res.status(500).json({ message: "Failed to fetch topics" });
     }
   });
 
