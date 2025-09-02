@@ -1,0 +1,57 @@
+Form 1
+Form 1 introduces students to the basic principles of chemistry, focusing on practical skills and foundational concepts.
+
+Introduction to Chemistry: This topic covers the definition of chemistry, its importance, laboratory rules, safety, and apparatus. Students also learn about the different states of matter and the effects of heat.
+
+Simple Classification of Substances: Students learn to distinguish between elements, compounds, and mixtures. They also explore methods for separating different types of mixtures, such as filtration, distillation, and chromatography.
+
+Acids, Bases, and Indicators: This topic introduces the characteristics of acids and bases, the pH scale, and how to use various indicators to identify them.
+
+Air and Combustion: Students study the composition of air and the process of combustion, including the reactivity series of metals with oxygen and the effects of rusting.
+
+Water and Hydrogen: This section focuses on the properties of water, its reaction with various substances, and the preparation and properties of hydrogen gas.
+
+Form 2
+Form 2 builds on the foundation laid in Form 1, introducing the fundamental building blocks of matter and chemical bonding.
+
+Structure of the Atom and The Periodic Table: Students learn about the subatomic particles (protons, neutrons, electrons), atomic number, and mass number. They also explore the organization of the periodic table, including periods and groups.
+
+Chemical Families: This topic delves into the properties of elements within specific groups of the periodic table, such as alkali metals, alkaline earth metals, halogens, and noble gases.
+
+Structure and Bonding: Students study the forces that hold atoms together, including ionic bonding, covalent bonding, and metallic bonding. They also learn to draw Lewis structures and understand the properties of compounds based on their bonding.
+
+Salts: This unit covers the preparation, properties, and uses of salts. It also introduces the concepts of solubility and water hardness.
+
+Effect of an Electric Current on a Substance: This topic introduces electrochemistry, including the concepts of electrolytes, non-electrolytes, and the process of electrolysis.
+
+Form 3
+Form 3 focuses on quantitative chemistry, gas behavior, and an introduction to organic chemistry.
+
+The Mole and Chemical Equations: This crucial topic introduces the concept of the mole as a unit of measurement in chemistry. Students learn to calculate molar masses, empirical and molecular formulas, and solve stoichiometric problems.
+
+Gas Laws: Students study the relationship between pressure, volume, and temperature of gases, covering Boyle's Law, Charles' Law, and the Combined Gas Law. They also explore the process of diffusion and Graham's Law.
+
+Organic Chemistry I: This is the first part of organic chemistry. It focuses on hydrocarbons, specifically alkanes, alkenes, and alkynes, their nomenclature, isomerism, preparation, properties, and uses.
+
+Sulphur and its Compounds: This topic covers the allotropes of sulphur, its compounds like sulphur(IV) oxide and sulphuric(VI) acid, and their industrial and laboratory preparation and uses.
+
+Chlorine and its Compounds: Students learn about the preparation and properties of chlorine gas and its compounds, including hydrochloric acid.
+
+Nitrogen and its Compounds: This topic explores the compounds of nitrogen, such as ammonia and nitric(V) acid, and their large-scale industrial production.
+
+Form 4
+Form 4 covers advanced topics that build upon the knowledge from the previous years, preparing students for the final national examination.
+
+Acids, Bases, and Salts (Revision & Expansion): This is a more detailed look at the concepts introduced in Form 1, including qualitative analysis of cations and anions and the preparation of complex salts.
+
+Energy Changes in Chemical and Physical Processes: This topic, also known as thermochemistry, covers enthalpy changes (e.g., heat of combustion, formation, and neutralization), endothermic and exothermic reactions, and energy level diagrams.
+
+Reaction Rates and Reversible Reactions: Students learn about the factors that affect the rate of a chemical reaction and the principles of chemical equilibrium, including Le Chatelier's Principle.
+
+Electrochemistry (Continuation): This section revisits and expands on the Form 2 topic, covering the electrochemical series, redox reactions, and the application of electrolysis in various industries.
+
+Metals: This unit focuses on the extraction of metals from their ores, their properties, and their uses.
+
+Organic Chemistry II (Alkanols and Alkanoic Acids): This is the second part of organic chemistry. It focuses on alkanols (alcohols) and alkanoic acids (carboxylic acids), their properties, and their reactions. The topic also includes an introduction to polymers and detergents.
+
+Radioactivity: The final topic covers the nature of radioactivity, different types of radiation (alpha, beta, gamma), half-life, and the uses and dangers of radioactivity.
