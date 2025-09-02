@@ -110,6 +110,7 @@ export interface IStorage {
   
   // Term operations
   getTerms(): Promise<Term[]>;
+  getTermsBySystem(systemId: string): Promise<Term[]>;
   
   // Profile operations
   getUserProfiles(userId: string): Promise<Profile[]>;
@@ -458,6 +459,12 @@ export class DatabaseStorage implements IStorage {
     );
     
     return termsWithMetrics;
+  }
+
+  async getTermsBySystem(systemId: string): Promise<Term[]> {
+    return await db.select().from(terms)
+      .where(eq(terms.examinationSystemId, systemId))
+      .orderBy(terms.order);
   }
 
   // Profile operations
