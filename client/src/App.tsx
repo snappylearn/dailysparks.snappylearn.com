@@ -4,6 +4,7 @@ import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import { AdminAuthProvider } from "@/hooks/useAdminAuth";
 import { Profile as ProfileType } from "@shared/schema";
 import Landing from "@/pages/Landing";
 import SimpleHome from "@/pages/SimpleHome";
@@ -68,64 +69,88 @@ function Router() {
     <Switch>
       {/* Admin Routes */}
       <Route path="/admin">
-        <AdminLayout>
-          <AdminDashboard />
-        </AdminLayout>
+        <AdminAuthProvider>
+          <AdminLayout>
+            <AdminDashboard />
+          </AdminLayout>
+        </AdminAuthProvider>
       </Route>
       <Route path="/admin/quizzes">
-        <AdminLayout>
-          <AdminQuizzes />
-        </AdminLayout>
+        <AdminAuthProvider>
+          <AdminLayout>
+            <AdminQuizzes />
+          </AdminLayout>
+        </AdminAuthProvider>
       </Route>
       <Route path="/admin/topics">
-        <AdminLayout>
-          <AdminTopics />
-        </AdminLayout>
+        <AdminAuthProvider>
+          <AdminLayout>
+            <AdminTopics />
+          </AdminLayout>
+        </AdminAuthProvider>
       </Route>
       <Route path="/admin/examination-systems">
-        <AdminLayout>
-          <AdminExaminationSystems />
-        </AdminLayout>
+        <AdminAuthProvider>
+          <AdminLayout>
+            <AdminExaminationSystems />
+          </AdminLayout>
+        </AdminAuthProvider>
       </Route>
       <Route path="/admin/levels">
-        <AdminLayout>
-          <AdminLevels />
-        </AdminLayout>
+        <AdminAuthProvider>
+          <AdminLayout>
+            <AdminLevels />
+          </AdminLayout>
+        </AdminAuthProvider>
       </Route>
       <Route path="/admin/subjects">
-        <AdminLayout>
-          <AdminSubjects />
-        </AdminLayout>
+        <AdminAuthProvider>
+          <AdminLayout>
+            <AdminSubjects />
+          </AdminLayout>
+        </AdminAuthProvider>
       </Route>
       <Route path="/admin/terms">
-        <AdminLayout>
-          <AdminTerms />
-        </AdminLayout>
+        <AdminAuthProvider>
+          <AdminLayout>
+            <AdminTerms />
+          </AdminLayout>
+        </AdminAuthProvider>
       </Route>
       <Route path="/admin/users">
-        <AdminLayout>
-          <AdminUsers />
-        </AdminLayout>
+        <AdminAuthProvider>
+          <AdminLayout>
+            <AdminUsers />
+          </AdminLayout>
+        </AdminAuthProvider>
       </Route>
       <Route path="/admin/quiz-types">
-        <AdminLayout>
-          <QuizTypes />
-        </AdminLayout>
+        <AdminAuthProvider>
+          <AdminLayout>
+            <QuizTypes />
+          </AdminLayout>
+        </AdminAuthProvider>
       </Route>
       <Route path="/admin/analytics">
-        <AdminLayout>
-          <AdminAnalytics />
-        </AdminLayout>
+        <AdminAuthProvider>
+          <AdminLayout>
+            <AdminAnalytics />
+          </AdminLayout>
+        </AdminAuthProvider>
       </Route>
       <Route path="/admin/settings">
-        <AdminLayout>
-          <AdminSettings />
-        </AdminLayout>
+        <AdminAuthProvider>
+          <AdminLayout>
+            <AdminSettings />
+          </AdminLayout>
+        </AdminAuthProvider>
       </Route>
       <Route path="/admin/platform-settings">
-        <AdminLayout>
-          <PlatformSettings />
-        </AdminLayout>
+        <AdminAuthProvider>
+          <AdminLayout>
+            <PlatformSettings />
+          </AdminLayout>
+        </AdminAuthProvider>
       </Route>
       
       {/* Quiz Preview Route (for admin) */}

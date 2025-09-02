@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -59,8 +59,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      setLocation("/admin/login");
+    }
+  }, [isLoading, isAuthenticated, setLocation]);
+
   if (!isAuthenticated) {
-    setLocation("/admin/login");
     return null;
   }
 
