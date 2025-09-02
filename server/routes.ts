@@ -897,7 +897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('Generating admin quiz with params:', quizGenerationParams);
           
           // Generate and save quiz as admin template for future reuse
-          const savedQuizId = await LLMQuizEngine.generateQuizForAdmin(quizGenerationParams, 'system-auto-generated');
+          const savedQuizId = await LLMQuizEngine.generateQuizForAdmin(quizGenerationParams, userId);
           
           console.log('Auto-generated admin quiz saved with ID:', savedQuizId);
           
