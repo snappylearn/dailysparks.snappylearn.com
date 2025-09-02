@@ -47,7 +47,14 @@ const adminLoginSchema = z.object({
 });
 
 export function setupAdminAuth(app: Express) {
-  // Use the existing session middleware - no need for separate admin sessions
+  // Set up admin-specific session handling for /admin routes
+  app.use('/admin/api', (req, res, next) => {
+    // For admin routes, we need to be more flexible with cookie settings for deployment
+    if (!req.session) {
+      return res.status(500).json({ message: "Session not available" });
+    }
+    next();
+  });
 
   // Admin login route
   app.post("/admin/api/login", async (req, res) => {
