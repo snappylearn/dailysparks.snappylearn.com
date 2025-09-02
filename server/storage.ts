@@ -2376,18 +2376,14 @@ export class DatabaseStorage implements IStorage {
           timeLimit: quizzes.timeLimit,
           difficulty: quizzes.difficulty,
           quizType: quizzes.quizType,
-          subject: subjects.name,
-          level: levels.title,
-          examSystem: examinationSystems.name,
-          term: terms.name,
+          subjectId: quizzes.subjectId,
+          levelId: quizzes.levelId,
+          examinationSystemId: quizzes.examinationSystemId,
+          termId: quizzes.termId,
           createdAt: quizzes.createdAt,
           questions: quizzes.questions,
         })
         .from(quizzes)
-        .leftJoin(subjects, eq(quizzes.subjectId, subjects.id))
-        .leftJoin(levels, eq(quizzes.levelId, levels.id))
-        .leftJoin(examinationSystems, eq(quizzes.examinationSystemId, examinationSystems.id))
-        .leftJoin(terms, eq(quizzes.termId, terms.id))
         .where(eq(quizzes.id, quizId));
 
       if (!quiz) {
