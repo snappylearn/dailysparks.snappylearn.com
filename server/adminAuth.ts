@@ -79,6 +79,15 @@ export function setupAdminAuth(app: Express) {
           return res.status(500).json({ message: "Session save failed" });
         }
         
+        // Log successful login in production for debugging
+        if (process.env.NODE_ENV === 'production') {
+          console.log("Admin login successful:", { 
+            adminId: adminUser.id, 
+            email: adminUser.email,
+            sessionId: req.sessionID?.substring(0, 8) + "..."
+          });
+        }
+        
         // Return admin user without password
         const { password: _, ...adminUserWithoutPassword } = adminUser;
         res.json(adminUserWithoutPassword);
@@ -157,8 +166,24 @@ export function setupAdminAuth(app: Express) {
 export const isAdminAuthenticated: RequestHandler = (req, res, next) => {
   const session = req.session as any;
   
+  // Additional debugging for production issues
+  if (!session) {
+    console.error("No session found for admin request");
+    return res.status(401).json({ message: "Admin authentication required" });
+  }
+  
   if (session.isAdminAuthenticated && session.adminId) {
     return next();
+  }
+  
+  // Log session state for debugging production issues
+  if (process.env.NODE_ENV === 'production') {
+    console.error("Admin auth failed:", { 
+      hasSession: !!session,
+      isAdminAuthenticated: session.isAdminAuthenticated,
+      hasAdminId: !!session.adminId,
+      sessionId: req.sessionID?.substring(0, 8) + "..." // Partial session ID for privacy
+    });
   }
   
   return res.status(401).json({ message: "Admin authentication required" });
