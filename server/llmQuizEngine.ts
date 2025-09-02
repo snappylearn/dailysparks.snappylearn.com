@@ -480,7 +480,8 @@ Generate exactly ${params.questionCount} questions following this format.`;
     console.log(`Looking for question ID: ${questionId}`);
     console.log(`Question found: ${question.content}`);
     console.log(`Correct choice: ${question.choices.find((c: any) => c.isCorrect)?.content}`);
-    console.log(`User answer: ${answer}`);
+    console.log(`User answer: ${answer} -> Answer Index: ${answerIndex}`);
+    console.log(`Selected choice:`, selectedChoice);
     console.log(`Is correct: ${isCorrect}`);
     console.log(`Question choices:`, question.choices);
     
