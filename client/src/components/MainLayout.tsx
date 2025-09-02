@@ -140,8 +140,8 @@ export function MainLayout({ children }: MainLayoutProps) {
     { icon: User, label: 'Profile', path: '/profile', active: location === '/profile' },
   ];
 
-  // Check if we should show sidebar (dashboard, leaderboard, quiz history, badges, and challenges)
-  const showSidebar = location === '/' || location === '/leaderboard' || location === '/quiz-history' || location === '/badges-trophies' || location === '/challenges';
+  // Check if we should show sidebar (dashboard, leaderboard, quiz history, badges, challenges, profile, and subscriptions)
+  const showSidebar = location === '/' || location === '/leaderboard' || location === '/quiz-history' || location === '/badges-trophies' || location === '/challenges' || location === '/subscriptions' || location === '/profile';
 
 
 
