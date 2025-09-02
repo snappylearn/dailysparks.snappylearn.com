@@ -472,8 +472,17 @@ Generate exactly ${params.questionCount} questions following this format.`;
     }
 
     // Check if answer is correct
-    const selectedChoice = question.choices.find((c: any) => c.content === answer);
+    // User submits letter answers (A, B, C, D), map to orderIndex (1, 2, 3, 4)
+    const answerIndex = answer === 'A' ? 1 : answer === 'B' ? 2 : answer === 'C' ? 3 : answer === 'D' ? 4 : 0;
+    const selectedChoice = question.choices.find((c: any) => c.orderIndex === answerIndex);
     const isCorrect = selectedChoice?.isCorrect || false;
+    
+    console.log(`Looking for question ID: ${questionId}`);
+    console.log(`Question found: ${question.content}`);
+    console.log(`Correct choice: ${question.choices.find((c: any) => c.isCorrect)?.content}`);
+    console.log(`User answer: ${answer}`);
+    console.log(`Is correct: ${isCorrect}`);
+    console.log(`Question choices:`, question.choices);
     
     // Calculate sparks
     const sparks = this.calculateSparks(question.difficulty, isCorrect);
