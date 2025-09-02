@@ -1,0 +1,166 @@
+{
+  "subject": "Business Studies",
+  "subjectId": "business-studies-kcse",
+  "examinationSystem": "KCSE",
+  "levels": [
+    {
+      "level": "Form 1",
+      "levelId": "form-1",
+      "topics": [
+        {
+          "title": "Introduction to Business Studies",
+          "description": "Defines business studies, its various components (e.g., economics, commerce, accounting), and the importance of studying the subject.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Business and Its Environment",
+          "description": "Examines the purpose of a business, types of business activities, and the various internal and external environments that affect a business's operations.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Satisfaction of Human Wants",
+          "description": "Covers the characteristics of human wants, types of goods and services, and the concepts of scarcity, choice, and opportunity cost.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Production",
+          "description": "Explains the meaning of production, types of production, factors of production, and the concept of division of labor and specialization. ",
+          "termId": "term-2"
+        },
+        {
+          "title": "Entrepreneurship",
+          "description": "Introduces entrepreneurship, qualities of a good entrepreneur, and the importance of entrepreneurship in economic development.",
+          "termId": "term-2"
+        },
+        {
+          "title": "The Office",
+          "description": "Covers the functions of an office, office equipment, and the roles and responsibilities of office staff.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 2",
+      "levelId": "form-2",
+      "topics": [
+        {
+          "title": "Home Trade",
+          "description": "Examines the different types of retail and wholesale trade, channels of distribution, and factors influencing home trade.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Forms of Business Units",
+          "description": "Covers the different forms of business ownership, including sole proprietorships, partnerships, and companies, and their advantages and disadvantages.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Government and Business",
+          "description": "Discusses the role of the government in business, including regulations, taxation, and the provision of public services.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Transport",
+          "description": "Explains the role and importance of transport, and the different modes of transport (road, rail, water, and air).",
+          "termId": "term-2"
+        },
+        {
+          "title": "Communication",
+          "description": "Covers the meaning and types of communication, and the importance of effective communication in business.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Warehousing",
+          "description": "Discusses the functions and types of warehouses, and the importance of storage in business.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Insurance",
+          "description": "Introduces the concept of insurance, principles of insurance, and different classes of insurance policies.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 3",
+      "levelId": "form-3",
+      "topics": [
+        {
+          "title": "Demand and Supply",
+          "description": "Explains the concepts of demand and supply, the law of demand and supply, and how equilibrium price is determined.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Size and Location of a Firm",
+          "description": "Covers the factors that influence the size and location of a business, as well as the concepts of economies and diseconomies of scale.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Product Markets",
+          "description": "Examines different types of market structures, including perfect competition, monopoly, and oligopoly.",
+          "termId": "term-2"
+        },
+        {
+          "title": "The Chain of Distribution",
+          "description": "Discusses the various channels through which goods move from producers to consumers, including the roles of intermediaries.",
+          "termId": "term-2"
+        },
+        {
+          "title": "National Income",
+          "description": "Introduces the concept of national income, its measurement, and the factors affecting it.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Population and Employment",
+          "description": "Examines population size, structure, and dynamics, and their relationship with employment and unemployment.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Business Transactions",
+          "description": "Covers business documents, books of original entry, and the accounting process.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 4",
+      "levelId": "form-4",
+      "topics": [
+        {
+          "title": "Source Documents and Books of Original Entry",
+          "description": "A more detailed look at business documents and their use in accounting, including ledgers and cash books.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Financial Statements",
+          "description": "Focuses on the preparation and analysis of financial statements, including the Trading, Profit and Loss account, and Balance Sheet.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Money and Banking",
+          "description": "Covers the meaning and functions of money, the development of banking, and the role of the Central Bank.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Public Finance",
+          "description": "Examines government revenue (taxation) and expenditure, and the role of public finance in the economy.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Inflation",
+          "description": "Discusses the meaning, causes, and effects of inflation on an economy.",
+          "termId": "term-3"
+        },
+        {
+          "title": "International Trade",
+          "description": "Covers the reasons for and benefits of international trade, trade restrictions, and balance of payments.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Economic Development and Planning",
+          "description": "Explains the meaning of economic development, indicators of development, and the role of economic planning.",
+          "termId": "term-3"
+        }
+      ]
+    }
+  ]
+}
