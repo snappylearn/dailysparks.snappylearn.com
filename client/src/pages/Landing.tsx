@@ -2,8 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Zap, Trophy, Users, BookOpen, Target, Star, ArrowRight } from "lucide-react";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 export default function Landing() {
+  const { platformName, tagline } = usePlatformSettings();
+  
   const handleLogin = () => {
     window.location.href = "/api/login";
   };
@@ -18,7 +21,7 @@ export default function Landing() {
               <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-lg flex items-center justify-center">
                 <Zap className="h-4 w-4 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900">Daily Sparks</span>
+              <span className="text-xl font-bold text-gray-900">{platformName}</span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
@@ -37,7 +40,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto">
             <Badge className="mb-6 bg-orange-100 text-orange-700 border-orange-200">
-              TikTok Simple, Harvard Smart
+              {tagline}
             </Badge>
             
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">

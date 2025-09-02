@@ -1,5 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const [location, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const { platformName } = usePlatformSettings();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -160,7 +162,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-full flex items-center justify-center">
                 <Flame className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900">Daily Sparks</span>
+              <span className="text-xl font-bold text-gray-900">{platformName}</span>
             </div>
 
             {/* Center: Navigation Actions & System Selectors */}

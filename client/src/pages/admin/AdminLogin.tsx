@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Flame, Lock, Mail, Eye, EyeOff } from "lucide-react";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +24,7 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { platformName } = usePlatformSettings();
 
   const {
     register,
@@ -67,7 +69,7 @@ export default function AdminLogin() {
               <Flame className="h-8 w-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Daily Sparks</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">{platformName}</h1>
           <p className="text-gray-300">Administrator Portal</p>
         </div>
 
