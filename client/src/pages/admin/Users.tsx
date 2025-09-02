@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -7,12 +9,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Mail, Calendar, Trophy, Zap, TrendingUp, Eye, Ban, Settings } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Filter, Mail, Calendar, Trophy, Zap, TrendingUp, Eye, Ban, Settings, User, Clock, Star } from "lucide-react";
 
 export default function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("recent");
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showUserDetails, setShowUserDetails] = useState(false);
+  const { toast } = useToast();
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["/api/admin/users"],
@@ -20,6 +26,34 @@ export default function AdminUsers() {
 
   const { data: userStats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/admin/user-stats"],
+  });
+
+  // Fetch individual user details
+  const { data: userDetails, isLoading: userDetailsLoading } = useQuery({
+    queryKey: ["/api/admin/users", selectedUser?.id],
+    enabled: !!selectedUser?.id,
+  });
+
+  // Block/unblock user mutation
+  const blockUserMutation = useMutation({
+    mutationFn: async ({ userId, isBlocked }: { userId: string; isBlocked: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/status`, { isBlocked });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Success",
+        description: "User status updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const filteredUsers = users?.filter((user: any) => {
@@ -32,7 +66,12 @@ export default function AdminUsers() {
     return matchesSearch && matchesStatus;
   }) || [];
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, isActive?: boolean) => {
+    // Check if user is blocked based on isActive field
+    if (isActive === false) {
+      return <Badge variant="destructive">Blocked</Badge>;
+    }
+    
     switch (status) {
       case 'active':
         return <Badge className="bg-green-100 text-green-800">Active</Badge>;
@@ -252,7 +291,7 @@ export default function AdminUsers() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{getStatusBadge(user.status)}</TableCell>
+                    <TableCell>{getStatusBadge(user.status, user.isActive)}</TableCell>
                     <TableCell>
                       <div className="space-y-1">
                         {getExamSystemBadge(user.examSystem)}
@@ -289,13 +328,38 @@ export default function AdminUsers() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowUserDetails(true);
+                          }}
+                          data-testid={`button-view-user-${user.id}`}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          disabled
+                          data-testid={`button-email-user-${user.id}`}
+                        >
                           <Mail className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            const isCurrentlyBlocked = user.isActive === false;
+                            blockUserMutation.mutate({ 
+                              userId: user.id, 
+                              isBlocked: !isCurrentlyBlocked 
+                            });
+                          }}
+                          disabled={blockUserMutation.isPending}
+                          data-testid={`button-block-user-${user.id}`}
+                        >
                           <Ban className="h-4 w-4" />
                         </Button>
                       </div>
@@ -307,6 +371,152 @@ export default function AdminUsers() {
           )}
         </CardContent>
       </Card>
+
+      {/* User Details Modal */}
+      <Dialog open={showUserDetails} onOpenChange={setShowUserDetails}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about the selected user
+            </DialogDescription>
+          </DialogHeader>
+          {userDetailsLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="text-muted-foreground">Loading user details...</div>
+            </div>
+          ) : userDetails ? (
+            <div className="space-y-6">
+              {/* User Basic Info */}
+              <div className="flex items-start space-x-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={userDetails.profileImageUrl} />
+                  <AvatarFallback className="text-lg">
+                    {(userDetails.firstName?.charAt(0) || userDetails.email?.charAt(0) || 'U')}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold">
+                    {userDetails.firstName && userDetails.lastName 
+                      ? `${userDetails.firstName} ${userDetails.lastName}`
+                      : userDetails.email || 'Unknown User'
+                    }
+                  </h3>
+                  <p className="text-muted-foreground flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    {userDetails.email || 'No email provided'}
+                  </p>
+                  <div className="flex items-center gap-4 mt-2">
+                    <Badge variant={userDetails.isActive ? "default" : "destructive"}>
+                      {userDetails.isActive ? "Active" : "Blocked"}
+                    </Badge>
+                    {userDetails.isPremium && (
+                      <Badge className="bg-yellow-100 text-yellow-800">Premium</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* User Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-yellow-500" />
+                    <div>
+                      <div className="text-2xl font-bold">{userDetails.sparks || 0}</div>
+                      <div className="text-sm text-muted-foreground">Sparks</div>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-4">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                    <div>
+                      <div className="text-2xl font-bold">{userDetails.currentStreak || 0}</div>
+                      <div className="text-sm text-muted-foreground">Streak</div>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Star className="h-5 w-5 text-blue-500" />
+                    <div>
+                      <div className="text-2xl font-bold">{userDetails.longestStreak || 0}</div>
+                      <div className="text-sm text-muted-foreground">Best Streak</div>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-purple-500" />
+                    <div>
+                      <div className="text-2xl font-bold">{userDetails.rank || '-'}</div>
+                      <div className="text-sm text-muted-foreground">Rank</div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Academic Info */}
+              <div className="space-y-3">
+                <h4 className="text-lg font-semibold">Academic Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Examination System</label>
+                    <div className="mt-1">
+                      {getExamSystemBadge(userDetails.examSystemName || 'Unknown')}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Level</label>
+                    <div className="mt-1 font-medium">{userDetails.levelTitle || 'Not specified'}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Current Term</label>
+                    <div className="mt-1 font-medium">{userDetails.currentTerm || 'Not specified'}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Credits</label>
+                    <div className="mt-1 font-medium">${userDetails.credits || '0.00'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Activity Info */}
+              <div className="space-y-3">
+                <h4 className="text-lg font-semibold">Activity Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Joined</label>
+                    <div className="mt-1 flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      {userDetails.createdAt ? new Date(userDetails.createdAt).toLocaleDateString() : 'Unknown'}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Last Activity</label>
+                    <div className="mt-1 flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      {userDetails.lastActivity ? new Date(userDetails.lastActivity).toLocaleDateString() : 'No recent activity'}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Last Quiz</label>
+                    <div className="mt-1 flex items-center gap-2">
+                      <Trophy className="h-4 w-4" />
+                      {userDetails.lastQuizDate ? new Date(userDetails.lastQuizDate).toLocaleDateString() : 'No quizzes taken'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-muted-foreground">Failed to load user details</div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -664,6 +664,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get detailed user information
+  app.get('/api/admin/users/:id', isAdminAuthenticated, async (req: any, res) => {
+    try {
+      const userDetails = await storage.getAdminUserDetails(req.params.id);
+      if (!userDetails) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(userDetails);
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      res.status(500).json({ message: "Failed to fetch user details" });
+    }
+  });
+
+  // Block/unblock user
+  app.patch('/api/admin/users/:id/status', isAdminAuthenticated, async (req: any, res) => {
+    try {
+      const { isBlocked } = req.body;
+      const result = await storage.updateUserStatus(req.params.id, isBlocked);
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      res.status(500).json({ message: "Failed to update user status" });
+    }
+  });
+
   // Quiz types management routes
   app.get('/api/admin/quiz-types', isAdminAuthenticated, async (req: any, res) => {
     try {
