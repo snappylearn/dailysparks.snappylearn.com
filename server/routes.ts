@@ -748,12 +748,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Available quizzes for subject:', availableQuizzes);
 
       // Filter quizzes that have actual questions in them
-      const quizzesWithQuestions = availableQuizzes.filter(quiz => {
+      let quizzesWithQuestions = availableQuizzes.filter(quiz => {
         const questions = quiz.questions;
         return questions && Array.isArray(questions) && questions.length > 0;
       });
 
-      console.log('Quizzes with questions:', quizzesWithQuestions.length);
+      // For topical quizzes, try to find existing quizzes that match the specific topic
+      if (quizType === 'topical' && topicId) {
+        const topicalQuizzes = quizzesWithQuestions.filter(quiz => quiz.topicId === topicId);
+        if (topicalQuizzes.length > 0) {
+          quizzesWithQuestions = topicalQuizzes;
+          console.log('Found existing topical quizzes for topic:', topicalQuizzes.length);
+        }
+      }
+
+      // For termly quizzes, try to find existing quizzes that match the specific term
+      if (quizType === 'termly' && termId) {
+        const termlyQuizzes = quizzesWithQuestions.filter(quiz => quiz.termId === termId);
+        if (termlyQuizzes.length > 0) {
+          quizzesWithQuestions = termlyQuizzes;
+          console.log('Found existing termly quizzes for term:', termlyQuizzes.length);
+        }
+      }
+
+      console.log('Final filtered quizzes with questions:', quizzesWithQuestions.length);
 
       // If we have admin quizzes with questions, use them
       if (quizzesWithQuestions.length > 0) {
@@ -801,7 +819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If no admin quizzes with questions found, use AI to generate questions
       if (!availableQuizzes || availableQuizzes.length === 0 || quizzesWithQuestions.length === 0) {
-        console.log('No admin quizzes with questions found, generating with AI...');
+        console.log('No admin quizzes with questions found, generating with AI and saving to admin pool...');
         
         // Get subject info for AI generation
         const [subjectInfo] = await db
@@ -846,36 +864,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
             termInfo = term ? term.title : null;
           }
 
-          const generatedQuestions = await generateQuestions({
-            subject: subjectInfo.title,
-            level: levelInfo,
-            topics: topicsList,
-            term: termInfo,
-            quizType: quizType || 'random',
-            questionCount: 10
-          });
-
-          console.log('Generated questions result:', generatedQuestions);
+          // Use the LLM Quiz Engine to generate and save quiz as admin template
+          const { LLMQuizEngine } = require('./llmQuizEngine');
           
-          if (!generatedQuestions || !Array.isArray(generatedQuestions) || generatedQuestions.length === 0) {
-            console.error('Invalid generated questions:', generatedQuestions);
-            return res.status(500).json({ message: "Failed to generate questions" });
+          const quizGenerationParams = {
+            examinationSystemId: profile.examinationSystemId,
+            levelId: profile.levelId,
+            subjectId: subjectId,
+            quizType: quizType || 'random',
+            topicId: topicId || null,
+            termId: termId || null,
+            questionCount: 10,
+            timeLimit: 1800 // 30 minutes default
+          };
+
+          console.log('Generating admin quiz with params:', quizGenerationParams);
+          
+          // Generate and save quiz as admin template for future reuse
+          const savedQuizId = await LLMQuizEngine.generateQuizForAdmin(quizGenerationParams, 'system-auto-generated');
+          
+          console.log('Auto-generated admin quiz saved with ID:', savedQuizId);
+          
+          // Now get the saved quiz and use it for the session
+          const savedQuiz = await storage.getQuizDetails(savedQuizId);
+          
+          if (!savedQuiz || !savedQuiz.questions || savedQuiz.questions.length === 0) {
+            console.error('Failed to retrieve saved quiz or quiz has no questions');
+            return res.status(500).json({ message: "Failed to generate quiz questions" });
           }
 
-          // Convert AI questions to our format
-          const quizQuestions = generatedQuestions.map((q, index) => ({
-            id: `ai_${Date.now()}_${index}`,
-            content: q.questionText,
-            choices: [
-              { id: `ai_${Date.now()}_${index}_a`, content: q.optionA, isCorrect: q.correctAnswer === 'A', orderIndex: 1 },
-              { id: `ai_${Date.now()}_${index}_b`, content: q.optionB, isCorrect: q.correctAnswer === 'B', orderIndex: 2 },
-              { id: `ai_${Date.now()}_${index}_c`, content: q.optionC, isCorrect: q.correctAnswer === 'C', orderIndex: 3 },
-              { id: `ai_${Date.now()}_${index}_d`, content: q.optionD, isCorrect: q.correctAnswer === 'D', orderIndex: 4 }
-            ],
+          // Use the saved quiz questions for the session
+          const quizQuestions = savedQuiz.questions.map((q: any) => ({
+            id: q.id,
+            content: q.content,
+            choices: q.choices,
             explanation: q.explanation
           }));
 
-          // Create quiz session with AI-generated questions
+          // Create quiz session with the saved admin quiz questions
           const quizSession = await storage.createQuizSession({
             userId,
             profileId,
@@ -902,7 +928,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             sessionId: quizSession.id,
             questions: sessionQuestions,
             totalQuestions: sessionQuestions.length,
-            currentQuestionIndex: 0
+            currentQuestionIndex: 0,
+            source: 'ai-generated-admin'
           });
         } catch (error) {
           console.error('AI question generation failed:', error);
