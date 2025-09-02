@@ -5,11 +5,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { Profile, Subject } from "@shared/schema";
 import { Book, Flame, Zap, TrendingUp, Plus } from "lucide-react";
 import { MainLayout } from "@/components/MainLayout";
-import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 export default function Home() {
   const { user } = useAuth();
-  const { platformName } = usePlatformSettings();
 
   // Get user profiles
   const { data: profiles = [], isLoading: profilesLoading } = useQuery<Profile[]>({
@@ -172,7 +170,7 @@ export default function Home() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Flame className="h-5 w-5" />
-              <span>Welcome to {platformName}!</span>
+              <span>Welcome to Daily Sparks!</span>
             </CardTitle>
           </CardHeader>
           <CardContent>

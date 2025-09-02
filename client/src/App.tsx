@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminAuthProvider } from "@/hooks/useAdminAuth";
-import { SettingsProvider } from "@/contexts/SettingsContext";
 import { Profile as ProfileType } from "@shared/schema";
 import Landing from "@/pages/Landing";
 import SimpleHome from "@/pages/SimpleHome";
@@ -184,16 +183,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <SettingsProvider>
-        <TooltipProvider>
+      <TooltipProvider>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <Toaster />
         <Router />
-        </TooltipProvider>
-      </SettingsProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
