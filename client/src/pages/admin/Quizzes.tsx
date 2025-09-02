@@ -680,7 +680,7 @@ export default function AdminQuizzes() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {topics?.map((topic: any) => (
+                                {addFilteredTopics?.map((topic: any) => (
                                   <SelectItem key={topic.id} value={topic.id}>
                                     {topic.title}
                                   </SelectItem>
@@ -1234,10 +1234,17 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
   console.log("Filtered terms:", filteredTerms);
   console.log("Current termId:", form.watch("termId"));
 
-  // Filter topics by selected subject
-  const filteredTopics = topics?.filter((topic: any) => 
-    topic.subjectId === form.watch("subjectId")
-  ) || [];
+  // Filter topics by selected examination system, level, and subject for Add Quiz form
+  const addFilteredTopics = topics?.filter((topic: any) => {
+    const currentExamSystemId = addForm.watch("examinationSystemId");
+    const currentLevelId = addForm.watch("levelId"); 
+    const currentSubjectId = addForm.watch("subjectId");
+    
+    // Only show topics that match all three criteria
+    return topic.examinationSystemId === currentExamSystemId &&
+           topic.levelId === currentLevelId &&
+           topic.subjectId === currentSubjectId;
+  }) || [];
 
   const updateQuizMutation = useMutation({
     mutationFn: async (data: any) => {
