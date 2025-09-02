@@ -115,6 +115,12 @@ export interface IStorage {
   // Profile operations
   getUserProfiles(userId: string): Promise<Profile[]>;
   getProfile(profileId: string): Promise<Profile | undefined>;
+  getUserStats(userId: string): Promise<{
+    totalSparks: number;
+    totalQuizzes: number;
+    averageScore: number;
+    currentStreak: number;
+  }>;
   createProfile(profile: InsertProfile): Promise<Profile>;
   setDefaultProfile(userId: string, profileId: string): Promise<User>;
   updateProfile(profileId: string, data: Partial<Profile>): Promise<Profile>;
@@ -465,6 +471,71 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(terms)
       .where(eq(terms.examinationSystemId, systemId))
       .orderBy(terms.order);
+  }
+
+  async getUserStats(userId: string): Promise<{
+    totalSparks: number;
+    totalQuizzes: number;
+    averageScore: number;
+    currentStreak: number;
+  }> {
+    try {
+      // Get user's active profile first
+      const userProfiles = await this.getUserProfiles(userId);
+      const activeProfile = userProfiles[0];
+      
+      if (!activeProfile) {
+        return {
+          totalSparks: 0,
+          totalQuizzes: 0,
+          averageScore: 0,
+          currentStreak: 0
+        };
+      }
+
+      // Get total completed quizzes count
+      const completedQuizzesResult = await db
+        .select({ count: sql`count(*)` })
+        .from(quizSessions)
+        .where(and(
+          eq(quizSessions.userId, userId),
+          eq(quizSessions.completed, true)
+        ));
+
+      const totalQuizzes = Number(completedQuizzesResult[0]?.count || 0);
+
+      // Get average score calculation
+      const avgScoreResult = await db
+        .select({ 
+          avgScore: sql`CASE 
+            WHEN count(*) > 0 
+            THEN (sum(${quizSessions.correctAnswers}) * 100.0 / sum(${quizSessions.totalQuestions}))
+            ELSE 0 
+          END` 
+        })
+        .from(quizSessions)
+        .where(and(
+          eq(quizSessions.userId, userId),
+          eq(quizSessions.completed, true)
+        ));
+
+      const averageScore = Math.round(Number(avgScoreResult[0]?.avgScore || 0));
+
+      return {
+        totalSparks: activeProfile.sparks || 0,
+        totalQuizzes,
+        averageScore,
+        currentStreak: activeProfile.streak || 0
+      };
+    } catch (error) {
+      console.error('Error calculating user stats:', error);
+      return {
+        totalSparks: 0,
+        totalQuizzes: 0,
+        averageScore: 0,
+        currentStreak: 0
+      };
+    }
   }
 
   // Profile operations

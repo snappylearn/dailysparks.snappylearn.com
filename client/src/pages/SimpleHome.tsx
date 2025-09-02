@@ -22,6 +22,17 @@ export default function Home() {
     enabled: !!currentProfile?.examinationSystemId,
   });
 
+  // Get user stats for progress section
+  const { data: userStats } = useQuery<{
+    totalSparks: number;
+    totalQuizzes: number;
+    averageScore: number;
+    currentStreak: number;
+  }>({
+    queryKey: ['/api/user-stats'],
+    enabled: !!user,
+  });
+
   if (profilesLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50 flex items-center justify-center">
@@ -119,12 +130,37 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-4">
-                <Book className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">
-                  Take your first quiz to see your progress!
-                </p>
-              </div>
+              {userStats && userStats.totalQuizzes > 0 ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-orange-500">{userStats.totalSparks}</div>
+                      <div className="text-xs text-gray-600">Total Sparks</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-teal-500">{userStats.totalQuizzes}</div>
+                      <div className="text-xs text-gray-600">Quizzes Completed</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-yellow-500">{userStats.averageScore}%</div>
+                      <div className="text-xs text-gray-600">Average Score</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-500">{userStats.currentStreak}</div>
+                      <div className="text-xs text-gray-600">Current Streak</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <Book className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">
+                    Take your first quiz to see your progress!
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

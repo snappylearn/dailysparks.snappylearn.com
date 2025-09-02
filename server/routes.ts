@@ -111,6 +111,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user stats for dashboard
+  app.get('/api/user-stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const stats = await storage.getUserStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   // Profile update routes
   app.patch('/api/profiles/:id', isAuthenticated, async (req: any, res) => {
     try {
