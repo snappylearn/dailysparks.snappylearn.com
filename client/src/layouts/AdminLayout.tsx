@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { 
   Menu, 
   Home, 
@@ -41,9 +42,27 @@ const menuItems = [
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user } = useAuth();
+  const { adminUser, isAuthenticated, isLoading, logoutMutation } = useAdminAuth();
+
+  // Redirect to admin login if not authenticated
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin portal...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    setLocation("/admin/login");
+    return null;
+  }
 
   const Sidebar = ({ isMobile = false }) => (
     <div className={`flex flex-col h-full bg-white border-r ${isMobile ? 'w-full' : sidebarCollapsed ? 'w-16' : 'w-64'}`}>

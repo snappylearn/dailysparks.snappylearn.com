@@ -1,5 +1,6 @@
 import {
   users,
+  adminUsers,
   examinationSystems,
   levels,
   profiles,
@@ -90,6 +91,9 @@ import {
   type InsertUserSubscription,
   type InsertPaymentTransaction,
   type InsertCreditTransaction,
+  // Admin types
+  type AdminUser,
+  type InsertAdminUser,
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, sql, count, avg, gte, lte, inArray, or, isNull } from "drizzle-orm";
@@ -244,6 +248,12 @@ export interface IStorage {
   updateQuizSettings(settings: Partial<InsertQuizSettings>, updatedBy: string): Promise<QuizSettings>;
   getNotificationSettings(): Promise<NotificationSettings>;
   updateNotificationSettings(settings: Partial<InsertNotificationSettings>, updatedBy: string): Promise<NotificationSettings>;
+
+  // Admin user operations
+  getAdmin(id: string): Promise<AdminUser | undefined>;
+  getAdminByEmail(email: string): Promise<AdminUser | undefined>;
+  createAdmin(adminData: InsertAdminUser): Promise<AdminUser>;
+  updateAdminLastLogin(adminId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2767,6 +2777,39 @@ export class DatabaseStorage implements IStorage {
       .from(creditTransactions)
       .where(eq(creditTransactions.userId, userId))
       .orderBy(desc(creditTransactions.createdAt));
+  }
+
+  // Admin user operations
+  async getAdmin(id: string): Promise<AdminUser | undefined> {
+    const [admin] = await db.select().from(adminUsers).where(eq(adminUsers.id, id));
+    return admin;
+  }
+
+  async getAdminByEmail(email: string): Promise<AdminUser | undefined> {
+    const [admin] = await db.select().from(adminUsers).where(eq(adminUsers.email, email));
+    return admin;
+  }
+
+  async createAdmin(adminData: InsertAdminUser): Promise<AdminUser> {
+    const [admin] = await db
+      .insert(adminUsers)
+      .values({
+        ...adminData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return admin;
+  }
+
+  async updateAdminLastLogin(adminId: string): Promise<void> {
+    await db
+      .update(adminUsers)
+      .set({
+        lastLoginAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(adminUsers.id, adminId));
   }
 }
 

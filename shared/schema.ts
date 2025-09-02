@@ -26,6 +26,31 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
+// Admin sessions table (for admin authentication)
+export const adminSessions = pgTable(
+  "admin_sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_admin_session_expire").on(table.expire)],
+);
+
+// Admin users table (separate from regular users)
+export const adminUsers = pgTable("admin_users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique().notNull(),
+  password: varchar("password").notNull(), // hashed password
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  role: varchar("role").default("admin"), // admin, super_admin
+  isActive: boolean("is_active").default(true),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // User storage table (required for Replit Auth)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -938,3 +963,13 @@ export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema
 export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
 export type InsertPaymentTransaction = z.infer<typeof insertPaymentTransactionSchema>;
 export type InsertCreditTransaction = z.infer<typeof insertCreditTransactionSchema>;
+
+// Admin user types
+export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
