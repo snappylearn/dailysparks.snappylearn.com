@@ -548,7 +548,7 @@ export default function Quiz() {
                 {startQuizMutation.isPending && selectedQuizType === 'random' ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Loading...
+                    Getting your quiz ready...
                   </div>
                 ) : 'Start Random Quiz'}
               </Button>
@@ -632,9 +632,9 @@ export default function Quiz() {
           </DialogHeader>
           <div className="overflow-y-auto max-h-96">
             {topicsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
-                <span className="ml-2 text-sm text-gray-600">Loading topics...</span>
+              <div className="flex flex-col items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
+                <span className="text-sm text-gray-600">Loading topics...</span>
               </div>
             ) : topics && topics.length > 0 ? (
               <div className="space-y-2">
@@ -644,13 +644,21 @@ export default function Quiz() {
                     variant="ghost"
                     className="w-full justify-start h-auto py-3 px-4"
                     onClick={() => handleTopicSelect(topic)}
+                    disabled={startQuizMutation.isPending}
                   >
-                    <div className="text-left">
-                      <div className="font-medium">{topic.title}</div>
-                      {topic.description && (
-                        <div className="text-sm text-gray-500 mt-1">{topic.description}</div>
-                      )}
-                    </div>
+                    {startQuizMutation.isPending && selectedTopic === topic.id ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <span>Preparing your quiz...</span>
+                      </div>
+                    ) : (
+                      <div className="text-left">
+                        <div className="font-medium">{topic.title}</div>
+                        {topic.description && (
+                          <div className="text-sm text-gray-500 mt-1">{topic.description}</div>
+                        )}
+                      </div>
+                    )}
                   </Button>
                 ))}
               </div>

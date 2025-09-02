@@ -878,38 +878,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         try {
-          // Get the actual level information
-          let levelInfo = 'Secondary';
-          if (profile.levelId) {
-            const [level] = await db
-              .select()
-              .from(levels)
-              .where(eq(levels.id, profile.levelId));
-            levelInfo = level ? level.title : 'Secondary';
-          }
-
-          // Get topics for the subject if this is a topical quiz
-          let topicsList = [];
-          if (quizType === 'topical' && topicId) {
-            const [topic] = await db
-              .select()
-              .from(topics)
-              .where(eq(topics.id, topicId));
-            if (topic) {
-              topicsList = [topic.title];
-            }
-          }
-
-          // Get term information if this is a termly quiz
-          let termInfo = null;
-          if (quizType === 'termly' && termId) {
-            const [term] = await db
-              .select()
-              .from(terms)
-              .where(eq(terms.id, termId));
-            termInfo = term ? term.title : null;
-          }
-
+          console.log('Starting AI quiz generation for level:', profile.levelId);
+          
           // Use the LLM Quiz Engine to generate and save quiz as admin template
           const { LLMQuizEngine } = require('./llmQuizEngine');
           
@@ -936,7 +906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (!savedQuiz || !savedQuiz.questions || savedQuiz.questions.length === 0) {
             console.error('Failed to retrieve saved quiz or quiz has no questions');
-            return res.status(500).json({ message: "Failed to generate quiz questions" });
+            throw new Error("Generated quiz is empty or invalid");
           }
 
           // Use the saved quiz questions for the session
@@ -979,7 +949,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         } catch (error) {
           console.error('AI question generation failed:', error);
-          return res.status(500).json({ message: "Failed to generate quiz questions" });
+          return res.status(500).json({ 
+            message: "Failed to generate quiz questions", 
+            error: error.message,
+            level: profile.levelId,
+            subject: subjectId,
+            quizType: quizType
+          });
         }
       }
     } catch (error) {
