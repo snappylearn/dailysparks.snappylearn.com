@@ -177,6 +177,8 @@ export interface IStorage {
   // Admin user operations
   getAdminUserList(filters?: any): Promise<any[]>;
   getAdminUserStats(): Promise<any>;
+  getAdminUserDetails(userId: string): Promise<any>;
+  updateUserStatus(userId: string, isBlocked: boolean): Promise<any>;
   
   // Quiz History
   getQuizHistoryForUser(userId: string): Promise<any[]>;
@@ -2148,6 +2150,76 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Admin user operations
+  async getAdminUserDetails(userId: string): Promise<any> {
+    try {
+      const query = db
+        .select({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+          isPremium: users.isPremium,
+          credits: users.credits,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          // Profile details
+          profileId: profiles.id,
+          examinationSystemId: profiles.examinationSystemId,
+          levelId: profiles.levelId,
+          currentTerm: profiles.currentTerm,
+          sparks: profiles.sparks,
+          streak: profiles.streak,
+          currentStreak: profiles.currentStreak,
+          longestStreak: profiles.longestStreak,
+          rank: profiles.rank,
+          lastQuizDate: profiles.lastQuizDate,
+          lastActivity: profiles.lastActivity,
+          isActive: profiles.isActive,
+          // Exam system details
+          examSystemName: examinationSystems.name,
+          levelTitle: levels.title,
+        })
+        .from(users)
+        .leftJoin(profiles, eq(users.id, profiles.userId))
+        .leftJoin(examinationSystems, eq(profiles.examinationSystemId, examinationSystems.id))
+        .leftJoin(levels, eq(profiles.levelId, levels.id))
+        .where(eq(users.id, userId))
+        .limit(1);
+      
+      const result = await query;
+      return result[0] || null;
+    } catch (error) {
+      console.error('Error getting admin user details:', error);
+      throw error;
+    }
+  }
+
+  async updateUserStatus(userId: string, isBlocked: boolean): Promise<any> {
+    try {
+      // We'll use the profile's isActive field to block/unblock users
+      const result = await db
+        .update(profiles)
+        .set({ 
+          isActive: !isBlocked,
+          updatedAt: new Date()
+        })
+        .where(eq(profiles.userId, userId))
+        .returning();
+      
+      // Also update the user's updatedAt timestamp
+      await db
+        .update(users)
+        .set({ updatedAt: new Date() })
+        .where(eq(users.id, userId));
+      
+      return { success: true, isBlocked };
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      throw error;
+    }
+  }
+
   async getAdminUserList(filters?: any): Promise<any[]> {
     try {
       // First get all users with their primary profile (or any profile if default_profile_id is null)
