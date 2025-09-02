@@ -200,6 +200,26 @@ export default function AdminQuizzes() {
     }
   });
 
+  const deleteQuizMutation = useMutation({
+    mutationFn: async (quizId: string) => {
+      return apiRequest("DELETE", `/api/admin/quizzes/${quizId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success", 
+        description: "Quiz deleted successfully!"
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/quizzes"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete quiz",
+        variant: "destructive"
+      });
+    }
+  });
+
   const addQuizMutation = useMutation({
     mutationFn: async (data: AddQuizFormData) => {
       return apiRequest("POST", "/api/admin/quizzes", data);
@@ -935,19 +955,9 @@ export default function AdminQuizzes() {
                           size="sm"
                           onClick={() => {
                             setSelectedQuiz(quiz);
-                            setQuestionsDialogOpen(true);
-                          }}
-                          title="View questions"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedQuiz(quiz);
                             setEditDialogOpen(true);
                           }}
+                          title="Edit quiz"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -958,6 +968,19 @@ export default function AdminQuizzes() {
                           title="Preview quiz as student would see it"
                         >
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to delete the quiz "${quiz.title}"? This action cannot be undone.`)) {
+                              deleteQuizMutation.mutate(quiz.id);
+                            }
+                          }}
+                          title="Delete quiz"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
