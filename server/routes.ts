@@ -58,15 +58,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Terms routes
+  // Terms routes - basic terms only for quiz selection (KCSE: Term 1, 2, 3)
   app.get('/api/terms', async (req, res) => {
     try {
       const terms = await storage.getTerms();
-      // Filter to only show basic terms (Term 1, 2, 3) for quiz selection
-      const basicTerms = terms.filter(term => term.order <= 3);
+      // Filter to only show basic terms for KCSE (Term 1, 2, 3) for quiz selection
+      const basicTerms = terms.filter(term => 
+        term.examinationSystemId === 'bde2015e-8e30-4460-ad2b-c79837d9438b' && term.order <= 3
+      );
       res.json(basicTerms);
     } catch (error) {
       console.error("Error fetching terms:", error);
+      res.status(500).json({ message: "Failed to fetch terms" });
+    }
+  });
+
+  // Terms routes - filtered by examination system for admin panel
+  app.get('/api/terms/:systemId', async (req, res) => {
+    try {
+      const { systemId } = req.params;
+      const terms = await storage.getTermsBySystem(systemId);
+      res.json(terms);
+    } catch (error) {
+      console.error("Error fetching terms by system:", error);
       res.status(500).json({ message: "Failed to fetch terms" });
     }
   });
