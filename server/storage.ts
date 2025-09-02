@@ -216,6 +216,11 @@ export interface IStorage {
   updateTopic(topicId: string, updateData: Partial<InsertTopic>): Promise<Topic>;
   deleteTopic(topicId: string): Promise<void>;
 
+  // Quiz management
+  createQuiz(quizData: any): Promise<any>;
+  updateQuiz(quizId: string, updateData: any): Promise<any>;
+  deleteQuiz(quizId: string): Promise<void>;
+  
   // Quiz types management
   getQuizTypes(): Promise<any[]>;
   createQuizType(data: any): Promise<any>;
@@ -1961,6 +1966,25 @@ export class DatabaseStorage implements IStorage {
       return newQuiz;
     } catch (error) {
       console.error('Error creating quiz:', error);
+      throw error;
+    }
+  }
+
+  async deleteQuiz(quizId: string): Promise<void> {
+    try {
+      // Delete quiz questions first (foreign key constraint)
+      await db.delete(quizQuestions)
+        .where(eq(quizQuestions.quizId, quizId));
+      
+      // Delete any quiz sessions related to this quiz
+      await db.delete(quizSessions)
+        .where(eq(quizSessions.quizId, quizId));
+      
+      // Delete the quiz
+      await db.delete(quizzes)
+        .where(eq(quizzes.id, quizId));
+    } catch (error) {
+      console.error('Error deleting quiz:', error);
       throw error;
     }
   }
