@@ -358,6 +358,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete quiz
+  app.delete('/api/admin/quizzes/:quizId', isAdminAuthenticated, async (req: any, res) => {
+    try {
+      const { quizId } = req.params;
+      await storage.deleteQuiz(quizId);
+      res.json({ message: "Quiz deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting quiz:", error);
+      res.status(500).json({ message: "Failed to delete quiz" });
+    }
+  });
+
   // CRUD routes for Examination Systems
   app.post('/api/admin/examination-systems', isAdminAuthenticated, async (req: any, res) => {
     try {

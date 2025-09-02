@@ -209,7 +209,9 @@ export default function AdminQuizzes() {
         title: "Success", 
         description: "Quiz deleted successfully!"
       });
+      // Force refetch the quiz list to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ["/api/admin/quizzes"] });
+      queryClient.refetchQueries({ queryKey: ["/api/admin/quizzes"] });
     },
     onError: (error: any) => {
       toast({
