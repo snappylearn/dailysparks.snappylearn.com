@@ -236,6 +236,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get detailed quiz review with questions and answers
+  app.get('/api/quiz-sessions/:sessionId/review', isAuthenticated, async (req: any, res) => {
+    try {
+      const { sessionId } = req.params;
+      const userId = req.user.claims.sub;
+      
+      // Get the quiz session
+      const session = await db
+        .select()
+        .from(quizSessions)
+        .where(eq(quizSessions.id, sessionId))
+        .limit(1);
+      
+      if (session.length === 0) {
+        return res.status(404).json({ message: "Quiz session not found" });
+      }
+      
+      // Verify session belongs to user
+      const profiles = await storage.getUserProfiles(userId);
+      const userProfileIds = profiles.map(p => p.id);
+      if (!userProfileIds.includes(session[0].profileId)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      // Get user answers for this session
+      const answers = await db
+        .select()
+        .from(userAnswers)
+        .where(eq(userAnswers.quizSessionId, sessionId));
+      
+      // Get quiz questions from session JSONB data
+      const quizQuestions = session[0].quizQuestions as any;
+      
+      if (!quizQuestions || !quizQuestions.questions) {
+        return res.status(400).json({ message: "Quiz questions not found in session" });
+      }
+      
+      // Combine questions with user answers
+      const reviewData = quizQuestions.questions.map((question: any) => {
+        const userAnswer = answers.find(a => a.questionId === question.id);
+        return {
+          ...question,
+          userAnswer: userAnswer ? userAnswer.userAnswer : null,
+          isCorrect: userAnswer ? userAnswer.isCorrect : false,
+          timeSpent: userAnswer ? userAnswer.timeSpent : 0
+        };
+      });
+      
+      res.json({
+        sessionId,
+        subjectName: quizQuestions.subjectName || 'Unknown Subject',
+        quizType: session[0].quizType,
+        totalQuestions: session[0].totalQuestions,
+        correctAnswers: session[0].correctAnswers,
+        completed: session[0].completed,
+        questions: reviewData
+      });
+    } catch (error) {
+      console.error("Error fetching quiz review:", error);
+      res.status(500).json({ message: "Failed to fetch quiz review: " + error.message });
+    }
+  });
+
   // Submit answer for quiz question
   app.post('/api/quiz-sessions/:sessionId/answers', isAdminAuthenticated, async (req: any, res) => {
     try {

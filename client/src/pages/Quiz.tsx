@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-import { ArrowLeft, Clock, Target, Shuffle, BookOpen, Calendar, CheckCircle, XCircle, Zap, Trophy } from "lucide-react";
+import { ArrowLeft, Clock, Target, Shuffle, BookOpen, Calendar, CheckCircle, XCircle, Zap, Trophy, Eye } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -67,6 +67,7 @@ export default function Quiz() {
   const [quizResults, setQuizResults] = useState<QuizResults | null>(null);
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [incompleteSession, setIncompleteSession] = useState<any>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   
   // Get URL parameters
   const urlParams = new URLSearchParams(window.location.search);
@@ -351,6 +352,15 @@ export default function Quiz() {
               </div>
               
               <div className="space-y-3">
+                <Button 
+                  onClick={() => setShowReviewModal(true)}
+                  variant="default"
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                  data-testid="button-review-answers"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Review Answers
+                </Button>
                 <Button 
                   onClick={() => {
                     setQuizSession(null);
@@ -815,6 +825,181 @@ export default function Quiz() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Quiz Review Modal */}
+      {quizResults && (
+        <QuizReviewModal
+          sessionId={quizResults.sessionId}
+          isOpen={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+        />
+      )}
     </MainLayout>
+  );
+}
+
+// Quiz Review Modal Component for the results page
+function QuizReviewModal({ sessionId, isOpen, onClose }: {
+  sessionId: string;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const { data: reviewData, isLoading } = useQuery({
+    queryKey: ['/api/quiz-sessions', sessionId, 'review'],
+    enabled: isOpen && !!sessionId,
+  });
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5 text-orange-500" />
+            Quiz Review: {reviewData?.subjectName}
+          </DialogTitle>
+          <DialogDescription>
+            Detailed breakdown of your answers and explanations
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+          </div>
+        ) : reviewData ? (
+          <div className="space-y-4">
+            {/* Quiz Stats */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <div className="font-bold text-lg text-blue-600">
+                  {reviewData.correctAnswers}/{reviewData.totalQuestions}
+                </div>
+                <div className="text-sm text-gray-600">Correct Answers</div>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <div className="font-bold text-lg text-green-600">
+                  {Math.round((reviewData.correctAnswers / reviewData.totalQuestions) * 100)}%
+                </div>
+                <div className="text-sm text-gray-600">Accuracy</div>
+              </div>
+              <div className="text-center p-3 bg-purple-50 rounded-lg">
+                <div className="font-bold text-lg text-purple-600">
+                  {reviewData.questions.length}
+                </div>
+                <div className="text-sm text-gray-600">Questions</div>
+              </div>
+            </div>
+
+            {/* Questions Review */}
+            <div className="space-y-4">
+              {reviewData.questions.map((question: any, index: number) => {
+                const correctChoice = question.choices?.find((c: any) => c.isCorrect);
+                const userChoice = question.choices?.find((c: any) => 
+                  c.orderIndex === (question.userAnswer ? question.userAnswer.charCodeAt(0) - 64 : 0)
+                );
+                
+                return (
+                  <Card key={question.id} className="border-l-4" style={{
+                    borderLeftColor: question.isCorrect ? '#10b981' : '#ef4444'
+                  }}>
+                    <CardContent className="p-6">
+                      {/* Question Header */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm font-medium text-gray-500">
+                              Question {index + 1}
+                            </span>
+                            {question.isCorrect ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-500" />
+                            )}
+                          </div>
+                          <h4 className="font-medium text-gray-900 mb-3">
+                            {question.content}
+                          </h4>
+                        </div>
+                      </div>
+
+                      {/* Choices */}
+                      <div className="space-y-2 mb-4">
+                        {question.choices?.map((choice: any) => {
+                          const isUserChoice = choice.orderIndex === (question.userAnswer ? question.userAnswer.charCodeAt(0) - 64 : 0);
+                          const isCorrectChoice = choice.isCorrect;
+                          
+                          let bgColor = 'bg-gray-50';
+                          let borderColor = 'border-gray-200';
+                          let textColor = 'text-gray-700';
+                          
+                          if (isCorrectChoice) {
+                            bgColor = 'bg-green-50';
+                            borderColor = 'border-green-200';
+                            textColor = 'text-green-800';
+                          } else if (isUserChoice && !isCorrectChoice) {
+                            bgColor = 'bg-red-50';
+                            borderColor = 'border-red-200';
+                            textColor = 'text-red-800';
+                          }
+                          
+                          return (
+                            <div
+                              key={choice.id}
+                              className={`p-3 rounded-lg border-2 ${bgColor} ${borderColor} ${textColor}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">
+                                  {String.fromCharCode(64 + choice.orderIndex)}.
+                                </span>
+                                <span>{choice.content}</span>
+                                {isCorrectChoice && (
+                                  <CheckCircle className="h-4 w-4 text-green-600 ml-auto" />
+                                )}
+                                {isUserChoice && !isCorrectChoice && (
+                                  <XCircle className="h-4 w-4 text-red-600 ml-auto" />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Answer Summary */}
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <div>
+                          <strong>Your answer:</strong> {question.userAnswer || 'No answer'} 
+                          {userChoice && ` (${userChoice.content})`}
+                        </div>
+                        <div>
+                          <strong>Correct answer:</strong> {correctChoice ? String.fromCharCode(64 + correctChoice.orderIndex) : 'N/A'} 
+                          {correctChoice && ` (${correctChoice.content})`}
+                        </div>
+                      </div>
+
+                      {/* Explanation */}
+                      {question.explanation && (
+                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <Target className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <div className="font-medium text-blue-900 text-sm mb-1">Explanation</div>
+                              <div className="text-blue-800 text-sm">{question.explanation}</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Unable to load quiz review</p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
