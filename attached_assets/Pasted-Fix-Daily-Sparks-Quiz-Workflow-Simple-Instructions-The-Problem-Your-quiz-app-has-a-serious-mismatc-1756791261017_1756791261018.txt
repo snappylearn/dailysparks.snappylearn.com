@@ -1,0 +1,83 @@
+Fix Daily Sparks Quiz Workflow - Simple Instructions
+The Problem
+Your quiz app has a serious mismatch:
+
+Users select Physics Form 1 Term 1
+But get Geography questions like "What is the capital of Kenya?"
+Only 2 questions show up instead of 15
+Questions repeat and don't come from your admin backend
+
+What Needs to Happen
+1. STOP Using Fake Questions
+
+Your frontend is showing questions that don't exist in your admin panel
+DELETE any hardcoded questions in your frontend code
+The quiz must ONLY show questions that admins have added to the backend
+
+2. Fix the Question Flow
+Current broken flow:
+
+User picks Physics Form 1 Term 1
+Frontend shows random questions from nowhere
+Questions don't match the selection
+
+Correct flow should be:
+
+User picks Physics Form 1 Term 1
+Frontend asks backend: "Give me 15 Physics Form 1 Term 1 questions"
+Backend finds ONLY Physics Form 1 Term 1 questions from admin panel
+Backend sends back exactly 15 questions that match
+Frontend shows these questions one by one
+
+3. Simple Backend Fix
+When someone starts a quiz, your backend must:
+
+Check: What subject? (Physics)
+Check: What form? (Form 1)
+Check: What term? (Term 1)
+Find questions that match ALL THREE
+Count them - if less than 15, show error "Not enough questions available"
+If 15 or more exist, pick exactly 15
+Send these 15 to frontend
+
+4. Simple Frontend Fix
+Your frontend must:
+
+Never show questions unless they come from backend API
+Always verify each question matches what user selected
+If question doesn't match, show error and go back to dashboard
+Show exactly 15 questions, no more, no less
+
+5. Admin Panel Check
+Go to your admin panel and verify:
+
+Do you have 15+ Physics questions for Form 1 Term 1?
+Are they properly labeled as "Physics" subject?
+Are they properly labeled as "Form 1" level?
+Are they properly labeled as "Term 1"?
+
+If NO - add more questions with correct labels
+If YES - the problem is in your API connection
+6. Quick Test Steps
+
+Add 20 Physics Form 1 Term 1 questions in admin panel
+Start Physics Form 1 Term 1 quiz
+Verify EVERY question shown is actually Physics
+Verify you get exactly 15 different questions
+Try again - should get different random 15 questions
+
+7. Error Messages to Add
+
+"Sorry, not enough questions available for this combination"
+"Error: Question doesn't match your selection. Returning to menu"
+"Failed to load questions. Please try again"
+
+Simple Rule
+If admin hasn't added it to the backend, users shouldn't see it in the quiz.
+The geography question about Kenya's capital should NOT appear in a Physics quiz because:
+
+It's not Physics
+It probably doesn't exist in your admin questions
+Your system is pulling from wrong source
+
+Fix this by making frontend and backend talk to each other properly, with the backend only sending questions that match exactly what the user selected.

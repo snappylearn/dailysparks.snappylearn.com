@@ -1555,12 +1555,14 @@ export class DatabaseStorage implements IStorage {
           totalQuestions: quizzes.totalQuestions,
           timeLimit: quizzes.timeLimit,
           createdAt: quizzes.createdAt,
-          isActive: quizzes.isActive
+          isActive: quizzes.isActive,
+          questions: quizzes.questions
         })
         .from(quizzes)
         .where(and(eq(quizzes.subjectId, subjectId), eq(quizzes.isActive, true)))
         .orderBy(desc(quizzes.createdAt));
       
+      console.log(`Found ${subjectQuizzes.length} quizzes for subject ${subjectId}:`, subjectQuizzes.map(q => q.title));
       return subjectQuizzes;
     } catch (error) {
       console.error("Error fetching quizzes by subject:", error);
