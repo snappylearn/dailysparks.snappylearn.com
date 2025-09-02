@@ -237,15 +237,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get detailed quiz review with questions and answers
-  app.get('/api/quiz-sessions/:sessionId/review', isAuthenticated, async (req: any, res) => {
+  app.get('/api/quiz-sessions/:sessionId/review', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       const userId = req.user.claims.sub;
       
-      // Get the quiz session
+      // Get the quiz session with subject name
       const session = await db
-        .select()
+        .select({
+          id: quizSessions.id,
+          profileId: quizSessions.profileId,
+          subjectId: quizSessions.subjectId,
+          quizType: quizSessions.quizType,
+          topicId: quizSessions.topicId,
+          termId: quizSessions.termId,
+          quizQuestions: quizSessions.quizQuestions,
+          totalQuestions: quizSessions.totalQuestions,
+          correctAnswers: quizSessions.correctAnswers,
+          completed: quizSessions.completed,
+          subjectName: subjects.name,
+          subjectCode: subjects.code,
+        })
         .from(quizSessions)
+        .leftJoin(subjects, eq(quizSessions.subjectId, subjects.id))
         .where(eq(quizSessions.id, sessionId))
         .limit(1);
       
@@ -269,12 +283,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get quiz questions from session JSONB data
       const quizQuestions = session[0].quizQuestions as any;
       
-      if (!quizQuestions || !quizQuestions.questions) {
+      if (!quizQuestions || !Array.isArray(quizQuestions)) {
         return res.status(400).json({ message: "Quiz questions not found in session" });
       }
       
       // Combine questions with user answers
-      const reviewData = quizQuestions.questions.map((question: any) => {
+      const reviewData = quizQuestions.map((question: any) => {
         const userAnswer = answers.find(a => a.questionId === question.id);
         return {
           ...question,
@@ -284,9 +298,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
       
+      // Get subject name from the joined query
+      const subjectName = session[0].subjectName || session[0].subjectCode || 'Unknown Subject';
+      
       res.json({
         sessionId,
-        subjectName: quizQuestions.subjectName || 'Unknown Subject',
+        subjectName: subjectName,
         quizType: session[0].quizType,
         totalQuestions: session[0].totalQuestions,
         correctAnswers: session[0].correctAnswers,
