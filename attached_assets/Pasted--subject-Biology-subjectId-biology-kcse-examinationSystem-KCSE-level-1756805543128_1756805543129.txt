@@ -1,0 +1,155 @@
+{
+  "subject": "Biology",
+  "subjectId": "biology-kcse",
+  "examinationSystem": "KCSE",
+  "levels": [
+    {
+      "level": "Form 1",
+      "levelId": "form-1",
+      "topics": [
+        {
+          "title": "Introduction to Biology",
+          "description": "Definition of biology, its branches, the importance of studying biology, and the characteristics of living organisms.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Classification I",
+          "description": "Introduces the principles of classifying living organisms and the major taxonomic groups. Students also learn about the use of simple identification keys.",
+          "termId": "term-1"
+        },
+        {
+          "title": "The Cell",
+          "description": "Examines the cell as the basic unit of life, including the structure and function of various cell organelles in plant and animal cells. 
+
+[Image of a plant and animal cell]
+",
+          "termId": "term-1"
+        },
+        {
+          "title": "Cell Physiology",
+          "description": "Studies the functions of a cell, focusing on the movement of substances across the cell membrane through processes like diffusion, osmosis, and active transport.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Nutrition in Plants and Animals",
+          "description": "Covers the process of nutrition in living organisms, including photosynthesis in plants and different modes of feeding in animals.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Transport in Plants and Animals",
+          "description": "Explains the importance of transport systems and details the transport of water and nutrients in plants, as well as the circulatory systems in animals.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Gaseous Exchange",
+          "description": "Focuses on the process of gaseous exchange in both plants and animals, and the structures adapted for this function.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 2",
+      "levelId": "form-2",
+      "topics": [
+        {
+          "title": "Respiration",
+          "description": "Defines respiration, its importance, and the different types of respiration (aerobic and anaerobic) in living organisms.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Excretion and Homeostasis",
+          "description": "Covers the removal of metabolic waste products from the body (excretion) and the maintenance of a constant internal environment (homeostasis).",
+          "termId": "term-1"
+        },
+        {
+          "title": "Reproduction in Plants and Animals",
+          "description": "Explores the significance of reproduction and details both asexual and sexual reproduction in plants and animals.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Growth and Development",
+          "description": "Studies the processes of growth and development in living organisms, including metamorphosis in insects and growth curves in plants.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Classification II",
+          "description": "Expands on Form 1's classification topic, providing a more detailed survey of the five kingdoms and their major phyla/divisions.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 3",
+      "levelId": "form-3",
+      "topics": [
+        {
+          "title": "Ecology",
+          "description": "Studies the relationship between living organisms and their environment, including ecosystems, energy flow, and nutrient cycling.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Genetics",
+          "description": "Introduces the principles of heredity and variation. Key concepts include genes, chromosomes, Mendelian inheritance, and an overview of genetic disorders.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Evolution",
+          "description": "Examines the theories and evidence of organic evolution, including natural selection and fossil records.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Human Health and Disease",
+          "description": "Focuses on the causes, transmission, prevention, and control of common human diseases.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Irritability and Coordination in Plants",
+          "description": "Explores how plants respond to stimuli through tropisms and nastic movements, and the role of plant hormones.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 4",
+      "levelId": "form-4",
+      "topics": [
+        {
+          "title": "Support and Movement in Plants and Animals",
+          "description": "Covers the various types of support systems in plants and animals, and the mechanisms of movement, including the human skeleton. 
+
+[Image of the human skeleton]
+",
+          "termId": "term-1"
+        },
+        {
+          "title": "Coordination and Response in Animals",
+          "description": "Details the nervous and endocrine systems in animals, and how they work together to coordinate responses to stimuli.",
+          "termId": "term-1"
+        },
+        {
+          "title": "The Human Eye and Ear",
+          "description": "Studies the structure and functions of the human eye and ear as specialized sense organs. 
+
+[Image of the human eye]
+",
+          "termId": "term-2"
+        },
+        {
+          "title": "Reproduction and Development in Humans",
+          "description": "An in-depth look at the human reproductive system, fertilization, and the stages of growth and development from conception to birth.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Human Health and Immunity",
+          "description": "Expands on human health, focusing on the immune system, its components, and different types of immunity.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Drugs and Drug Abuse",
+          "description": "Identifies common drugs and explains the effects of drug abuse on the human body and society.",
+          "termId": "term-3"
+        }
+      ]
+    }
+  ]
+}
