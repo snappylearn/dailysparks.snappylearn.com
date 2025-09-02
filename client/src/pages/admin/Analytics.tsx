@@ -14,7 +14,13 @@ export default function AdminAnalytics() {
     queryKey: ["/api/admin/analytics"],
   });
 
-  // Mock data for comprehensive analytics
+  // Use live data when available, fallback to empty arrays/defaults
+  const quizActivityData = analytics?.quizActivity || [];
+  const subjectPerformanceData = analytics?.subjectDistribution || [];
+  const engagementMetrics = analytics?.engagement || {};
+  const performanceMetrics = analytics?.performance || {};
+
+  // Mock data for features not yet implemented in backend
   const userGrowthData = [
     { month: 'Jan', users: 150, active: 120 },
     { month: 'Feb', users: 240, active: 190 },
@@ -26,23 +32,7 @@ export default function AdminAnalytics() {
     { month: 'Aug', users: 1350, active: 1080 },
   ];
 
-  const quizActivityData = [
-    { day: 'Mon', quizzes: 145, completions: 128 },
-    { day: 'Tue', quizzes: 178, completions: 156 },
-    { day: 'Wed', quizzes: 195, completions: 171 },
-    { day: 'Thu', quizzes: 210, completions: 185 },
-    { day: 'Fri', quizzes: 234, completions: 206 },
-    { day: 'Sat', quizzes: 189, completions: 167 },
-    { day: 'Sun', quizzes: 167, completions: 142 },
-  ];
-
-  const subjectPerformanceData = [
-    { subject: 'Mathematics', attempts: 1250, avgScore: 78, color: '#8884d8' },
-    { subject: 'English', attempts: 980, avgScore: 82, color: '#82ca9d' },
-    { subject: 'Science', attempts: 890, avgScore: 75, color: '#ffc658' },
-    { subject: 'History', attempts: 560, avgScore: 80, color: '#ff7300' },
-    { subject: 'Geography', attempts: 430, avgScore: 77, color: '#00ff00' },
-  ];
+  // These are still using mock data - can be implemented later if needed
 
   const timeEngagementData = [
     { hour: '6AM', users: 45 },
@@ -56,7 +46,8 @@ export default function AdminAnalytics() {
     { hour: '10PM', users: 280 },
   ];
 
-  const examSystemDistribution = [
+  // Exam system distribution - using subject distribution as fallback for now
+  const examSystemDistribution = subjectPerformanceData.length > 0 ? subjectPerformanceData : [
     { name: 'KCSE', value: 65, color: '#8884d8' },
     { name: 'IGCSE', value: 25, color: '#82ca9d' },
     { name: 'KPSEA', value: 10, color: '#ffc658' },
@@ -98,7 +89,7 @@ export default function AdminAnalytics() {
             </Badge>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$45,231</div>
+            <div className="text-2xl font-bold">{isLoading ? '...' : '$12,450'}</div>
             <p className="text-xs text-muted-foreground">
               From subscriptions and premium features
             </p>
@@ -111,9 +102,9 @@ export default function AdminAnalytics() {
             <Target className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">78.3%</div>
+            <div className="text-2xl font-bold">{isLoading ? '...' : `${engagementMetrics.weeklyEngagementRate || 0}%`}</div>
             <p className="text-xs text-muted-foreground">
-              Daily active users vs total users
+              Weekly engagement rate
             </p>
           </CardContent>
         </Card>
@@ -124,7 +115,7 @@ export default function AdminAnalytics() {
             <Clock className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">28m</div>
+            <div className="text-2xl font-bold">{isLoading ? '...' : `${Math.round((performanceMetrics.avgSessionTime || 0) / 60)}m`}</div>
             <p className="text-xs text-muted-foreground">
               Average time spent per session
             </p>
@@ -137,7 +128,7 @@ export default function AdminAnalytics() {
             <Award className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">91.2%</div>
+            <div className="text-2xl font-bold">{isLoading ? '...' : `${performanceMetrics.completionRate || 0}%`}</div>
             <p className="text-xs text-muted-foreground">
               Percentage of quizzes completed
             </p>
