@@ -86,8 +86,15 @@ export function MainLayout({ children }: MainLayoutProps) {
         title: "Success",
         description: "Preferences updated successfully",
       });
+      // Invalidate all profile-dependent queries
       queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
       queryClient.invalidateQueries({ queryKey: ['/api/subjects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/topics'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/levels'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/terms'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user-stats'] });
+      // Force refetch of any cached data that depends on level
+      queryClient.refetchQueries();
     },
     onError: (error: any) => {
       console.error('Update profile error:', error);
