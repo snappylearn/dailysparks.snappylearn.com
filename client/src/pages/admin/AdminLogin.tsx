@@ -8,7 +8,7 @@ import { Flame, Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 
 const adminLoginSchema = z.object({
@@ -40,6 +40,9 @@ export default function AdminLogin() {
       const response = await apiRequest("POST", "/admin/api/login", data);
       
       if (response.ok) {
+        const adminUser = await response.json();
+        // Update the query cache to mark user as authenticated
+        queryClient.setQueryData(["/admin/api/user"], adminUser);
         // Redirect to admin dashboard on successful login
         setLocation("/admin");
       } else {
