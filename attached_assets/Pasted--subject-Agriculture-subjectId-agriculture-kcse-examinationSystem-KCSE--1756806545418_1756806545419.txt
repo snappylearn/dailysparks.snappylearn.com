@@ -1,0 +1,116 @@
+{
+  "subject": "Agriculture",
+  "subjectId": "agriculture-kcse",
+  "examinationSystem": "KCSE",
+  "levels": [
+    {
+      "level": "Form 1",
+      "levelId": "form-1",
+      "topics": [
+        {
+          "title": "Introduction to Agriculture",
+          "description": "Defines agriculture, its importance in Kenya, and the challenges faced by farmers. Also covers historical development and the relationship between agriculture and other subjects.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Factors Influencing Agriculture",
+          "description": "Examines the various ecological (e.g., climate, soil, pests) and economic (e.g., market, transport, capital) factors that influence agricultural production.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Tools and Equipment",
+          "description": "Covers the identification, uses, and maintenance of various hand tools and equipment used in farming.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Crop Production I",
+          "description": "Explains the processes involved in crop production, from land preparation and planting to harvesting and marketing.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 2",
+      "levelId": "form-2",
+      "topics": [
+        {
+          "title": "Soil Fertility I",
+          "description": "Introduces the concept of soil fertility, the components of soil, and methods of maintaining and improving soil fertility.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Livestock Production I",
+          "description": "Covers the common livestock in Kenya, including cattle, poultry, and goats. Students learn about different breeds and their general management.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Agricultural Economics I",
+          "description": "Explains basic economic concepts in agriculture, such as land tenure, farm records, and marketing.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Crop Production II",
+          "description": "Expands on Form 1 topics, focusing on specific crops like maize, wheat, and coffee, and their cultivation practices.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 3",
+      "levelId": "form-3",
+      "topics": [
+        {
+          "title": "Soil Fertility II",
+          "description": "A more detailed look at soil fertility, including soil conservation, manuring, and the use of fertilizers.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Livestock Production II",
+          "description": "Covers advanced topics in livestock production, including nutrition, breeding, and disease control.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Agricultural Economics II",
+          "description": "Deals with advanced agricultural economics, including farm planning, budgeting, and sources of agricultural finance.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 4",
+      "levelId": "form-4",
+      "topics": [
+        {
+          "title": "Pests and Diseases of Crops",
+          "description": "Covers the identification of common crop pests and diseases and their control methods. Includes both chemical and non-chemical methods.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Weeds",
+          "description": "Explains the types of weeds, their effects, and the various methods of weed control.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Agricultural Structures",
+          "description": "Discusses the construction and maintenance of farm structures like fences, barns, and animal housing.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Farm Power and Machinery",
+          "description": "Covers the use and maintenance of different farm machinery, including tractors and irrigation equipment. ",
+          "termId": "term-2"
+        },
+        {
+          "title": "Agricultural Products Processing",
+          "description": "Introduces the basic methods of processing and preserving agricultural produce to increase shelf life and value.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Environmental Pollution and Conservation",
+          "description": "Examines the causes and effects of environmental pollution from agricultural activities and the importance of conservation.",
+          "termId": "term-3"
+        }
+      ]
+    }
+  ]
+}
