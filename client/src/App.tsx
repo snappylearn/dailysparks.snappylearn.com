@@ -4,7 +4,7 @@ import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
-import { Profile } from "@shared/schema";
+import { Profile as ProfileType } from "@shared/schema";
 import Landing from "@/pages/Landing";
 import SimpleHome from "@/pages/SimpleHome";
 import Quiz from "@/pages/Quiz";
@@ -30,12 +30,13 @@ import QuizPreview from "@/pages/QuizPreview";
 import BadgesAndTrophies from "@/pages/BadgesAndTrophies";
 import Challenges from "@/pages/Challenges";
 import Subscriptions from "@/pages/Subscriptions";
+import Profile from "@/pages/Profile";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
   // Get user profiles if authenticated
-  const { data: profiles, isLoading: profilesLoading } = useQuery<Profile[]>({
+  const { data: profiles, isLoading: profilesLoading } = useQuery<ProfileType[]>({
     queryKey: ['/api/profiles'],
     enabled: isAuthenticated,
   });
@@ -143,6 +144,7 @@ function Router() {
         <Challenges />
       </Route>
       <Route path="/subscriptions" component={Subscriptions} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );
