@@ -52,7 +52,6 @@ export function setupAdminAuth(app: Express) {
   // Admin login route
   app.post("/admin/api/login", async (req, res) => {
     try {
-      console.log("Admin login attempt:", req.body.email);
       const { email, password } = adminLoginSchema.parse(req.body);
       
       const adminUser = await storage.getAdminByEmail(email);
@@ -72,7 +71,6 @@ export function setupAdminAuth(app: Express) {
       (req.session as any).adminId = adminUser.id;
       (req.session as any).isAdminAuthenticated = true;
 
-      console.log("Session set:", { adminId: adminUser.id, sessionId: req.sessionID });
 
       // Save the session explicitly
       req.session.save((err) => {
@@ -81,7 +79,6 @@ export function setupAdminAuth(app: Express) {
           return res.status(500).json({ message: "Session save failed" });
         }
         
-        console.log("Session saved successfully");
         // Return admin user without password
         const { password: _, ...adminUserWithoutPassword } = adminUser;
         res.json(adminUserWithoutPassword);
@@ -159,11 +156,6 @@ export function setupAdminAuth(app: Express) {
 // Admin authentication middleware
 export const isAdminAuthenticated: RequestHandler = (req, res, next) => {
   const session = req.session as any;
-  console.log("Admin auth check:", { 
-    sessionID: req.sessionID, 
-    isAdminAuthenticated: session.isAdminAuthenticated, 
-    adminId: session.adminId 
-  });
   
   if (session.isAdminAuthenticated && session.adminId) {
     return next();
