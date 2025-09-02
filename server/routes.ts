@@ -881,7 +881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('Starting AI quiz generation for level:', profile.levelId);
           
           // Use the LLM Quiz Engine to generate and save quiz as admin template
-          const { LLMQuizEngine } = require('./llmQuizEngine');
+          const { LLMQuizEngine } = await import('./llmQuizEngine');
           
           const quizGenerationParams = {
             examinationSystemId: profile.examinationSystemId,
