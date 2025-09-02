@@ -1,0 +1,116 @@
+{
+  "subject": "Computer Studies",
+  "subjectId": "computer-studies-kcse",
+  "examinationSystem": "KCSE",
+  "levels": [
+    {
+      "level": "Form 1",
+      "levelId": "form-1",
+      "topics": [
+        {
+          "title": "Introduction to Computers",
+          "description": "Defines a computer, its characteristics, historical development, and the importance of computers in society. Also covers safety precautions in the computer lab.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Computer Systems",
+          "description": "Explains the elements of a computer system: hardware, software, and liveware. Details the functions of various hardware components like input devices, the Central Processing Unit (CPU), and output devices.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Operating Systems",
+          "description": "Covers the definition, functions, and types of operating systems. Also includes file management, disk management, and how to install an operating system.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 2",
+      "levelId": "form-2",
+      "topics": [
+        {
+          "title": "Word Processors",
+          "description": "Introduces word processing software, including creating, editing, and formatting documents, as well as creating tables and mail merge documents.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Spreadsheets",
+          "description": "Explains the purpose and components of a spreadsheet. Students learn to use formulas and functions, manage data, and create charts.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Databases",
+          "description": "Covers database concepts, different database models, and how to create and manipulate a simple database in a database management system.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Desktop Publishing",
+          "description": "Introduces the concept and purpose of desktop publishing software for designing and producing publications like newsletters and brochures.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Internet and E-mail",
+          "description": "Covers the history and development of the internet, its importance, and how to use internet services like web browsing and e-mail.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 3",
+      "levelId": "form-3",
+      "topics": [
+        {
+          "title": "Data Representation in a Computer",
+          "description": "Explains how data is represented in a computer using binary digits. Includes different number systems (binary, decimal, octal, hexadecimal) and binary arithmetic operations.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Data Processing",
+          "description": "Discusses the data processing cycle, types of files, file organization methods, and different data processing modes.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Elementary Programming Principles",
+          "description": "Introduces programming concepts, levels of programming languages, and program development. Includes designing algorithms using flowcharts and pseudocode.",
+          "termId": "term-3"
+        },
+        {
+          "title": "System Development",
+          "description": "Covers the concept of a system, information systems, and the stages of the System Development Life Cycle (SDLC).",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 4",
+      "levelId": "form-4",
+      "topics": [
+        {
+          "title": "Networking and Data Communication",
+          "description": "Explains the concepts of computer networks, types of networks (LAN, MAN, WAN), network topologies, and the benefits and limitations of networking.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Application Areas of ICT",
+          "description": "Covers the use of Information and Communication Technology (ICT) in various sectors like education, business, transport, and law enforcement.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Impact of ICT on Society",
+          "description": "Discusses the positive and negative effects of computers on society, including issues related to ethics, privacy, and health.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Careers in ICT",
+          "description": "Identifies various career opportunities in the field of ICT and the skills required for each.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Computer Project",
+          "description": "This is a practical project where students apply the skills and knowledge acquired throughout the course to develop a complete system, from analysis to implementation.",
+          "termId": "term-3"
+        }
+      ]
+    }
+  ]
+}
