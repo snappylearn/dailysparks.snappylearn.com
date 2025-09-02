@@ -47,7 +47,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { user } = useAuth();
   const { adminUser, isAuthenticated, isLoading, logoutMutation } = useAdminAuth();
 
-  // Redirect to admin login if not authenticated
+  // All hooks must be called before any conditional returns
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      setLocation("/admin/login");
+    }
+  }, [isLoading, isAuthenticated, setLocation]);
+
+  // Now handle conditional rendering
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -58,12 +65,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      setLocation("/admin/login");
-    }
-  }, [isLoading, isAuthenticated, setLocation]);
 
   if (!isAuthenticated) {
     return null;
