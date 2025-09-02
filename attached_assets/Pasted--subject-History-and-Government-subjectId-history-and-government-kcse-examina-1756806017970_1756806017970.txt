@@ -1,0 +1,166 @@
+{
+  "subject": "History and Government",
+  "subjectId": "history-and-government-kcse",
+  "examinationSystem": "KCSE",
+  "levels": [
+    {
+      "level": "Form 1",
+      "levelId": "form-1",
+      "topics": [
+        {
+          "title": "Introduction to History and Government",
+          "description": "Defines history and government, their relationship, sources of historical information, and the importance of studying the subject.",
+          "termId": "term-1"
+        },
+        {
+          "title": "The Early Man",
+          "description": "Covers the origin and evolution of man, cultural and economic practices of Early Man, and the transition from hunting and gathering to settled life.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Development of Agriculture",
+          "description": "Explores the origins of agriculture, the agrarian revolution, and the challenges of food security in Africa and the world.",
+          "termId": "term-2"
+        },
+        {
+          "title": "The People of Kenya Up to the 19th Century",
+          "description": "Details the origin, migration, and settlement of various communities in Kenya, including the Bantu, Nilotes, and Cushites.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Socio-Economic and Political Organisation of Kenyan Communities in the 19th Century",
+          "description": "Examines the social, political, and economic structures of Kenyan communities before the colonial period.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Contacts Between East Africa and the Outside World Up to the 19th Century",
+          "description": "Covers the interactions between East African communities and visitors from the outside world, including Arabs, Persians, and Europeans.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 2",
+      "levelId": "form-2",
+      "topics": [
+        {
+          "title": "Citizenship",
+          "description": "Defines citizenship, different types of citizenship, and the rights and responsibilities of a Kenyan citizen.",
+          "termId": "term-1"
+        },
+        {
+          "title": "National Integration",
+          "description": "Explores the meaning of national integration, factors that promote and hinder it, and strategies for fostering national unity in Kenya.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Trade",
+          "description": "Covers the history and development of trade, including regional and international trade routes.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Development of Transport and Communication",
+          "description": "Examines the evolution of transport and communication systems from early times to modern day.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Development of Industry",
+          "description": "Discusses the origins and evolution of industries, including the Industrial Revolution and its effects.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Urbanisation",
+          "description": "Covers the historical development of urban centres and the social, economic, and political effects of urbanization.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 3",
+      "levelId": "form-3",
+      "topics": [
+        {
+          "title": "European Invasion of Africa and the Process of Colonisation",
+          "description": "Examines the scramble for and partitioning of Africa, the reasons for European invasion, and the methods of colonial conquest.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Establishment of Colonial Rule in Kenya",
+          "description": "Details the establishment of British colonial administration in Kenya, including the role of the Imperial British East Africa Company (IBEACo).",
+          "termId": "term-1"
+        },
+        {
+          "title": "Colonial Administration",
+          "description": "Covers the structures and policies of colonial administration, including direct and indirect rule, and the British system in Kenya.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Socio-Economic Developments during the Colonial Period in Kenya",
+          "description": "Focuses on changes in land, labor, agriculture, and infrastructure during the colonial era and their impact on Kenyan societies.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Political Developments and the Struggle for Independence in Kenya (1919-1963)",
+          "description": "Explores the rise of African nationalism and the various political struggles that led to Kenya's independence.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Lives and Contributions of Kenyan Leaders",
+          "description": "Examines the roles and contributions of key Kenyan leaders who fought for independence and built the nation.",
+          "termId": "term-3"
+        },
+        {
+          "title": "The Formation, Structure, and Functions of the Government of Kenya",
+          "description": "Introduces students to the three arms of government: the legislature, the executive, and the judiciary.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 4",
+      "levelId": "form-4",
+      "topics": [
+        {
+          "title": "World Wars",
+          "description": "Covers the causes, events, and results of the First and Second World Wars, and their global impact.",
+          "termId": "term-1"
+        },
+        {
+          "title": "International Relations",
+          "description": "Explores the concept of international relations, including the formation and functions of international organizations like the United Nations (UN).",
+          "termId": "term-1"
+        },
+        {
+          "title": "Co-operation in Africa",
+          "description": "Discusses the history of Pan-Africanism and the role of regional and continental bodies like the Organization of African Unity (OAU) and the African Union (AU).",
+          "termId": "term-1"
+        },
+        {
+          "title": "Social, Economic, and Political Developments and Challenges in Kenya Since Independence",
+          "description": "Examines the changes and challenges Kenya has faced since 1963, including land issues, political changes, and economic policies.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Social, Economic, and Political Developments and Challenges in Africa Since Independence",
+          "description": "Analyzes the post-independence challenges and developments in Africa, including coups, civil wars, and economic reforms.",
+          "termId": "term-2"
+        },
+        {
+          "title": "The Electoral Process and Functions of Government in Other Parts of the World",
+          "description": "Compares electoral systems and government functions in different countries, such as the UK and the USA.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Devolved Government",
+          "description": "Focuses on the concept and structure of devolved government in Kenya, its functions, and challenges.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Public Revenue and Expenditure in Kenya",
+          "description": "Covers the sources of public revenue, how the government spends its money, and the role of institutions like the Kenya Revenue Authority (KRA).",
+          "termId": "term-3"
+        }
+      ]
+    }
+  ]
+}
