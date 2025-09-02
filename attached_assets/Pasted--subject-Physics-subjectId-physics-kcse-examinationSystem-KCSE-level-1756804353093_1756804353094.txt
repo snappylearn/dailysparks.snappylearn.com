@@ -1,0 +1,236 @@
+{
+  "subject": "Physics",
+  "subjectId": "physics-kcse",
+  "examinationSystem": "KCSE",
+  "levels": [
+    {
+      "level": "Form 1",
+      "levelId": "form-1",
+      "topics": [
+        {
+          "title": "Introduction to Physics",
+          "description": "Defines physics, its relationship with other subjects, career opportunities, and laboratory safety rules.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Measurements I",
+          "description": "Covers fundamental physical quantities (length, mass, time, etc.) and the use of basic measuring instruments.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Force",
+          "description": "Introduces the concept of force, its effects, and different types of forces, including gravity and friction. Distinguishes between mass and weight.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Pressure",
+          "description": "Explains the concept of pressure in solids, liquids, and gases, along with their applications.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Particulate Nature of Matter",
+          "description": "Explores the three states of matter (solids, liquids, and gases) based on the kinetic theory of matter.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Thermal Expansion",
+          "description": "Deals with the expansion of solids, liquids, and gases when heated, and its applications and consequences.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Heat Transfer",
+          "description": "Covers the three modes of heat transfer: conduction, convection, and radiation.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Rectilinear Propagation and Reflection",
+          "description": "Introduces the concept of light traveling in a straight line and its reflection on plane surfaces.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Electrostatics I",
+          "description": "Covers the basics of static electricity, including charging by friction and induction.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Cells and Simple Circuits",
+          "description": "Introduces the components of a simple electric circuit and the function of a cell as a power source.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 2",
+      "levelId": "form-2",
+      "topics": [
+        {
+          "title": "Magnetism",
+          "description": "Properties of magnets, magnetic fields, and the process of magnetization and demagnetization.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Measurements II",
+          "description": "Learning to use more precise measuring instruments like the Vernier caliper and micrometer screw gauge.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Turning Effect of a Force",
+          "description": "Introduces the concept of moments and the principle of moments, with applications in levers.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Equilibrium and Centre of Gravity",
+          "description": "Explains different states of equilibrium and how the position of the center of gravity affects the stability of an object.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Reflection at Curved Surfaces",
+          "description": "Focuses on image formation by concave and convex mirrors.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Magnetic Effect of an Electric Current",
+          "description": "Studies the magnetic field produced by a current-carrying wire, leading to the study of electromagnets.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Hooke's Law",
+          "description": "Introduces the relationship between force and extension in an elastic material.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Waves I",
+          "description": "Covers the basic properties of waves and differentiates between transverse and longitudinal waves.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Sound",
+          "description": "Explains the nature, properties, and applications of sound waves.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Fluid Flow",
+          "description": "Introduces the principles governing the flow of fluids, including streamline and turbulent flow.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 3",
+      "levelId": "form-3",
+      "topics": [
+        {
+          "title": "Linear Motion",
+          "description": "Deals with the motion of objects in a straight line, including concepts like displacement, velocity, acceleration, and the equations of motion.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Newton's Laws of Motion",
+          "description": "Covers Newton's three laws of motion and their applications in everyday life.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Work, Energy, Power and Machines",
+          "description": "Explains the concepts of work, energy (kinetic and potential), and power. Also covers the study of simple machines.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Current Electricity II",
+          "description": "Expands on Form 1 topics, covering complex circuits, Ohm's Law, and factors affecting resistance.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Waves II",
+          "description": "Covers more advanced wave concepts, including reflection, refraction, and superposition.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Electrostatics II",
+          "description": "Covers electrostatic induction in more detail, as well as the concepts of electric fields and capacitance.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Heating Effect of an Electric Current",
+          "description": "Focuses on the relationship between electrical energy and heat energy, including the formula $H = I^2Rt$.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Quantity of Heat",
+          "description": "Deals with calculating heat changes, including specific heat capacity and specific latent heat.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Refraction of Light",
+          "description": "Covers the bending of light as it passes between different media, including Snell's Law and total internal reflection. ",
+          "termId": "term-3"
+        },
+        {
+          "title": "Gas Laws",
+          "description": "Studies the relationships between pressure, volume, and temperature for gases.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 4",
+      "levelId": "form-4",
+      "topics": [
+        {
+          "title": "Thin Lenses",
+          "description": "Covers image formation by concave and convex lenses, including the lens formula and linear magnification.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Uniform Circular Motion",
+          "description": "Explains motion in a circle, including centripetal force and centripetal acceleration.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Floating and Sinking",
+          "description": "Revisits pressure in fluids, focusing on the principles of floatation and Archimedes' principle.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Electromagnetic Spectrum",
+          "description": "Students study the entire range of electromagnetic waves, their properties and applications.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Electromagnetic Induction",
+          "description": "Covers how a changing magnetic field can produce an electric current, leading to the principles of generators and transformers.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Mains Electricity",
+          "description": "Focuses on the generation, transmission, and use of electricity for domestic and industrial purposes.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Cathode Rays and Cathode Ray Tube",
+          "description": "Covers the properties of cathode rays and the workings of a CRT.",
+          "termId": "term-3"
+        },
+        {
+          "title": "X-rays",
+          "description": "Explains the production, properties, uses, and dangers of X-rays.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Photoelectric Effect",
+          "description": "A modern physics topic explaining how light can cause the emission of electrons from a metal surface.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Radioactivity",
+          "description": "Covers the nature of radioactivity, different types of radiation, half-life, and the uses and dangers of radioactive materials.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Electronics",
+          "description": "Introduces the basics of electronics, including semiconductors, diodes, and transistors.",
+          "termId": "term-3"
+        }
+      ]
+    }
+  ]
+}
