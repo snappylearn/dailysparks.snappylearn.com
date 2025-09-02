@@ -1099,12 +1099,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const correctChoice = question.choices?.find((choice: any) => choice.isCorrect);
       let isCorrect = false;
       
-      // Handle letter answers (A, B, C, D) - map to choice IDs
+      console.log(`=== GRADING DEBUG ===`);
+      console.log(`Question: ${question.content}`);
+      console.log(`User answer: ${userAnswer}`);
+      console.log(`All choices:`, question.choices);
+      
+      // Handle letter answers (A, B, C, D) - map to orderIndex (1, 2, 3, 4)
       if (userAnswer === 'A' || userAnswer === 'B' || userAnswer === 'C' || userAnswer === 'D') {
-        const letterToChoiceId = { 'A': 'a', 'B': 'b', 'C': 'c', 'D': 'd' };
-        const choiceId = letterToChoiceId[userAnswer];
-        const selectedChoice = question.choices?.find((choice: any) => choice.id === choiceId);
+        const answerIndex = userAnswer === 'A' ? 1 : userAnswer === 'B' ? 2 : userAnswer === 'C' ? 3 : userAnswer === 'D' ? 4 : 0;
+        console.log(`Looking for orderIndex: ${answerIndex}`);
+        const selectedChoice = question.choices?.find((choice: any) => Number(choice.orderIndex) === Number(answerIndex));
+        console.log(`Selected choice:`, selectedChoice);
         isCorrect = selectedChoice && selectedChoice.isCorrect === true;
+        console.log(`Is correct: ${isCorrect}`);
       } else {
         // Full text answer
         const userChoice = question.choices?.find((choice: any) => choice.content === userAnswer);
