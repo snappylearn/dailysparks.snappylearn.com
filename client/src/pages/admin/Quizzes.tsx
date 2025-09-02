@@ -15,7 +15,7 @@ import { z } from "zod";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Edit, Eye, Users, BarChart3, Filter, FileText } from "lucide-react";
+import { Plus, Search, Edit, Eye, Users, BarChart3, Filter, FileText, Trash2 } from "lucide-react";
 
 const generateQuizSchema = z.object({
   examinationSystemId: z.string().min(1, "Examination system is required"),
