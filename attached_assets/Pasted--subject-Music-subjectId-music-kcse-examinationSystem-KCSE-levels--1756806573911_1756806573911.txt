@@ -1,0 +1,106 @@
+{
+  "subject": "Music",
+  "subjectId": "music-kcse",
+  "examinationSystem": "KCSE",
+  "levels": [
+    {
+      "level": "Form 1",
+      "levelId": "form-1",
+      "topics": [
+        {
+          "title": "Introduction to Music",
+          "description": "Defines music, its elements, and its importance in society. Also covers the different branches of music.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Elements of Music",
+          "description": "Covers the fundamental elements of music, including rhythm, melody, harmony, and dynamics. ",
+          "termId": "term-1"
+        },
+        {
+          "title": "Western Musical Instruments",
+          "description": "Identifies and classifies Western musical instruments, including those in the orchestra. Students learn to distinguish between string, woodwind, brass, and percussion instruments.",
+          "termId": "term-2"
+        },
+        {
+          "title": "African Traditional Instruments",
+          "description": "Examines the various categories of African musical instruments (e.g., idiophones, chordophones, aerophones) and their functions in different communities.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 2",
+      "levelId": "form-2",
+      "topics": [
+        {
+          "title": "Forms of Music",
+          "description": "Introduces different musical forms like binary, ternary, and rondo forms. Also covers African musical forms.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Melody",
+          "description": "A more detailed look at melody, including melodic intervals, scales (major and minor), and different types of melodic movement.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Harmony",
+          "description": "Covers the concepts of harmony, chords (triads), and simple chord progressions. Students learn to build and identify basic chords.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Rhythm and Metre",
+          "description": "Examines complex rhythmic patterns, time signatures, and syncopation. Students learn to clap and count complex rhythms.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 3",
+      "levelId": "form-3",
+      "topics": [
+        {
+          "title": "History of Western Music",
+          "description": "Covers the major periods of Western music history, including the Baroque, Classical, and Romantic periods, and their key composers.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Set Works",
+          "description": "A detailed study of specific musical compositions chosen by the Kenya National Examinations Council (KNEC). Students analyse these pieces in detail.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Composition",
+          "description": "Introduces the principles of musical composition, including writing melodies, harmonizing, and arranging music for different instruments.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 4",
+      "levelId": "form-4",
+      "topics": [
+        {
+          "title": "Orchestral and Band Instruments",
+          "description": "A more in-depth study of the orchestra, including the seating arrangement and the roles of different instrumental sections.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Aural Training",
+          "description": "Develops the student's listening skills, including identifying intervals, chords, and rhythmic patterns by ear.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Musical Dictation",
+          "description": "A practical skill where students write down short melodies or rhythms played by the teacher. This is a crucial component of the final exam.",
+          "termId": "term-3"
+        },
+        {
+          "title": "Music in Society",
+          "description": "Examines the role of music in various social contexts, including ceremonies, entertainment, and communication.",
+          "termId": "term-3"
+        }
+      ]
+    }
+  ]
+}

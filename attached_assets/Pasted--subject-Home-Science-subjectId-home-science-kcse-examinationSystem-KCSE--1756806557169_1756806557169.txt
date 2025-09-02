@@ -1,0 +1,131 @@
+{
+  "subject": "Home Science",
+  "subjectId": "home-science-kcse",
+  "examinationSystem": "KCSE",
+  "levels": [
+    {
+      "level": "Form 1",
+      "levelId": "form-1",
+      "topics": [
+        {
+          "title": "Introduction to Home Science",
+          "description": "Defines Home Science and its importance in daily life. Covers the scope of Home Science and its relationship with other subjects.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Food and Nutrition",
+          "description": "Introduces the different food nutrients, their sources, and functions in the body. Covers meal planning for different groups and balanced diets.",
+          "termId": "term-1"
+        },
+        {
+          "title": "The Kitchen",
+          "description": "Covers the layout of a good kitchen, kitchen tools and equipment, and basic food preparation methods.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Fabric and Garment Construction I",
+          "description": "Introduces different types of fabrics, their properties, and basic hand stitches. Students also learn how to use a sewing machine.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Laundry Work I",
+          "description": "Covers the principles of laundry, sorting clothes, and basic laundering processes for different fabrics.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 2",
+      "levelId": "form-2",
+      "topics": [
+        {
+          "title": "The Home",
+          "description": "Examines the characteristics of a healthy home and its components. Covers household chores and home maintenance.",
+          "termId": "term-1"
+        },
+        {
+          "title": "First Aid",
+          "description": "Introduces the principles of first aid and how to handle common home accidents and emergencies.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Consumer Education",
+          "description": "Covers consumer rights and responsibilities, sources of consumer information, and how to make informed choices.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Family Finance",
+          "description": "Discusses budgeting, saving, and managing family income and expenditure. Covers basic financial documents.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Food Preservation and Storage",
+          "description": "Explains the reasons for preserving food and the various methods used for food preservation and storage.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 3",
+      "levelId": "form-3",
+      "topics": [
+        {
+          "title": "Hygiene and Grooming",
+          "description": "Covers personal hygiene, cleanliness, and the importance of good grooming and appearance.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Child Care and Development",
+          "description": "Examines the needs of a child, the stages of child development, and the importance of immunisation.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Clothing and Fashion",
+          "description": "Discusses clothing selection, care of clothes, and the influence of fashion on dressing.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Housing",
+          "description": "Covers the importance of housing, different types of housing, and factors to consider when choosing a house.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Household Pests",
+          "description": "Identifies common household pests, their effects on the family, and methods of controlling them.",
+          "termId": "term-3"
+        }
+      ]
+    },
+    {
+      "level": "Form 4",
+      "levelId": "form-4",
+      "topics": [
+        {
+          "title": "Textiles and Fibres",
+          "description": "A more detailed look at different types of textile fibres, their properties, and their uses in fabric production.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Garment Construction II",
+          "description": "Expands on Form 1 topics, focusing on more complex garment construction, including pattern drafting and various types of seams and finishes.",
+          "termId": "term-1"
+        },
+        {
+          "title": "Kitchen and Dining Room Etiquette",
+          "description": "Covers table setting, dining etiquette, and proper manners for different social occasions.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Diet and Diseases",
+          "description": "Discusses the relationship between diet and diseases. Covers nutritional deficiencies and lifestyle diseases.",
+          "termId": "term-2"
+        },
+        {
+          "title": "Home Science Project",
+          "description": "A practical project that requires students to apply their skills in areas like garment construction, cooking, or home management.",
+          "termId": "term-3"
+        }
+      ]
+    }
+  ]
+}
