@@ -1976,10 +1976,6 @@ export class DatabaseStorage implements IStorage {
       await db.delete(quizQuestions)
         .where(eq(quizQuestions.quizId, quizId));
       
-      // Delete any quiz sessions related to this quiz
-      await db.delete(quizSessions)
-        .where(eq(quizSessions.quizId, quizId));
-      
       // Delete the quiz
       await db.delete(quizzes)
         .where(eq(quizzes.id, quizId));
