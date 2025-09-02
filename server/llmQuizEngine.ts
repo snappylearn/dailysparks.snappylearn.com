@@ -474,8 +474,13 @@ Generate exactly ${params.questionCount} questions following this format.`;
     // Check if answer is correct
     // User submits letter answers (A, B, C, D), map to orderIndex (1, 2, 3, 4)
     const answerIndex = answer === 'A' ? 1 : answer === 'B' ? 2 : answer === 'C' ? 3 : answer === 'D' ? 4 : 0;
-    const selectedChoice = question.choices.find((c: any) => c.orderIndex === answerIndex);
-    const isCorrect = selectedChoice?.isCorrect || false;
+    
+    // Debug the exact orderIndex values and types
+    console.log(`All choice orderIndexes:`, question.choices.map((c: any) => ({ orderIndex: c.orderIndex, type: typeof c.orderIndex })));
+    console.log(`Looking for answerIndex: ${answerIndex}, type: ${typeof answerIndex}`);
+    
+    const selectedChoice = question.choices.find((c: any) => Number(c.orderIndex) === Number(answerIndex));
+    const isCorrect = selectedChoice?.isCorrect === true;
     
     console.log(`Looking for question ID: ${questionId}`);
     console.log(`Question found: ${question.content}`);
