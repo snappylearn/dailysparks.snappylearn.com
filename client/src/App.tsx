@@ -31,6 +31,7 @@ import BadgesAndTrophies from "@/pages/BadgesAndTrophies";
 import Challenges from "@/pages/Challenges";
 import Subscriptions from "@/pages/Subscriptions";
 import Profile from "@/pages/Profile";
+import AdminLogin from "@/pages/admin/AdminLogin";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -145,6 +146,10 @@ function Router() {
       </Route>
       <Route path="/subscriptions" component={Subscriptions} />
       <Route path="/profile" component={Profile} />
+      
+      {/* Admin login route - accessible without authentication */}
+      <Route path="/admin/login" component={AdminLogin} />
+      
       <Route component={NotFound} />
     </Switch>
   );

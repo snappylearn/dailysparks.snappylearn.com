@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAdminAuth, isAdminAuthenticated } from "./adminAuth";
 import { generateQuestions } from "./aiService";
 import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects, levels, terms } from "@shared/schema";
 import { db } from "./db";
@@ -11,6 +12,9 @@ import { z } from "zod";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+  
+  // Setup admin authentication
+  setupAdminAuth(app);
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -100,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get quiz history for current user
-  app.get('/api/quiz-history', isAuthenticated, async (req: any, res) => {
+  app.get('/api/quiz-history', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const quizHistory = await storage.getQuizHistoryForUser(userId);
@@ -124,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Profile update routes
-  app.patch('/api/profiles/:id', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/profiles/:id', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       const updateData = req.body;
@@ -158,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced Quiz API Routes
   
   // Generate and start a new quiz
-  app.post('/api/quizzes/generate', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quizzes/generate', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { 
@@ -211,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get quiz session details
-  app.get('/api/quiz-sessions/:sessionId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/quiz-sessions/:sessionId', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       const userId = req.user.claims.sub;
@@ -233,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Submit answer for quiz question
-  app.post('/api/quiz-sessions/:sessionId/answers', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz-sessions/:sessionId/answers', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       const { questionId, choiceId, answer, timeSpent } = req.body;
@@ -249,7 +253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete quiz session
-  app.post('/api/quiz-sessions/:sessionId/complete', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz-sessions/:sessionId/complete', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       
@@ -266,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== ADMIN ROUTES =====
   
   // Admin analytics and metrics
-  app.get('/api/admin/metrics', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/metrics', isAdminAuthenticated, async (req: any, res) => {
     try {
       // Enhanced metrics for admin dashboard
       const [
@@ -304,7 +308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin quiz list with filters and analytics
-  app.get('/api/admin/quizzes', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/quizzes', isAdminAuthenticated, async (req: any, res) => {
     try {
       const quizzes = await storage.getAdminQuizList(req.query);
       res.json(quizzes);
@@ -315,7 +319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get quiz details with questions
-  app.get('/api/admin/quizzes/:quizId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/quizzes/:quizId', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { quizId } = req.params;
       const quizWithQuestions = await storage.getQuizWithQuestions(quizId);
@@ -327,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new quiz
-  app.post('/api/admin/quizzes', isAuthenticated, async (req: any, res) => {
+  app.post('/api/admin/quizzes', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const quizData = { ...req.body, createdBy: userId };
@@ -341,7 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update quiz
-  app.put('/api/admin/quizzes/:quizId', isAuthenticated, async (req: any, res) => {
+  app.put('/api/admin/quizzes/:quizId', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { quizId } = req.params;
       const updateData = req.body;
@@ -355,7 +359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CRUD routes for Examination Systems
-  app.post('/api/admin/examination-systems', isAuthenticated, async (req: any, res) => {
+  app.post('/api/admin/examination-systems', isAdminAuthenticated, async (req: any, res) => {
     try {
       const newSystem = await storage.createExaminationSystem(req.body);
       res.json(newSystem);
@@ -365,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/examination-systems/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/admin/examination-systems/:id', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       const updatedSystem = await storage.updateExaminationSystem(id, req.body);
@@ -376,7 +380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/admin/examination-systems/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/admin/examination-systems/:id', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       await storage.deleteExaminationSystem(id);
@@ -388,7 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CRUD routes for Levels
-  app.post('/api/admin/levels', isAuthenticated, async (req: any, res) => {
+  app.post('/api/admin/levels', isAdminAuthenticated, async (req: any, res) => {
     try {
       const newLevel = await storage.createLevel(req.body);
       res.json(newLevel);
@@ -398,7 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/levels/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/admin/levels/:id', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       const updatedLevel = await storage.updateLevel(id, req.body);
@@ -409,7 +413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/admin/levels/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/admin/levels/:id', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       await storage.deleteLevel(id);
@@ -421,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CRUD routes for Subjects
-  app.post('/api/admin/subjects', isAuthenticated, async (req: any, res) => {
+  app.post('/api/admin/subjects', isAdminAuthenticated, async (req: any, res) => {
     try {
       const newSubject = await storage.createSubject(req.body);
       res.json(newSubject);
@@ -431,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/subjects/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/admin/subjects/:id', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       const updatedSubject = await storage.updateSubject(id, req.body);
@@ -442,7 +446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/admin/subjects/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/admin/subjects/:id', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       await storage.deleteSubject(id);
@@ -454,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CRUD routes for Terms
-  app.post('/api/admin/terms', isAuthenticated, async (req: any, res) => {
+  app.post('/api/admin/terms', isAdminAuthenticated, async (req: any, res) => {
     try {
       const newTerm = await storage.createTerm(req.body);
       res.json(newTerm);
@@ -464,7 +468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/terms/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/admin/terms/:id', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       const updatedTerm = await storage.updateTerm(id, req.body);
@@ -475,7 +479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/admin/terms/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/admin/terms/:id', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       await storage.deleteTerm(id);
@@ -487,7 +491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin generate quiz endpoint
-  app.post('/api/admin/generate-quiz', isAuthenticated, async (req: any, res) => {
+  app.post('/api/admin/generate-quiz', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const quizData = req.body;
@@ -507,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Recent activity for admin dashboard
-  app.get('/api/admin/recent-activity', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/recent-activity', isAdminAuthenticated, async (req: any, res) => {
     try {
       const activities = await storage.getRecentActivity();
       res.json(activities);
@@ -518,7 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin leaderboard
-  app.get('/api/admin/leaderboard', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/leaderboard', isAdminAuthenticated, async (req: any, res) => {
     try {
       const leaderboard = await storage.getTopPerformers();
       res.json(leaderboard);
@@ -529,7 +533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced analytics endpoints
-  app.get('/api/admin/analytics', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/analytics', isAdminAuthenticated, async (req: any, res) => {
     try {
       const [
         quizActivity,
@@ -556,7 +560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Top performers by period (daily/weekly/monthly)
-  app.get('/api/admin/top-performers/:period', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/top-performers/:period', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { period } = req.params;
       let performers;
@@ -583,7 +587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin topic management routes
-  app.get('/api/admin/topics', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/topics', isAdminAuthenticated, async (req: any, res) => {
     try {
       const topics = await storage.getAdminTopicList(req.query);
       res.json(topics);
@@ -593,7 +597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/topics', isAuthenticated, async (req: any, res) => {
+  app.post('/api/admin/topics', isAdminAuthenticated, async (req: any, res) => {
     try {
       const topicData = req.body;
       const newTopic = await storage.createTopic(topicData);
@@ -604,7 +608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/topics/:topicId', isAuthenticated, async (req: any, res) => {
+  app.put('/api/admin/topics/:topicId', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { topicId } = req.params;
       const updateData = req.body;
@@ -616,7 +620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/admin/topics/:topicId', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/admin/topics/:topicId', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { topicId } = req.params;
       await storage.deleteTopic(topicId);
@@ -628,7 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin user management routes
-  app.get('/api/admin/users', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/users', isAdminAuthenticated, async (req: any, res) => {
     try {
       const users = await storage.getAdminUserList(req.query);
       res.json(users);
@@ -638,7 +642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/user-stats', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/user-stats', isAdminAuthenticated, async (req: any, res) => {
     try {
       const stats = await storage.getAdminUserStats();
       res.json(stats);
@@ -649,7 +653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Quiz types management routes
-  app.get('/api/admin/quiz-types', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/quiz-types', isAdminAuthenticated, async (req: any, res) => {
     try {
       const quizTypes = await storage.getQuizTypes();
       res.json(quizTypes);
@@ -659,7 +663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/quiz-types', isAuthenticated, async (req: any, res) => {
+  app.post('/api/admin/quiz-types', isAdminAuthenticated, async (req: any, res) => {
     try {
       const quizType = await storage.createQuizType(req.body);
       res.json(quizType);
@@ -669,7 +673,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/admin/quiz-types/:id', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/admin/quiz-types/:id', isAdminAuthenticated, async (req: any, res) => {
     try {
       const quizType = await storage.updateQuizType(req.params.id, req.body);
       res.json(quizType);
@@ -679,7 +683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/admin/quiz-types/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/admin/quiz-types/:id', isAdminAuthenticated, async (req: any, res) => {
     try {
       await storage.deleteQuizType(req.params.id);
       res.json({ success: true });
@@ -690,13 +694,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enhanced quiz system routes
-  app.get('/api/admin/quizzes', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/quizzes', isAdminAuthenticated, async (req: any, res) => {
     const quizzes = await storage.getAdminQuizzes();
     res.json(quizzes);
   });
 
   // Get single quiz details for preview
-  app.get('/api/admin/quizzes/:quizId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/quizzes/:quizId', isAdminAuthenticated, async (req: any, res) => {
     try {
       const quiz = await storage.getQuizDetails(req.params.quizId);
       if (!quiz) {
@@ -723,7 +727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Primary quiz start endpoint - uses existing admin-created quizzes
-  app.post('/api/quiz/start', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/start', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { profileId, subjectId, quizType, topicId, termId } = req.body;
@@ -1012,7 +1016,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/profiles/:profileId/default', isAuthenticated, async (req: any, res) => {
+  app.put('/api/profiles/:profileId/default', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { profileId } = req.params;
@@ -1037,7 +1041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Subject routes - By system (with quiz counts filtered by user level)
-  app.get('/api/subjects/:systemId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/subjects/:systemId', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { systemId } = req.params;
       const userId = req.user.claims.sub;
@@ -1070,7 +1074,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Quiz session routes are now handled by the primary quiz start endpoint above
 
   // Batch answer submission for better performance
-  app.post('/api/quiz/:sessionId/batch-answers', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/:sessionId/batch-answers', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       const { answers } = req.body;
@@ -1115,7 +1119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Single answer submission (kept for backward compatibility)
-  app.post('/api/quiz/:sessionId/answer', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/:sessionId/answer', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       const { questionId, userAnswer, timeSpent } = req.body;
@@ -1210,7 +1214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/quiz/:sessionId/complete', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/:sessionId/complete', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       
@@ -1333,7 +1337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Resume an existing quiz session
-  app.post('/api/quiz/resume/:sessionId', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/resume/:sessionId', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       const session = await storage.getQuizSession(sessionId);
@@ -1382,7 +1386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Resume an existing quiz session
-  app.post('/api/quiz/resume/:sessionId', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/resume/:sessionId', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       const session = await storage.getQuizSession(sessionId);
@@ -1417,7 +1421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Start a completely new quiz session (ignoring incomplete ones)
-  app.post('/api/quiz/start-fresh', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/start-fresh', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { profileId, subjectId, quizType } = req.body;
 
@@ -1503,7 +1507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Submit individual answer with session persistence
-  app.post('/api/quiz/:sessionId/answer', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/:sessionId/answer', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const sessionId = req.params.sessionId;
@@ -1565,7 +1569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete quiz  
-  app.post('/api/quiz/:sessionId/complete', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/:sessionId/complete', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const sessionId = req.params.sessionId;
@@ -1625,7 +1629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get today's challenge
-  app.get('/api/challenge/today', isAuthenticated, async (req: any, res) => {
+  app.get('/api/challenge/today', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const challenge = await storage.getTodaysChallenge();
@@ -1647,7 +1651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user stats
-  app.get('/api/user/stats', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/stats', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       // const stats = await storage.getProfileStats(profileId);
@@ -1659,7 +1663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get subject performance
-  app.get('/api/subjects/:subjectId/performance', isAuthenticated, async (req: any, res) => {
+  app.get('/api/subjects/:subjectId/performance', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { subjectId } = req.params;
@@ -1772,7 +1776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user badges
-  app.get('/api/user/:userId/badges', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/:userId/badges', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const userBadges = await storage.getUserBadges(userId);
@@ -1784,7 +1788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Award badge to user
-  app.post('/api/user/:userId/badges', isAuthenticated, async (req: any, res) => {
+  app.post('/api/user/:userId/badges', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const { badgeId, streaks = 0 } = req.body;
@@ -1890,7 +1894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user challenges
-  app.get('/api/user/:userId/challenges', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/:userId/challenges', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const userChallenges = await storage.getUserChallenges(userId);
@@ -1902,7 +1906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update challenge progress
-  app.put('/api/user/:userId/challenges/:challengeId', isAuthenticated, async (req: any, res) => {
+  app.put('/api/user/:userId/challenges/:challengeId', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { userId, challengeId } = req.params;
       const { progress } = req.body;
@@ -1920,7 +1924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete challenge
-  app.post('/api/user/:userId/challenges/:challengeId/complete', isAuthenticated, async (req: any, res) => {
+  app.post('/api/user/:userId/challenges/:challengeId/complete', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { userId, challengeId } = req.params;
       const userChallenge = await storage.completeChallenge(userId, challengeId);
@@ -1932,7 +1936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user spark boosts
-  app.get('/api/user/:userId/spark-boosts', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/:userId/spark-boosts', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const sparkBoosts = await storage.getUserSparkBoosts(userId);
@@ -1944,7 +1948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create spark boost
-  app.post('/api/user/:fromUserId/boost/:toUserId', isAuthenticated, async (req: any, res) => {
+  app.post('/api/user/:fromUserId/boost/:toUserId', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { fromUserId, toUserId } = req.params;
       const { sparks } = req.body;
@@ -1968,7 +1972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Check if user can boost
-  app.get('/api/user/:userId/can-boost', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/:userId/can-boost', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const canBoost = await storage.canBoostUser(userId);
@@ -1981,7 +1985,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Platform Settings Routes
   // General Settings
-  app.get('/api/admin/settings/general', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/settings/general', isAdminAuthenticated, async (req: any, res) => {
     try {
       const settings = await storage.getGeneralSettings();
       res.json(settings);
@@ -1991,7 +1995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/settings/general', isAuthenticated, async (req: any, res) => {
+  app.put('/api/admin/settings/general', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const settings = await storage.updateGeneralSettings(req.body, userId);
@@ -2003,7 +2007,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Quiz Settings
-  app.get('/api/admin/settings/quiz', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/settings/quiz', isAdminAuthenticated, async (req: any, res) => {
     try {
       const settings = await storage.getQuizSettings();
       res.json(settings);
@@ -2013,7 +2017,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/settings/quiz', isAuthenticated, async (req: any, res) => {
+  app.put('/api/admin/settings/quiz', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const settings = await storage.updateQuizSettings(req.body, userId);
@@ -2025,7 +2029,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notification Settings
-  app.get('/api/admin/settings/notifications', isAuthenticated, async (req: any, res) => {
+  app.get('/api/admin/settings/notifications', isAdminAuthenticated, async (req: any, res) => {
     try {
       const settings = await storage.getNotificationSettings();
       res.json(settings);
@@ -2035,7 +2039,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/settings/notifications', isAuthenticated, async (req: any, res) => {
+  app.put('/api/admin/settings/notifications', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const settings = await storage.updateNotificationSettings(req.body, userId);
@@ -2060,7 +2064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user's current subscription
-  app.get('/api/subscription/current', isAuthenticated, async (req: any, res) => {
+  app.get('/api/subscription/current', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const subscription = await storage.getUserSubscription(userId);
@@ -2072,7 +2076,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user credits
-  app.get('/api/user/credits', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/credits', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const credits = await storage.getUserCredits(userId);
@@ -2084,7 +2088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create subscription with credits
-  app.post('/api/subscription/create-with-credits', isAuthenticated, async (req: any, res) => {
+  app.post('/api/subscription/create-with-credits', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { planId, paymentMethod } = req.body;
@@ -2137,7 +2141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get payment history
-  app.get('/api/payment/history', isAuthenticated, async (req: any, res) => {
+  app.get('/api/payment/history', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const [paymentHistory, creditTransactions] = await Promise.all([
@@ -2159,7 +2163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create payment transaction (for Paystack integration)
-  app.post('/api/payment/create', isAuthenticated, async (req: any, res) => {
+  app.post('/api/payment/create', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { amount, type, description, planId } = req.body;
@@ -2182,7 +2186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Confirm payment transaction (after successful Paystack payment)
-  app.post('/api/payment/confirm', isAuthenticated, async (req: any, res) => {
+  app.post('/api/payment/confirm', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { transactionId, paystackReference } = req.body;
@@ -2234,7 +2238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Confirm credit top-up payment transaction
-  app.post('/api/payment/confirm-topup', isAuthenticated, async (req: any, res) => {
+  app.post('/api/payment/confirm-topup', isAdminAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { transactionId, paystackReference, amount } = req.body;
