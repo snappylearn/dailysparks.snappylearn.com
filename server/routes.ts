@@ -753,22 +753,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return questions && Array.isArray(questions) && questions.length > 0;
       });
 
+      console.log('All quizzes with questions before filtering:', quizzesWithQuestions.map(q => `${q.title} (Type: ${q.quizType}, Level: ${q.levelId}, Topic: ${q.topicId})`));
+
+      // Filter by current profile level
+      quizzesWithQuestions = quizzesWithQuestions.filter(quiz => quiz.levelId === profile.levelId);
+      console.log('Quizzes after level filtering:', quizzesWithQuestions.length);
+
+      // Filter by quiz type - very important for random vs topical separation
+      if (quizType === 'random') {
+        // For random quizzes, only get quizzes that are specifically marked as random or have no specific topic/term
+        quizzesWithQuestions = quizzesWithQuestions.filter(quiz => 
+          quiz.quizType === 'random' || (!quiz.topicId && !quiz.termId)
+        );
+        console.log('Random quizzes after type filtering:', quizzesWithQuestions.length);
+      }
+
       // For topical quizzes, try to find existing quizzes that match the specific topic
-      if (quizType === 'topical' && topicId) {
-        const topicalQuizzes = quizzesWithQuestions.filter(quiz => quiz.topicId === topicId);
+      else if (quizType === 'topical' && topicId) {
+        // Filter for topical quizzes only
+        quizzesWithQuestions = quizzesWithQuestions.filter(quiz => quiz.quizType === 'topical');
+        
+        // First try exact topicId match
+        let topicalQuizzes = quizzesWithQuestions.filter(quiz => quiz.topicId === topicId);
+        
+        // If no exact match, try to find quizzes with similar topic names (for cross-level compatibility)
+        if (topicalQuizzes.length === 0) {
+          const [selectedTopic] = await db
+            .select()
+            .from(topics)
+            .where(eq(topics.id, topicId));
+          
+          if (selectedTopic) {
+            // Find all topics with similar names across levels for this subject
+            const similarTopics = await db
+              .select()
+              .from(topics)
+              .where(and(
+                eq(topics.subjectId, subjectId),
+                eq(topics.title, selectedTopic.title)
+              ));
+            
+            const similarTopicIds = similarTopics.map(t => t.id);
+            topicalQuizzes = quizzesWithQuestions.filter(quiz => 
+              similarTopicIds.includes(quiz.topicId)
+            );
+            
+            console.log(`Found ${topicalQuizzes.length} quizzes for similar topic "${selectedTopic.title}" across levels`);
+          }
+        }
+        
         if (topicalQuizzes.length > 0) {
           quizzesWithQuestions = topicalQuizzes;
-          console.log('Found existing topical quizzes for topic:', topicalQuizzes.length);
+          console.log('Using existing topical quizzes:', topicalQuizzes.length);
         }
       }
 
       // For termly quizzes, try to find existing quizzes that match the specific term
-      if (quizType === 'termly' && termId) {
-        const termlyQuizzes = quizzesWithQuestions.filter(quiz => quiz.termId === termId);
-        if (termlyQuizzes.length > 0) {
-          quizzesWithQuestions = termlyQuizzes;
-          console.log('Found existing termly quizzes for term:', termlyQuizzes.length);
-        }
+      else if (quizType === 'termly' && termId) {
+        // Filter for termly quizzes only
+        quizzesWithQuestions = quizzesWithQuestions.filter(quiz => 
+          quiz.quizType === 'termly' && quiz.termId === termId
+        );
+        console.log('Found existing termly quizzes for term:', quizzesWithQuestions.length);
       }
 
       console.log('Final filtered quizzes with questions:', quizzesWithQuestions.length);
