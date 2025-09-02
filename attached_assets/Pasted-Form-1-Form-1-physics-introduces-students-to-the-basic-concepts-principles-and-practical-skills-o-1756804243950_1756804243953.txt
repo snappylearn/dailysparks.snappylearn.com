@@ -1,0 +1,97 @@
+Form 1
+Form 1 physics introduces students to the basic concepts, principles, and practical skills of the subject.
+
+Introduction to Physics: This topic defines physics, its relationship with other subjects, career opportunities, and the importance of laboratory safety.
+
+Measurements I: Students learn about fundamental physical quantities like length, mass, time, and volume. They also study the use of basic measuring instruments like rulers, scales, and stopwatches.
+
+Force: This topic introduces the concept of force, its effects, and different types of forces, including gravity and friction. Students learn to differentiate between mass and weight.
+
+Pressure: This unit covers the definition and calculation of pressure in solids, liquids, and gases. It includes applications like barometers and hydraulic systems.
+
+
+Licensed by Google
+Particulate Nature of Matter: Students explore the three states of matter—solids, liquids, and gases—based on the kinetic theory of matter.
+
+Thermal Expansion: This topic deals with the expansion of solids, liquids, and gases when heated, and its applications and consequences.
+
+Heat Transfer: Students learn about the three modes of heat transfer: conduction, convection, and radiation.
+
+Rectilinear Propagation and Reflection: This unit covers the concept of light traveling in a straight line and its reflection on plane surfaces.
+
+Electrostatics I: Students are introduced to the basics of static electricity, including charging by friction and induction.
+
+Cells and Simple Circuits: This topic covers the basic components of a simple electric circuit and the function of a cell as a source of energy.
+
+Form 2
+Form 2 builds on the Form 1 foundation, introducing more advanced mechanics and optics.
+
+Magnetism: This unit covers the properties of magnets, magnetic fields, and the process of magnetization and demagnetization.
+
+Measurements II: Students learn to use more precise measuring instruments, such as the Vernier caliper and the micrometer screw gauge.
+
+Turning Effect of a Force: This topic introduces the concept of moments of a force and the principle of moments, with applications in levers.
+
+Equilibrium and Centre of Gravity: Students learn about different states of equilibrium and how the position of the center of gravity affects the stability of an object.
+
+Reflection at Curved Surfaces: This topic expands on Form 1 optics, focusing on image formation by concave and convex mirrors.
+
+Magnetic Effect of an Electric Current: Students study the relationship between electricity and magnetism, including the magnetic field around a current-carrying wire. This leads to the study of electromagnets.
+
+Hooke's Law: This topic introduces the relationship between force and extension in an elastic material, and the concept of spring constant.
+
+Waves I: Students learn about the basic properties of waves, including amplitude, frequency, and wavelength, and differentiate between transverse and longitudinal waves.
+
+Sound: This unit covers the nature, properties, and applications of sound waves.
+
+Fluid Flow: Students are introduced to the principles governing the flow of fluids, including streamline and turbulent flow.
+
+Form 3
+Form 3 delves into more quantitative and abstract areas of physics, including motion, energy, and more on electricity.
+
+Linear Motion: This is a key topic that deals with the motion of objects in a straight line, including concepts like displacement, velocity, acceleration, and the equations of motion.
+
+Newton's Laws of Motion: Students study Newton's three laws of motion, which form the basis of classical mechanics.
+
+Work, Energy, Power and Machines: This unit covers the definitions, calculations, and applications of work, energy (kinetic and potential), and power. It also includes the study of simple machines like levers and pulleys.
+
+Current Electricity II: This topic expands on Form 1, covering more complex circuits, Ohm's Law, and the factors affecting resistance.
+
+Waves II: Students learn about more advanced wave concepts, including reflection, refraction, and superposition of waves.
+
+Electrostatics II: This unit covers electrostatic induction in more detail, as well as the concepts of electric field and capacitance.
+
+Heating Effect of an Electric Current: This topic focuses on the relationship between electrical energy and heat energy, including the formula H=I 
+2
+ Rt and its applications in appliances like electric kettles.
+
+Quantity of Heat: Students learn to calculate heat changes, including specific heat capacity and specific latent heat.
+
+Refraction of Light: This topic covers the bending of light as it passes from one medium to another, including Snell's Law and total internal reflection.
+
+Gas Laws: Students study the relationships between pressure, volume, and temperature for gases, covering Boyle's, Charles', and Gay-Lussac's laws.
+
+Form 4
+Form 4 completes the physics curriculum, covering modern physics and more advanced applications.
+
+Thin Lenses: This topic covers image formation by concave and convex lenses, including the lens formula and magnification.
+
+Uniform Circular Motion: Students learn about motion in a circle, including centripetal force and centripetal acceleration.
+
+Floating and Sinking: This unit revisits pressure in fluids, focusing on the principles of floatation and Archimedes' principle.
+
+Electromagnetic Spectrum: Students study the entire range of electromagnetic waves, from radio waves to gamma rays, and their properties and applications.
+
+Electromagnetic Induction: This topic covers how a changing magnetic field can produce an electric current, leading to the principles behind generators and transformers.
+
+Mains Electricity: This unit focuses on the generation and distribution of electricity for domestic and industrial use.
+
+Cathode Rays and Cathode Ray Tube (CRT): Students learn about the properties of cathode rays and the workings of a CRT, which was the basis for older television screens.
+
+X-rays: This topic covers the production, properties, uses, and dangers of X-rays.
+
+Photoelectric Effect: This modern physics topic explains how light can cause the emission of electrons from a metal surface.
+
+Radioactivity: Students study the nature of radioactivity, the types of radiation, nuclear equations, half-life, and the uses and dangers of radioactive materials.
+
+Electronics: The final topic introduces the basics of electronics, including semiconductors, diodes, and transistors.
