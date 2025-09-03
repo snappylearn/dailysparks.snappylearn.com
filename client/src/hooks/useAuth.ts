@@ -6,9 +6,10 @@ interface AuthUser extends User {
 }
 
 export function useAuth() {
-  const { data: user, isLoading } = useQuery<AuthUser>({
+  const { data: user, isLoading, error } = useQuery<AuthUser>({
     queryKey: ["/api/auth/user"],
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
       const res = await fetch("/api/auth/user", {
         credentials: "include",
@@ -30,5 +31,6 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated: !!user,
+    error,
   };
 }

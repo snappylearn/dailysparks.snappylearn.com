@@ -35,6 +35,18 @@ import Profile from "@/pages/Profile";
 import AdminLogin from "@/pages/admin/AdminLogin";
 
 function Router() {
+  return (
+    <Switch>
+      {/* Public Landing Page - no authentication check */}
+      <Route path="/" component={Landing} />
+      
+      {/* All other routes go through authentication */}
+      <Route path="/*" component={AuthenticatedRoutes} />
+    </Switch>
+  );
+}
+
+function AuthenticatedRoutes() {
   const { isAuthenticated, isLoading } = useAuth();
 
   // Get user profiles if authenticated
@@ -54,9 +66,20 @@ function Router() {
     );
   }
 
-  // Show landing page if not authenticated
+  // Redirect to landing if not authenticated (except for admin login)
   if (!isAuthenticated) {
-    return <Landing />;
+    return (
+      <Switch>
+        <Route path="/admin-login" component={AdminLogin} />
+        {/* Redirect all other paths to landing */}
+        <Route>
+          {() => {
+            window.location.href = '/';
+            return null;
+          }}
+        </Route>
+      </Switch>
+    );
   }
 
   // Show onboarding if no profiles exist
@@ -64,7 +87,7 @@ function Router() {
     return <Onboarding onComplete={() => window.location.reload()} />;
   }
 
-  // Show main app
+  // Show main app routes
   return (
     <Switch>
       {/* Admin Routes */}
@@ -152,30 +175,26 @@ function Router() {
           </AdminLayout>
         </AdminAuthProvider>
       </Route>
-      
+
       {/* Quiz Preview Route (for admin) */}
       <Route path="/quiz-preview/:quizId" component={QuizPreview} />
-      <Route path="/quiz-preview/:quizId" component={QuizPreview} />
-      
+
       {/* Student Routes */}
-      <Route path="/" component={SimpleHome} />
+      <Route path="/home" component={SimpleHome} />
       <Route path="/quiz/:sessionId?" component={Quiz} />
       <Route path="/quiz-history" component={QuizHistory} />
       <Route path="/results/:sessionId" component={Results} />
       <Route path="/leaderboard" component={Leaderboard} />
-      <Route path="/badges-trophies">
-        <BadgesAndTrophies />
-      </Route>
-      <Route path="/challenges">
-        <Challenges />
-      </Route>
+      <Route path="/badges-trophies" component={BadgesAndTrophies} />
+      <Route path="/challenges" component={Challenges} />
       <Route path="/subscriptions" component={Subscriptions} />
       <Route path="/profile" component={Profile} />
-      
-      {/* Admin login route - accessible without authentication */}
-      <Route path="/admin/login" component={AdminLogin} />
-      
-      <Route component={NotFound} />
+
+      {/* Admin login route - accessible without main auth */}
+      <Route path="/admin-login" component={AdminLogin} />
+
+      {/* Default route for authenticated users */}
+      <Route component={SimpleHome} />
     </Switch>
   );
 }
