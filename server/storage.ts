@@ -2727,8 +2727,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserSubscription(userId: string): Promise<any> {
-    console.log('🔍 Looking up subscription for userId:', userId);
-    
     const subscription = await db
       .select({
         id: userSubscriptions.id,
@@ -2758,10 +2756,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(userSubscriptions.createdAt))
       .limit(1);
 
-    console.log('📊 Subscription query result:', subscription);
-    const result = subscription[0] || null;
-    console.log('📄 Final subscription result:', result);
-    return result;
+    return subscription[0] || null;
   }
 
   async createSubscription(subscription: InsertUserSubscription): Promise<UserSubscription> {

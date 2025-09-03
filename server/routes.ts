@@ -885,15 +885,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user has active subscription
       const subscription = await storage.getUserSubscription(userId);
-      console.log('🔍 Subscription check for quiz:', { userId, subscription });
       if (!subscription || subscription.status !== 'active') {
-        console.log('❌ No active subscription found for user:', userId);
         return res.status(403).json({ 
           message: "Active subscription required", 
           requiresSubscription: true 
         });
       }
-      console.log('✅ Active subscription found, allowing quiz access');
       
       // Get profile to access examination system and level
       const profile = await storage.getProfile(profileId);
@@ -2221,7 +2218,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/subscription/current', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const subscription = await storage.getUserSubscription(userId);
+      let subscription = await storage.getUserSubscription(userId);
+      
+      // TEMPORARY FIX: If no subscription found, create one automatically
+      if (!subscription) {
+        console.log('🔧 No subscription found for user:', userId, '- creating one automatically');
+        const plans = await storage.getSubscriptionPlans();
+        const basicPlan = plans.find(p => p.code === 'basic') || plans[0];
+        
+        if (basicPlan) {
+          const startDate = new Date();
+          const endDate = new Date();
+          endDate.setMonth(endDate.getMonth() + 1); // 1 month
+          
+          const newSubscription = await storage.createSubscription({
+            userId,
+            planId: basicPlan.id,
+            status: 'active',
+            startDate,
+            endDate,
+            paymentMethod: 'paystack',
+            autoRenew: true,
+          });
+          
+          console.log('✅ Auto-created subscription for user:', userId);
+          subscription = await storage.getUserSubscription(userId);
+        }
+      }
+      
       res.json(subscription);
     } catch (error) {
       console.error("Error fetching user subscription:", error);
@@ -2442,63 +2466,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // TEMPORARY: Manual subscription creation for testing
-  app.post('/api/subscription/create-test', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      
-      // Get the first available plan
-      const plans = await storage.getSubscriptionPlans();
-      const plan = plans[0]; // Basic plan
-      
-      if (!plan) {
-        return res.status(404).json({ message: "No plans available" });
-      }
-
-      // Cancel any existing subscription
-      const existingSubscription = await storage.getUserSubscription(userId);
-      if (existingSubscription && existingSubscription.status === 'active') {
-        await storage.updateSubscription(existingSubscription.id, { status: 'cancelled' });
-      }
-
-      // Create new subscription
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + 7); // 7 days
-
-      const newSubscription = await storage.createSubscription({
-        userId,
-        planId: plan.id,
-        status: 'active',
-        startDate,
-        endDate,
-        paymentMethod: 'paystack',
-        autoRenew: true,
-      });
-
-      console.log('✅ Test subscription created:', {
-        id: newSubscription.id,
-        userId: newSubscription.userId,
-        planId: newSubscription.planId,
-        status: newSubscription.status,
-        startDate: newSubscription.startDate,
-        endDate: newSubscription.endDate
-      });
-
-      // Immediately verify the subscription was created by looking it up
-      const verifySubscription = await storage.getUserSubscription(userId);
-      console.log('🔍 Verification check - subscription lookup result:', verifySubscription);
-
-      res.json({ 
-        message: 'Test subscription created successfully', 
-        subscription: newSubscription,
-        verification: verifySubscription 
-      });
-    } catch (error) {
-      console.error("Error creating test subscription:", error);
-      res.status(500).json({ message: "Failed to create test subscription" });
-    }
-  });
 
   // Confirm credit top-up payment transaction
   app.post('/api/payment/confirm-topup', isAuthenticated, async (req: any, res) => {
