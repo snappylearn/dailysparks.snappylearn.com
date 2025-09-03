@@ -237,10 +237,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get detailed quiz review with questions and answers
-  app.get('/api/quiz-sessions/:sessionId/review', async (req: any, res) => {
+  app.get('/api/quiz-sessions/:sessionId/review', isAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
-      const userId = "47111705"; // Hardcoded for now since auth is bypassed
+      const userId = req.user.claims.sub;
       
       // Get the quiz session with subject name
       const session = await db
