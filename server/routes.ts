@@ -2224,30 +2224,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // AUTO-FIX: If no subscription, create one now
       if (!subscription) {
-        console.log('🔧 No subscription found, auto-creating one...');
+        console.log('🔧 AUTO-CREATING SUBSCRIPTION FOR USER:', userId);
         try {
-          const plans = await storage.getSubscriptionPlans();
-          const basicPlan = plans.find(p => p.code === 'basic') || plans[0];
+          // Use plan ID "1" exactly like in the working export
+          const startDate = new Date();
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + 7); // 7 days like the working export
           
-          if (basicPlan) {
-            const startDate = new Date();
-            const endDate = new Date();
-            endDate.setMonth(endDate.getMonth() + 1); // 1 month
-            
-            const newSub = await storage.createSubscription({
-              userId,
-              planId: basicPlan.id,
-              status: 'active',
-              startDate,
-              endDate,
-              paymentMethod: 'paystack',
-              autoRenew: true,
-            });
-            console.log('✅ Auto-created subscription:', newSub.id);
-            subscription = await storage.getUserSubscription(userId);
-          }
+          const newSub = await storage.createSubscription({
+            userId,
+            planId: "1", // Use exact plan ID from export
+            status: 'active',
+            startDate,
+            endDate,
+            paymentMethod: 'paystack',
+            autoRenew: true,
+          });
+          console.log('✅ SUBSCRIPTION CREATED:', newSub);
+          subscription = await storage.getUserSubscription(userId);
+          console.log('✅ VERIFIED SUBSCRIPTION:', subscription);
         } catch (autoCreateError) {
-          console.error('Auto-create failed:', autoCreateError);
+          console.error('❌ AUTO-CREATE FAILED:', autoCreateError);
         }
       }
       
