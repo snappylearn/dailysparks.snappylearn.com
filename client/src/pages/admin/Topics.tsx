@@ -175,13 +175,28 @@ export default function AdminTopics() {
       return apiRequest("POST", `/api/admin/topics/${topicId}/generate-content`);
     },
     onSuccess: (data: any) => {
+      console.log('Generated content data:', data, 'Type:', typeof data); // Debug log
       toast({
         title: "Success",
         description: "Content generated successfully!"
       });
-      // Update the form with generated content
-      const content = data.content || data;
-      editForm.setValue("summaryContent", content, { 
+      // Update the form with generated content - ensure it's a string
+      let content = '';
+      if (typeof data === 'string') {
+        content = data;
+      } else if (data && typeof data.content === 'string') {
+        content = data.content;
+      } else {
+        console.error('Invalid content format received:', data);
+        toast({
+          title: "Error",
+          description: "Invalid content format received from server",
+          variant: "destructive"
+        });
+        return;
+      }
+      console.log('Extracted content:', content, 'Type:', typeof content); // Debug log
+      editForm.setValue("summaryContent", String(content), { 
         shouldValidate: true, 
         shouldDirty: true,
         shouldTouch: true 
