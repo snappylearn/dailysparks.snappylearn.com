@@ -89,6 +89,9 @@ function AuthenticatedRoutes() {
   // Show main app routes
   return (
     <Switch>
+      {/* Admin login route - accessible to all users */}
+      <Route path="/admin/login" component={AdminLogin} />
+      
       {/* Root path redirect to home for authenticated users */}
       <Route path="/" exact>
         {() => {
