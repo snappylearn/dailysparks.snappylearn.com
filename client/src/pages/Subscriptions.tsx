@@ -488,6 +488,30 @@ export default function Subscriptions() {
                     )}
                   </div>
                   
+                  {/* EMERGENCY FIX BUTTON */}
+                  <Button 
+                    onClick={() => {
+                      fetch('/api/subscription/force-create', { 
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                      })
+                      .then(res => res.json())
+                      .then(data => {
+                        toast({ title: "Subscription force-created!" });
+                        queryClient.invalidateQueries({ queryKey: ["/api/subscription/current"] });
+                        refetchSubscription();
+                      })
+                      .catch(err => {
+                        toast({ title: "Error", description: err.message, variant: "destructive" });
+                      });
+                    }}
+                    variant="destructive"
+                    size="sm"
+                    className="mt-2"
+                  >
+                    Emergency Fix: Force Create Subscription
+                  </Button>
+                  
                 </div>
                 
                 <div className="space-y-2">

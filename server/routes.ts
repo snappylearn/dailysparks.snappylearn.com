@@ -2218,11 +2218,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/subscription/current', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      console.log('SUBSCRIPTION CHECK FOR USER:', userId);
       const subscription = await storage.getUserSubscription(userId);
+      console.log('SUBSCRIPTION RESULT:', subscription);
       res.json(subscription);
     } catch (error) {
       console.error("Error fetching user subscription:", error);
       res.status(500).json({ message: "Failed to fetch subscription" });
+    }
+  });
+
+  // EMERGENCY FIX: Force create subscription
+  app.post('/api/subscription/force-create', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      console.log('FORCE CREATING SUBSCRIPTION FOR USER:', userId);
+      
+      // Get basic plan
+      const plans = await storage.getSubscriptionPlans();
+      const basicPlan = plans.find(p => p.code === 'basic') || plans[0];
+      
+      if (!basicPlan) {
+        return res.status(400).json({ message: 'No plans available' });
+      }
+      
+      // Cancel existing
+      try {
+        const existing = await storage.getUserSubscription(userId);
+        if (existing) {
+          await storage.updateSubscription(existing.id, { status: 'cancelled' });
+        }
+      } catch (e) {
+        console.log('No existing subscription to cancel');
+      }
+      
+      // Create new subscription
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + 1); // 1 month
+      
+      const newSubscription = await storage.createSubscription({
+        userId,
+        planId: basicPlan.id,
+        status: 'active',
+        startDate,
+        endDate,
+        paymentMethod: 'paystack',
+        autoRenew: true,
+      });
+      
+      console.log('FORCE CREATED SUBSCRIPTION:', newSubscription);
+      
+      // Verify it works
+      const verify = await storage.getUserSubscription(userId);
+      console.log('VERIFICATION:', verify);
+      
+      res.json({ 
+        message: 'Subscription force-created successfully',
+        subscription: newSubscription,
+        verification: verify
+      });
+      
+    } catch (error) {
+      console.error('FORCE CREATE ERROR:', error);
+      res.status(500).json({ message: 'Failed to force create subscription', error: error.message });
     }
   });
 
@@ -2355,6 +2414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Confirm payment transaction (after successful Paystack payment)
   app.post('/api/payment/confirm', isAuthenticated, async (req: any, res) => {
+    console.log('PAYMENT CONFIRM ENDPOINT HIT!!!');
     try {
       const userId = req.user.claims.sub;
       const { transactionId, paystackReference } = req.body;
