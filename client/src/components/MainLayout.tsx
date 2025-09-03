@@ -141,7 +141,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   ];
 
   // Check if we should show sidebar (dashboard, leaderboard, quiz history, badges, challenges, profile, and subscriptions)
-  const showSidebar = location === '/' || location === '/leaderboard' || location === '/quiz-history' || location === '/badges-trophies' || location === '/challenges' || location === '/subscriptions' || location === '/profile';
+  const showSidebar = location === '/' || location === '/home' || location === '/leaderboard' || location === '/quiz-history' || location === '/badges-trophies' || location === '/challenges' || location === '/subscriptions' || location === '/profile';
 
 
 

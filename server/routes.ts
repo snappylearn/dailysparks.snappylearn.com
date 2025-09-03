@@ -1159,7 +1159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Subject routes - By system (with quiz counts filtered by user level)
-  app.get('/api/subjects/:systemId', isAdminAuthenticated, async (req: any, res) => {
+  app.get('/api/subjects/:systemId', isAuthenticated, async (req: any, res) => {
     try {
       const { systemId } = req.params;
       const userId = req.user.claims.sub;
