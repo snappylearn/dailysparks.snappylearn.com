@@ -2402,7 +2402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               break;
           }
 
-          await storage.createSubscription({
+          const newSubscription = await storage.createSubscription({
             userId,
             planId: plan.id,
             status: 'active',
@@ -2410,6 +2410,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             endDate,
             paymentMethod: 'paystack',
             autoRenew: true,
+          });
+          console.log('✅ Subscription created successfully:', {
+            subscriptionId: newSubscription.id,
+            userId,
+            planId: plan.id,
+            startDate,
+            endDate,
+            billingCycle: transactionBillingCycle
           });
         }
       }

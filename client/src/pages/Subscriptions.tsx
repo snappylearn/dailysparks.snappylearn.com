@@ -119,7 +119,7 @@ export default function Subscriptions() {
     queryKey: ["/api/subscription/plans"],
   });
 
-  const { data: currentSubscription, isLoading: subscriptionLoading } = useQuery<UserSubscription>({
+  const { data: currentSubscription, isLoading: subscriptionLoading, refetch: refetchSubscription } = useQuery<UserSubscription>({
     queryKey: ["/api/subscription/current"],
   });
 
@@ -183,9 +183,13 @@ export default function Subscriptions() {
       }).then(res => res.json()),
     onSuccess: () => {
       toast({ title: "Payment successful! Subscription activated." });
+      // Force a complete refresh of subscription data
       queryClient.invalidateQueries({ queryKey: ["/api/subscription/current"] });
+      queryClient.refetchQueries({ queryKey: ["/api/subscription/current"] });
       queryClient.invalidateQueries({ queryKey: ["/api/payment/history"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
+      // Also manually trigger refetch
+      setTimeout(() => refetchSubscription(), 1000);
     },
   });
 
