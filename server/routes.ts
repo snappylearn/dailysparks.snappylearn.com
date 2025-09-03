@@ -723,6 +723,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate topic content with AI
+  app.post('/api/admin/topics/:topicId/generate-content', isAdminAuthenticated, async (req: any, res) => {
+    try {
+      const { topicId } = req.params;
+      
+      // Get topic details
+      const topic = await storage.getTopicById(topicId);
+      if (!topic) {
+        return res.status(404).json({ message: "Topic not found" });
+      }
+
+      // Import AI service
+      const { generateTopicContent } = await import('./aiService');
+      
+      // Generate content
+      const content = await generateTopicContent({
+        subject: topic.subject || 'Unknown Subject',
+        level: topic.level || 'Unknown Level',
+        topicTitle: topic.title,
+        topicDescription: topic.description,
+        termTitle: topic.term
+      });
+
+      // Update topic with generated content - using summaryContent field
+      await storage.updateTopic(topicId, { summaryContent: content });
+
+      res.json({ content });
+    } catch (error) {
+      console.error("Error generating topic content:", error);
+      res.status(500).json({ message: "Failed to generate content" });
+    }
+  });
+
   // Admin user management routes
   app.get('/api/admin/users', isAdminAuthenticated, async (req: any, res) => {
     try {

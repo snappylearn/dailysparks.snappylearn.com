@@ -1829,6 +1829,54 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Topic management operations
+  async getTopicById(topicId: string): Promise<any> {
+    try {
+      const [topic] = await db
+        .select()
+        .from(topics)
+        .where(eq(topics.id, topicId))
+        .limit(1);
+
+      if (!topic) {
+        return null;
+      }
+
+      // Get related data
+      let subjectName = 'Unknown';
+      let levelTitle = 'Unknown';
+      let termTitle = null;
+
+      try {
+        if (topic.subjectId) {
+          const [subject] = await db.select({ name: subjects.name }).from(subjects).where(eq(subjects.id, topic.subjectId));
+          subjectName = subject?.name || 'Unknown';
+        }
+
+        if (topic.levelId) {
+          const [level] = await db.select({ title: levels.title }).from(levels).where(eq(levels.id, topic.levelId));
+          levelTitle = level?.title || 'Unknown';
+        }
+
+        if (topic.termId) {
+          const [term] = await db.select({ title: terms.title }).from(terms).where(eq(terms.id, topic.termId));
+          termTitle = term?.title || null;
+        }
+      } catch (err) {
+        console.error('Error fetching related data for topic:', err);
+      }
+
+      return {
+        ...topic,
+        subject: subjectName,
+        level: levelTitle,
+        term: termTitle
+      };
+    } catch (error) {
+      console.error('Error fetching topic by ID:', error);
+      return null;
+    }
+  }
+
   async getAdminTopicList(filters?: any): Promise<any[]> {
     try {
       // First get all topics
@@ -1910,6 +1958,7 @@ export class DatabaseStorage implements IStorage {
             title: topic.title,
             description: topic.description,
             content: topic.summaryContent,
+            summaryContent: topic.summaryContent,
             subjectId: topic.subjectId,
             levelId: topic.levelId,
             examinationSystemId: topic.examinationSystemId,
