@@ -30,6 +30,14 @@ interface QuestionGenerationParams {
   questionCount: number;
 }
 
+export interface TopicContentParams {
+  subject: string;
+  level: string;
+  topicTitle: string;
+  topicDescription?: string;
+  termTitle?: string;
+}
+
 const SYSTEM_PROMPT = `You are an expert question generator for Kenyan KCSE examination system. 
 
 Generate high-quality multiple choice questions that:
@@ -47,6 +55,64 @@ Guidelines:
 - Use Kenyan context and examples where appropriate
 
 Return valid JSON array with the exact structure specified.`;
+
+const CONTENT_SYSTEM_PROMPT = `You are an expert educator and content creator for the Kenyan education system. 
+
+Generate comprehensive, well-structured educational notes in markdown format that:
+1. Follow Kenyan curriculum standards (KCSE/IGCSE/A-Level)
+2. Are appropriate for the specified form level
+3. Include clear explanations, examples, and practical applications
+4. Use proper markdown formatting (headers, lists, emphasis, etc.)
+5. Include relevant Kenyan context and examples where appropriate
+
+The content should be:
+- Detailed but accessible for the student level
+- Well-organized with clear sections and subsections
+- Include key concepts, definitions, and examples
+- Provide practical applications and real-world connections
+- Use proper markdown syntax for formatting
+
+Return only the markdown content, no additional formatting or explanations.`;
+
+export async function generateTopicContent(params: TopicContentParams): Promise<string> {
+  const { subject, level, topicTitle, topicDescription, termTitle } = params;
+
+  const contextInfo = termTitle ? `${termTitle} term content` : 'general syllabus content';
+  const descriptionInfo = topicDescription ? `\nTopic Description: ${topicDescription}` : '';
+
+  const userPrompt = `Generate comprehensive educational notes in markdown format for:
+
+Subject: ${subject}
+Level: ${level}
+Topic: ${topicTitle}${descriptionInfo}
+Context: ${contextInfo}
+
+Create detailed, well-structured notes that cover all key concepts, provide clear explanations, include relevant examples, and follow proper markdown formatting. The content should be suitable for ${level} students studying ${subject}.`;
+
+  try {
+    console.log('Generating topic content with OpenAI...');
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: CONTENT_SYSTEM_PROMPT },
+        { role: "user", content: userPrompt }
+      ],
+      max_tokens: 3000,
+      temperature: 0.7,
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error('No content received from OpenAI');
+    }
+
+    console.log('Successfully generated topic content');
+    return content.trim();
+  } catch (error) {
+    console.error('Error generating topic content:', error);
+    throw new Error('Failed to generate topic content');
+  }
+}
 
 export async function generateQuestions(params: QuestionGenerationParams): Promise<QuizQuestion[]> {
   const {
