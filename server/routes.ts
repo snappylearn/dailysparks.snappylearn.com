@@ -885,12 +885,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user has active subscription
       const subscription = await storage.getUserSubscription(userId);
+      console.log('🔍 Subscription check for quiz:', { userId, subscription });
       if (!subscription || subscription.status !== 'active') {
+        console.log('❌ No active subscription found for user:', userId);
         return res.status(403).json({ 
           message: "Active subscription required", 
           requiresSubscription: true 
         });
       }
+      console.log('✅ Active subscription found, allowing quiz access');
       
       // Get profile to access examination system and level
       const profile = await storage.getProfile(profileId);
@@ -2402,6 +2405,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               break;
           }
 
+          // Check if user already has an active subscription and cancel it first
+          const existingSubscription = await storage.getUserSubscription(userId);
+          if (existingSubscription && existingSubscription.status === 'active') {
+            console.log('🔄 Cancelling existing subscription before creating new one:', existingSubscription.id);
+            // Cancel existing subscription (set status to cancelled)
+            await storage.updateSubscription(existingSubscription.id, { status: 'cancelled' });
+          }
+
           const newSubscription = await storage.createSubscription({
             userId,
             planId: plan.id,
@@ -2419,6 +2430,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             endDate,
             billingCycle: transactionBillingCycle
           });
+        } else {
+          console.log('❌ Plan not found for planId:', transaction.planId);
         }
       }
 
@@ -2426,6 +2439,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error confirming payment:", error);
       res.status(500).json({ message: "Failed to confirm payment" });
+    }
+  });
+
+  // TEMPORARY: Manual subscription creation for testing
+  app.post('/api/subscription/create-test', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Get the first available plan
+      const plans = await storage.getSubscriptionPlans();
+      const plan = plans[0]; // Basic plan
+      
+      if (!plan) {
+        return res.status(404).json({ message: "No plans available" });
+      }
+
+      // Cancel any existing subscription
+      const existingSubscription = await storage.getUserSubscription(userId);
+      if (existingSubscription && existingSubscription.status === 'active') {
+        await storage.updateSubscription(existingSubscription.id, { status: 'cancelled' });
+      }
+
+      // Create new subscription
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 7); // 7 days
+
+      const newSubscription = await storage.createSubscription({
+        userId,
+        planId: plan.id,
+        status: 'active',
+        startDate,
+        endDate,
+        paymentMethod: 'paystack',
+        autoRenew: true,
+      });
+
+      console.log('✅ Test subscription created:', newSubscription);
+      res.json({ message: 'Test subscription created successfully', subscription: newSubscription });
+    } catch (error) {
+      console.error("Error creating test subscription:", error);
+      res.status(500).json({ message: "Failed to create test subscription" });
     }
   });
 

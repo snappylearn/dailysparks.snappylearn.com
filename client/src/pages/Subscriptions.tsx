@@ -207,6 +207,19 @@ export default function Subscriptions() {
     },
   });
 
+  const createTestSubscriptionMutation = useMutation({
+    mutationFn: () =>
+      fetch("/api/subscription/create-test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }).then(res => res.json()),
+    onSuccess: () => {
+      toast({ title: "Test subscription created!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription/current"] });
+      refetchSubscription();
+    },
+  });
+
   const initiatePaystackPayment = async (plan: SubscriptionPlan) => {
     if (!user?.email) {
       toast({ title: "Error", description: "User email not found", variant: "destructive" });
@@ -486,6 +499,18 @@ export default function Subscriptions() {
                       <Badge variant="secondary">No Active Plan</Badge>
                     )}
                   </div>
+                  
+                  {/* TEMPORARY TEST BUTTON */}
+                  <Button 
+                    onClick={() => createTestSubscriptionMutation.mutate()}
+                    disabled={createTestSubscriptionMutation.isPending}
+                    variant="outline"
+                    size="sm"
+                    data-testid="button-create-test-subscription"
+                    className="mt-2"
+                  >
+                    {createTestSubscriptionMutation.isPending ? "Creating..." : "Create Test Subscription"}
+                  </Button>
                 </div>
                 
                 <div className="space-y-2">
