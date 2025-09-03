@@ -132,7 +132,7 @@ export default function Subscriptions() {
   });
 
   const subscribeWithCreditsMutation = useMutation({
-    mutationFn: (data: { planId: string; paymentMethod: string }) =>
+    mutationFn: (data: { planId: string; paymentMethod: string; billingCycle?: string }) =>
       fetch("/api/subscription/create-with-credits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -156,7 +156,8 @@ export default function Subscriptions() {
     if (paymentMethod === 'credits') {
       subscribeWithCreditsMutation.mutate({
         planId: plan.id,
-        paymentMethod: 'credits'
+        paymentMethod: 'credits',
+        billingCycle: billingPeriod
       });
     } else {
       // Handle Paystack payment
@@ -165,7 +166,7 @@ export default function Subscriptions() {
   };
 
   const createPaymentTransactionMutation = useMutation({
-    mutationFn: (data: { amount: number; planId: string; type: string; description: string }) =>
+    mutationFn: (data: { amount: number; planId: string; type: string; description: string; billingCycle?: string }) =>
       fetch("/api/payment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -210,15 +211,16 @@ export default function Subscriptions() {
 
     try {
       // Create payment transaction record
+      const periodPrice = calculatePrice(parseFloat(plan.price), billingPeriod);
       const transaction = await createPaymentTransactionMutation.mutateAsync({
-        amount: parseFloat(plan.price),
+        amount: parseFloat(periodPrice),
         planId: plan.id,
         type: 'subscription',
-        description: `Subscription: ${plan.name}`,
+        description: `Subscription: ${plan.name} (${billingPeriod})`,
+        billingCycle: billingPeriod
       });
 
-      // Calculate price based on billing period and convert to cents
-      const periodPrice = calculatePrice(parseFloat(plan.price), billingPeriod);
+      // Convert calculated price to cents for Paystack
       const amountInCents = Math.round(parseFloat(periodPrice) * 100); // Convert USD to cents
       const reference = `DS_${Date.now()}_${transaction.id}`;
 
