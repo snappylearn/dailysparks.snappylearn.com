@@ -488,41 +488,6 @@ export default function Subscriptions() {
                     )}
                   </div>
                   
-                  {/* EMERGENCY FIX BUTTON */}
-                  <Button 
-                    onClick={async () => {
-                      try {
-                        console.log('Clicking force create button...');
-                        const response = await fetch('/api/subscription/force-create', { 
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' }
-                        });
-                        console.log('Response status:', response.status);
-                        const data = await response.json();
-                        console.log('Response data:', data);
-                        
-                        if (!response.ok) {
-                          throw new Error(data.message || 'Failed to create subscription');
-                        }
-                        
-                        toast({ title: "Subscription force-created successfully!" });
-                        queryClient.invalidateQueries({ queryKey: ["/api/subscription/current"] });
-                        refetchSubscription();
-                      } catch (err) {
-                        console.error('Force create error:', err);
-                        toast({ 
-                          title: "Error", 
-                          description: err.message || 'Unknown error occurred', 
-                          variant: "destructive" 
-                        });
-                      }
-                    }}
-                    variant="destructive"
-                    size="sm"
-                    className="mt-2"
-                  >
-                    Emergency Fix: Force Create Subscription
-                  </Button>
                   
                 </div>
                 
