@@ -2643,6 +2643,30 @@ export class DatabaseStorage implements IStorage {
       .orderBy(subscriptionPlans.sortOrder);
   }
 
+  async createSubscriptionPlan(planData: any): Promise<any> {
+    const result = await db
+      .insert(subscriptionPlans)
+      .values({
+        id: planData.id,
+        name: planData.name,
+        code: planData.code,
+        description: planData.description,
+        price: planData.price,
+        currency: planData.currency,
+        billingCycle: planData.billingCycle,
+        dailyQuizLimit: planData.dailyQuizLimit,
+        questionBankSize: planData.questionBankSize,
+        features: planData.features,
+        hasAIPersonalization: planData.hasAIPersonalization,
+        supportLevel: planData.supportLevel,
+        isActive: planData.isActive,
+        sortOrder: planData.sortOrder,
+      })
+      .returning();
+    
+    return result[0];
+  }
+
   async getUserSubscription(userId: string): Promise<any> {
     const subscription = await db
       .select({
