@@ -2218,34 +2218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/subscription/current', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      let subscription = await storage.getUserSubscription(userId);
-      
-      // TEMPORARY FIX: If no subscription found, create one automatically
-      if (!subscription) {
-        console.log('🔧 No subscription found for user:', userId, '- creating one automatically');
-        const plans = await storage.getSubscriptionPlans();
-        const basicPlan = plans.find(p => p.code === 'basic') || plans[0];
-        
-        if (basicPlan) {
-          const startDate = new Date();
-          const endDate = new Date();
-          endDate.setMonth(endDate.getMonth() + 1); // 1 month
-          
-          const newSubscription = await storage.createSubscription({
-            userId,
-            planId: basicPlan.id,
-            status: 'active',
-            startDate,
-            endDate,
-            paymentMethod: 'paystack',
-            autoRenew: true,
-          });
-          
-          console.log('✅ Auto-created subscription for user:', userId);
-          subscription = await storage.getUserSubscription(userId);
-        }
-      }
-      
+      const subscription = await storage.getUserSubscription(userId);
       res.json(subscription);
     } catch (error) {
       console.error("Error fetching user subscription:", error);
@@ -2386,83 +2359,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const { transactionId, paystackReference } = req.body;
 
-      // Update transaction status
-      const updatedTransaction = await storage.updatePaymentTransaction(transactionId, {
+      console.log('🔄 Processing payment confirmation for user:', userId, 'transaction:', transactionId);
+
+      // Update transaction status first
+      await storage.updatePaymentTransaction(transactionId, {
         status: 'success',
         paystackReference,
         processedAt: new Date(),
       });
 
-      // Get transaction details to create subscription
-      const [paymentHistory] = await Promise.all([
-        storage.getPaymentHistory(userId),
-      ]);
-
+      // Get the specific transaction directly by ID
+      const paymentHistory = await storage.getPaymentHistory(userId);
       const transaction = paymentHistory.find(t => t.id === transactionId);
+      
       if (!transaction) {
+        console.error('❌ Transaction not found after update:', transactionId);
         return res.status(404).json({ message: "Transaction not found" });
       }
 
+      console.log('📄 Transaction details:', {
+        id: transaction.id,
+        type: transaction.type,
+        planId: transaction.planId,
+        metadata: transaction.metadata
+      });
+
       // Create subscription if payment was for subscription
       if (transaction.type === 'subscription' && transaction.planId) {
+        console.log('💳 Creating subscription for plan:', transaction.planId);
+        
+        // Cancel any existing active subscriptions first
+        try {
+          const existingSubscription = await storage.getUserSubscription(userId);
+          if (existingSubscription && existingSubscription.status === 'active') {
+            console.log('🔄 Cancelling existing subscription:', existingSubscription.id);
+            await storage.updateSubscription(existingSubscription.id, { status: 'cancelled' });
+          }
+        } catch (error) {
+          console.log('ℹ️ No existing subscription to cancel (this is normal for new users)');
+        }
+
+        // Get plan details
         const plans = await storage.getSubscriptionPlans();
         const plan = plans.find(p => p.id === transaction.planId);
         
-        if (plan) {
-          const startDate = new Date();
-          const endDate = new Date();
-          
-          // Calculate end date based on transaction billing cycle or plan's default
-          const transactionBillingCycle = transaction.metadata?.billingCycle || plan.billingCycle;
-          switch (transactionBillingCycle) {
-            case 'weekly':
-              endDate.setDate(endDate.getDate() + 7); // 7 days
-              break;
-            case 'monthly':
-              endDate.setMonth(endDate.getMonth() + 1); // 1 month
-              break;
-            case 'yearly':
-              endDate.setFullYear(endDate.getFullYear() + 1); // 1 year
-              break;
-            default:
-              endDate.setDate(endDate.getDate() + 7); // Default to weekly
-              break;
-          }
+        if (!plan) {
+          console.error('❌ Plan not found for planId:', transaction.planId);
+          return res.status(400).json({ message: "Subscription plan not found" });
+        }
 
-          // Check if user already has an active subscription and cancel it first
-          const existingSubscription = await storage.getUserSubscription(userId);
-          if (existingSubscription && existingSubscription.status === 'active') {
-            console.log('🔄 Cancelling existing subscription before creating new one:', existingSubscription.id);
-            // Cancel existing subscription (set status to cancelled)
-            await storage.updateSubscription(existingSubscription.id, { status: 'cancelled' });
-          }
+        // Calculate subscription dates
+        const startDate = new Date();
+        const endDate = new Date();
+        const billingCycle = transaction.metadata?.billingCycle || plan.billingCycle || 'weekly';
+        
+        console.log('📅 Setting up subscription dates with billing cycle:', billingCycle);
+        
+        switch (billingCycle) {
+          case 'weekly':
+            endDate.setDate(endDate.getDate() + 7);
+            break;
+          case 'monthly':
+            endDate.setMonth(endDate.getMonth() + 1);
+            break;
+          case 'yearly':
+            endDate.setFullYear(endDate.getFullYear() + 1);
+            break;
+          default:
+            endDate.setDate(endDate.getDate() + 7); // Default to weekly
+            break;
+        }
 
-          const newSubscription = await storage.createSubscription({
-            userId,
-            planId: plan.id,
-            status: 'active',
-            startDate,
-            endDate,
-            paymentMethod: 'paystack',
-            autoRenew: true,
-          });
+        // Create the subscription
+        const subscriptionData = {
+          userId,
+          planId: plan.id,
+          status: 'active',
+          startDate,
+          endDate,
+          paymentMethod: 'paystack',
+          autoRenew: true,
+        };
+
+        console.log('🆕 Creating subscription with data:', subscriptionData);
+        
+        try {
+          const newSubscription = await storage.createSubscription(subscriptionData);
           console.log('✅ Subscription created successfully:', {
             subscriptionId: newSubscription.id,
-            userId,
-            planId: plan.id,
-            startDate,
-            endDate,
-            billingCycle: transactionBillingCycle
+            userId: newSubscription.userId,
+            planId: newSubscription.planId,
+            status: newSubscription.status,
+            startDate: newSubscription.startDate,
+            endDate: newSubscription.endDate
           });
-        } else {
-          console.log('❌ Plan not found for planId:', transaction.planId);
+
+          // Verify the subscription was created by immediately looking it up
+          const verifySubscription = await storage.getUserSubscription(userId);
+          console.log('🔍 Verification - subscription lookup after creation:', verifySubscription);
+          
+        } catch (subscriptionError) {
+          console.error('❌ Failed to create subscription:', subscriptionError);
+          return res.status(500).json({ message: "Failed to create subscription", error: subscriptionError.message });
         }
       }
 
-      res.json({ message: 'Payment confirmed successfully', transaction: updatedTransaction });
+      res.json({ 
+        message: 'Payment confirmed and subscription activated successfully',
+        transactionId: transaction.id,
+        success: true
+      });
+
     } catch (error) {
-      console.error("Error confirming payment:", error);
-      res.status(500).json({ message: "Failed to confirm payment" });
+      console.error("❌ Error in payment confirmation:", error);
+      res.status(500).json({ 
+        message: "Failed to confirm payment", 
+        error: error.message 
+      });
     }
   });
 
