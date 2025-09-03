@@ -18,6 +18,7 @@ import {
   quizzes,
   quizQuestions,
   quizQuestionChoices,
+  enhancedQuizSessions,
   // Gamification tables
   badgeTypes,
   badges,
@@ -1871,25 +1872,34 @@ export class DatabaseStorage implements IStorage {
           // Calculate metrics for this topic
           let quizCount = 0, quizAttempts = 0, usersCount = 0;
           try {
+            // Count actual topical quizzes (quiz templates) that reference this topic
             const quizCountResult = await db
               .select({ count: sql`count(*)` })
-              .from(quizSessions)
-              .where(eq(quizSessions.topicId, topic.id));
+              .from(quizzes)
+              .where(and(
+                eq(quizzes.topicId, topic.id),
+                eq(quizzes.quizType, 'topical'),
+                eq(quizzes.isActive, true)
+              ));
             quizCount = Number(quizCountResult[0]?.count || 0);
             
+            // Count quiz session attempts for this topic
             const attemptCountResult = await db
               .select({ count: sql`count(*)` })
-              .from(quizSessions)
+              .from(enhancedQuizSessions)
+              .innerJoin(quizzes, eq(enhancedQuizSessions.quizId, quizzes.id))
               .where(and(
-                eq(quizSessions.topicId, topic.id),
-                eq(quizSessions.completed, true)
+                eq(quizzes.topicId, topic.id),
+                eq(enhancedQuizSessions.completed, true)
               ));
             quizAttempts = Number(attemptCountResult[0]?.count || 0);
             
+            // Count unique users who attempted quizzes for this topic
             const userCountResult = await db
-              .select({ count: sql`count(distinct ${quizSessions.profileId})` })
-              .from(quizSessions)
-              .where(eq(quizSessions.topicId, topic.id));
+              .select({ count: sql`count(distinct ${enhancedQuizSessions.profileId})` })
+              .from(enhancedQuizSessions)
+              .innerJoin(quizzes, eq(enhancedQuizSessions.quizId, quizzes.id))
+              .where(eq(quizzes.topicId, topic.id));
             usersCount = Number(userCountResult[0]?.count || 0);
           } catch (err) {
             console.error('Error calculating topic metrics:', err);
