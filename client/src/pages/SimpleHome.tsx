@@ -16,11 +16,16 @@ export default function Home() {
 
   const currentProfile = profiles[0]; // Use first profile for now
 
-  // Get subjects for current profile's examination system
-  const { data: subjects = [] } = useQuery<Subject[]>({
-    queryKey: ['/api/subjects', currentProfile?.examinationSystemId],
+  // Get all subjects and filter by current profile's examination system
+  const { data: allSubjects = [] } = useQuery<Subject[]>({
+    queryKey: ['/api/subjects'],
     enabled: !!currentProfile?.examinationSystemId,
   });
+
+  // Filter subjects by examination system
+  const subjects = allSubjects.filter(subject => 
+    subject.examinationSystemId === currentProfile?.examinationSystemId
+  );
 
   // Get user stats for progress section
   const { data: userStats } = useQuery<{
