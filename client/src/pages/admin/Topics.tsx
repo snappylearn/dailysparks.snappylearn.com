@@ -108,7 +108,8 @@ export default function AdminTopics() {
 
   const createTopicMutation = useMutation({
     mutationFn: async (data: CreateTopicFormData) => {
-      return apiRequest("POST", "/api/admin/topics", data);
+      const response = await apiRequest("POST", "/api/admin/topics", data);
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -130,7 +131,8 @@ export default function AdminTopics() {
 
   const updateTopicMutation = useMutation({
     mutationFn: async (data: { id: string; updateData: Partial<CreateTopicFormData> }) => {
-      return apiRequest("PUT", `/api/admin/topics/${data.id}`, data.updateData);
+      const response = await apiRequest("PUT", `/api/admin/topics/${data.id}`, data.updateData);
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -152,7 +154,8 @@ export default function AdminTopics() {
 
   const deleteTopicMutation = useMutation({
     mutationFn: async (topicId: string) => {
-      return apiRequest("DELETE", `/api/admin/topics/${topicId}`);
+      const response = await apiRequest("DELETE", `/api/admin/topics/${topicId}`);
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -172,10 +175,10 @@ export default function AdminTopics() {
 
   const generateContentMutation = useMutation({
     mutationFn: async (topicId: string) => {
-      return apiRequest("POST", `/api/admin/topics/${topicId}/generate-content`);
+      const response = await apiRequest("POST", `/api/admin/topics/${topicId}/generate-content`);
+      return response.json();
     },
     onSuccess: (data: any) => {
-      console.log('Generated content data:', data, 'Type:', typeof data); // Debug log
       toast({
         title: "Success",
         description: "Content generated successfully!"
@@ -187,7 +190,6 @@ export default function AdminTopics() {
       } else if (data && typeof data.content === 'string') {
         content = data.content;
       } else {
-        console.error('Invalid content format received:', data);
         toast({
           title: "Error",
           description: "Invalid content format received from server",
@@ -195,7 +197,6 @@ export default function AdminTopics() {
         });
         return;
       }
-      console.log('Extracted content:', content, 'Type:', typeof content); // Debug log
       editForm.setValue("summaryContent", String(content), { 
         shouldValidate: true, 
         shouldDirty: true,
