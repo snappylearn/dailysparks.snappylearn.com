@@ -68,6 +68,7 @@ function AuthenticatedRoutes() {
     return (
       <Switch>
         <Route path="/admin-login" component={AdminLogin} />
+        <Route path="/admin/login" component={AdminLogin} />
         <Route path="/" component={Landing} />
         {/* Redirect all other paths to landing */}
         <Route>
