@@ -1,0 +1,49 @@
+chunk-RPCDYKBN.js?v=aff3a798:14032 The above error occurred in the <Controller> component:
+
+    at Controller (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…nner/workspace/node_modules/.vite/deps/chunk-4BFJKWC4.js?v=aff3a798:298:35)
+    at FormField (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.dev/src/components/ui/form.tsx:33:6)
+    at form
+    at FormProvider (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…nner/workspace/node_modules/.vite/deps/chunk-4BFJKWC4.js?v=aff3a798:102:11)
+    at div
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-IWFJIMEQ.js?v=aff3a798:42:13
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…runner/workspace/node_modules/.vite/deps/chunk-HKSITMS3.js?v=aff3a798:61:7
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-LHPXHTGV.js?v=aff3a798:43:13
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-LHPXHTGV.js?v=aff3a798:20:13
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-IWFJIMEQ.js?v=aff3a798:42:13
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…runner/workspace/node_modules/.vite/deps/chunk-ZPUEITCI.js?v=aff3a798:57:5
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…kspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=aff3a798:238:13
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…kspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=aff3a798:161:58
+    at Presence (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-WKSNYNSY.js?v=aff3a798:24:11)
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…kspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=aff3a798:152:64
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-LHPXHTGV.js?v=aff3a798:43:13
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-LHPXHTGV.js?v=aff3a798:20:13
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-IWFJIMEQ.js?v=aff3a798:42:13
+    at https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…nner/workspace/node_modules/.vite/deps/chunk-HKSITMS3.js?v=aff3a798:260:22
+    at Presence (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-WKSNYNSY.js?v=aff3a798:24:11)
+    at Provider (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=aff3a798:38:15)
+    at DialogPortal (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…kspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=aff3a798:114:11)
+    at _c3 (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.dev/src/components/ui/dialog.tsx:52:12)
+    at Provider (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=aff3a798:38:15)
+    at Dialog (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…orkspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=aff3a798:55:5)
+    at div
+    at AdminTopics (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.dev/src/pages/admin/Topics.tsx?t=1756905758355:47:41)
+    at main
+    at div
+    at div
+    at AdminLayout (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.dev/src/layouts/AdminLayout.tsx:55:39)
+    at AdminAuthProvider (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.dev/src/hooks/useAdminAuth.tsx:24:37)
+    at Route (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=aff3a798:323:16)
+    at Switch (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=aff3a798:379:17)
+    at AuthenticatedRoutes (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.dev/src/App.tsx?t=1756905758355&v=p5cXLKmfgzLSQTzo4RR2u:65:42)
+    at Route (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=aff3a798:323:16)
+    at Switch (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=aff3a798:379:17)
+    at Router
+    at Provider (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=aff3a798:38:15)
+    at TooltipProvider (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…rkspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=aff3a798:64:5)
+    at QueryClientProvider (https://dc088780-d159-4c1a-bc9c-ea8ca3144adc-00-3c8uz62h31rrn.spock.replit.…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=aff3a798:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-RPCDYKBN.js?v=aff3a798:19413 Uncaught TypeError: field.value.slice is not a function
+    at Object.render (Topics.tsx:837:81)

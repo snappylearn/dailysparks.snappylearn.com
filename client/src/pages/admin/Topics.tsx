@@ -175,7 +175,6 @@ export default function AdminTopics() {
       return apiRequest("POST", `/api/admin/topics/${topicId}/generate-content`);
     },
     onSuccess: (data: any) => {
-      console.log("Generated content response:", data); // Debug log
       toast({
         title: "Success",
         description: "Content generated successfully!"
@@ -192,7 +191,6 @@ export default function AdminTopics() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/topics"] });
     },
     onError: (error: any) => {
-      console.error("Content generation error:", error); // Debug log
       toast({
         title: "Error",
         description: error.message || "Failed to generate content",
@@ -834,7 +832,7 @@ export default function AdminTopics() {
                     <FormControl>
                       <div data-color-mode="light">
                         <MDEditor
-                          key={`editor-${editorKey}-${field.value ? field.value.slice(0, 10) : 'empty'}`} // Force re-render when content changes
+                          key={`editor-${editorKey}-${field.value && typeof field.value === 'string' ? field.value.slice(0, 10) : 'empty'}`}
                           value={field.value || ""}
                           onChange={(value) => field.onChange(value || "")}
                           preview="edit"
