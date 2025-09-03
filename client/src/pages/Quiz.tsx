@@ -353,7 +353,14 @@ export default function Quiz() {
               
               <div className="space-y-3">
                 <Button 
-                  onClick={() => setShowReviewModal(true)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Review Answers clicked - setting modal to true');
+                    console.log('Current showReviewModal:', showReviewModal);
+                    console.log('Current quizResults:', quizResults);
+                    setShowReviewModal(true);
+                  }}
                   variant="default"
                   className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
                   data-testid="button-review-answers"
@@ -848,6 +855,8 @@ function QuizReviewModal({ sessionId, isOpen, onClose }: {
     queryKey: ['/api/quiz-sessions', sessionId, 'review'],
     enabled: isOpen && !!sessionId,
   });
+
+  console.log('QuizReviewModal rendered - isOpen:', isOpen, 'sessionId:', sessionId, 'reviewData:', reviewData);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
