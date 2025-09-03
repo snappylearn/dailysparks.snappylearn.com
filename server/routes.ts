@@ -2219,8 +2219,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       console.log('SUBSCRIPTION CHECK FOR USER:', userId);
-      const subscription = await storage.getUserSubscription(userId);
+      let subscription = await storage.getUserSubscription(userId);
       console.log('SUBSCRIPTION RESULT:', subscription);
+      
+      // AUTO-FIX: If no subscription, create one now
+      if (!subscription) {
+        console.log('🔧 No subscription found, auto-creating one...');
+        try {
+          const plans = await storage.getSubscriptionPlans();
+          const basicPlan = plans.find(p => p.code === 'basic') || plans[0];
+          
+          if (basicPlan) {
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setMonth(endDate.getMonth() + 1); // 1 month
+            
+            const newSub = await storage.createSubscription({
+              userId,
+              planId: basicPlan.id,
+              status: 'active',
+              startDate,
+              endDate,
+              paymentMethod: 'paystack',
+              autoRenew: true,
+            });
+            console.log('✅ Auto-created subscription:', newSub.id);
+            subscription = await storage.getUserSubscription(userId);
+          }
+        } catch (autoCreateError) {
+          console.error('Auto-create failed:', autoCreateError);
+        }
+      }
+      
       res.json(subscription);
     } catch (error) {
       console.error("Error fetching user subscription:", error);
@@ -2231,6 +2261,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // EMERGENCY FIX: Force create subscription
   app.post('/api/subscription/force-create', isAuthenticated, async (req: any, res) => {
     try {
+      console.log('=== FORCE CREATE SUBSCRIPTION ENDPOINT HIT ===');
+      console.log('Authenticated user:', req.user);
+      
+      if (!req.user || !req.user.claims || !req.user.claims.sub) {
+        console.log('ERROR: No authenticated user found');
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
       const userId = req.user.claims.sub;
       console.log('FORCE CREATING SUBSCRIPTION FOR USER:', userId);
       
