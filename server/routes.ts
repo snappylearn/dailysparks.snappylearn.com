@@ -104,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get quiz history for current user
-  app.get('/api/quiz-history', isAdminAuthenticated, async (req: any, res) => {
+  app.get('/api/quiz-history', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const quizHistory = await storage.getQuizHistoryForUser(userId);
@@ -128,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Profile update routes
-  app.patch('/api/profiles/:id', isAdminAuthenticated, async (req: any, res) => {
+  app.patch('/api/profiles/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { id } = req.params;
       const updateData = req.body;
@@ -162,7 +162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced Quiz API Routes
   
   // Generate and start a new quiz
-  app.post('/api/quizzes/generate', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/quizzes/generate', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { 
@@ -215,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get quiz session details
-  app.get('/api/quiz-sessions/:sessionId', isAdminAuthenticated, async (req: any, res) => {
+  app.get('/api/quiz-sessions/:sessionId', isAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       const userId = req.user.claims.sub;
@@ -237,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get detailed quiz review with questions and answers
-  app.get('/api/quiz-sessions/:sessionId/review', isAdminAuthenticated, async (req: any, res) => {
+  app.get('/api/quiz-sessions/:sessionId/review', isAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       const userId = req.user.claims.sub;
@@ -317,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Submit answer for quiz question
-  app.post('/api/quiz-sessions/:sessionId/answers', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz-sessions/:sessionId/answers', isAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       const { questionId, choiceId, answer, timeSpent } = req.body;
@@ -333,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete quiz session
-  app.post('/api/quiz-sessions/:sessionId/complete', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz-sessions/:sessionId/complete', isAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       
@@ -845,7 +845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Primary quiz start endpoint - uses existing admin-created quizzes
-  app.post('/api/quiz/start', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/start', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { profileId, subjectId, quizType, topicId, termId } = req.body;
@@ -1539,7 +1539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Start a completely new quiz session (ignoring incomplete ones)
-  app.post('/api/quiz/start-fresh', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/start-fresh', isAuthenticated, async (req: any, res) => {
     try {
       const { profileId, subjectId, quizType } = req.body;
 
@@ -2182,7 +2182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user's current subscription
-  app.get('/api/subscription/current', isAdminAuthenticated, async (req: any, res) => {
+  app.get('/api/subscription/current', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const subscription = await storage.getUserSubscription(userId);
@@ -2194,7 +2194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user credits
-  app.get('/api/user/credits', isAdminAuthenticated, async (req: any, res) => {
+  app.get('/api/user/credits', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const credits = await storage.getUserCredits(userId);
@@ -2206,7 +2206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create subscription with credits
-  app.post('/api/subscription/create-with-credits', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/subscription/create-with-credits', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { planId, paymentMethod } = req.body;
@@ -2259,7 +2259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get payment history
-  app.get('/api/payment/history', isAdminAuthenticated, async (req: any, res) => {
+  app.get('/api/payment/history', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const [paymentHistory, creditTransactions] = await Promise.all([
@@ -2281,7 +2281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create payment transaction (for Paystack integration)
-  app.post('/api/payment/create', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/payment/create', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { amount, type, description, planId } = req.body;
@@ -2304,7 +2304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Confirm payment transaction (after successful Paystack payment)
-  app.post('/api/payment/confirm', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/payment/confirm', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { transactionId, paystackReference } = req.body;
@@ -2356,7 +2356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Confirm credit top-up payment transaction
-  app.post('/api/payment/confirm-topup', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/payment/confirm-topup', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { transactionId, paystackReference, amount } = req.body;
