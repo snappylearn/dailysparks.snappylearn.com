@@ -2219,35 +2219,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       console.log('SUBSCRIPTION CHECK FOR USER:', userId);
-      let subscription = await storage.getUserSubscription(userId);
+      
+      const subscription = await storage.getUserSubscription(userId);
       console.log('SUBSCRIPTION RESULT:', subscription);
       
-      // AUTO-FIX: If no subscription, create one now
-      if (!subscription) {
-        console.log('🔧 AUTO-CREATING SUBSCRIPTION FOR USER:', userId);
-        try {
-          // Use plan ID "1" exactly like in the working export
-          const startDate = new Date();
-          const endDate = new Date();
-          endDate.setDate(endDate.getDate() + 7); // 7 days like the working export
-          
-          const newSub = await storage.createSubscription({
-            userId,
-            planId: "1", // Use exact plan ID from export
-            status: 'active',
-            startDate,
-            endDate,
-            paymentMethod: 'paystack',
-            autoRenew: true,
-          });
-          console.log('✅ SUBSCRIPTION CREATED:', newSub);
-          subscription = await storage.getUserSubscription(userId);
-          console.log('✅ VERIFIED SUBSCRIPTION:', subscription);
-        } catch (autoCreateError) {
-          console.error('❌ AUTO-CREATE FAILED:', autoCreateError);
-        }
-      }
-      
+      // No auto-creation - users must pay to get subscription
       res.json(subscription);
     } catch (error) {
       console.error("Error fetching user subscription:", error);
@@ -2255,66 +2231,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // EMERGENCY FIX: Force create subscription
-  app.post('/api/subscription/force-create', async (req: any, res) => {
-    try {
-      console.log('=== FORCE CREATE SUBSCRIPTION ENDPOINT HIT ===');
-      console.log('Authenticated user:', req.user);
-      
-      // Use hardcoded user ID for force creation
-      const userId = "47111705"; // Your user ID from logs
-      console.log('FORCE CREATING SUBSCRIPTION FOR USER:', userId);
-      
-      // Get basic plan
-      const plans = await storage.getSubscriptionPlans();
-      const basicPlan = plans.find(p => p.code === 'basic') || plans[0];
-      
-      if (!basicPlan) {
-        return res.status(400).json({ message: 'No plans available' });
-      }
-      
-      // Cancel existing
-      try {
-        const existing = await storage.getUserSubscription(userId);
-        if (existing) {
-          await storage.updateSubscription(existing.id, { status: 'cancelled' });
-        }
-      } catch (e) {
-        console.log('No existing subscription to cancel');
-      }
-      
-      // Create new subscription
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setMonth(endDate.getMonth() + 1); // 1 month
-      
-      const newSubscription = await storage.createSubscription({
-        userId,
-        planId: basicPlan.id,
-        status: 'active',
-        startDate,
-        endDate,
-        paymentMethod: 'paystack',
-        autoRenew: true,
-      });
-      
-      console.log('FORCE CREATED SUBSCRIPTION:', newSubscription);
-      
-      // Verify it works
-      const verify = await storage.getUserSubscription(userId);
-      console.log('VERIFICATION:', verify);
-      
-      res.json({ 
-        message: 'Subscription force-created successfully',
-        subscription: newSubscription,
-        verification: verify
-      });
-      
-    } catch (error) {
-      console.error('FORCE CREATE ERROR:', error);
-      res.status(500).json({ message: 'Failed to force create subscription', error: error.message });
-    }
-  });
 
   // Get user credits
   app.get('/api/user/credits', isAuthenticated, async (req: any, res) => {
