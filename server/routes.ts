@@ -1747,7 +1747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get today's challenge
-  app.get('/api/challenge/today', isAdminAuthenticated, async (req: any, res) => {
+  app.get('/api/challenge/today', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const challenge = await storage.getTodaysChallenge();
@@ -1894,7 +1894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user badges
-  app.get('/api/user/:userId/badges', isAdminAuthenticated, async (req: any, res) => {
+  app.get('/api/user/:userId/badges', isAuthenticated, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const userBadges = await storage.getUserBadges(userId);
@@ -1906,7 +1906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Award badge to user
-  app.post('/api/user/:userId/badges', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/user/:userId/badges', isAuthenticated, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const { badgeId, streaks = 0 } = req.body;
@@ -2012,7 +2012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user challenges
-  app.get('/api/user/:userId/challenges', isAdminAuthenticated, async (req: any, res) => {
+  app.get('/api/user/:userId/challenges', isAuthenticated, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const userChallenges = await storage.getUserChallenges(userId);
@@ -2024,7 +2024,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update challenge progress
-  app.put('/api/user/:userId/challenges/:challengeId', isAdminAuthenticated, async (req: any, res) => {
+  app.put('/api/user/:userId/challenges/:challengeId', isAuthenticated, async (req: any, res) => {
     try {
       const { userId, challengeId } = req.params;
       const { progress } = req.body;
@@ -2042,7 +2042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete challenge
-  app.post('/api/user/:userId/challenges/:challengeId/complete', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/user/:userId/challenges/:challengeId/complete', isAuthenticated, async (req: any, res) => {
     try {
       const { userId, challengeId } = req.params;
       const userChallenge = await storage.completeChallenge(userId, challengeId);

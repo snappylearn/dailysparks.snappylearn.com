@@ -14,7 +14,8 @@ import {
   quizQuestionAnswers,
   questions,
   topics,
-  profiles
+  profiles,
+  challenges
 } from "@shared/schema";
 import { eq, and, sql, inArray } from "drizzle-orm";
 import type { 
@@ -332,6 +333,18 @@ export class QuizEngine {
         })
         .where(eq(profiles.id, updatedSession.profileId));
 
+      // Get updated profile to check total sparks and quiz count for badge/trophy awarding
+      const [updatedProfile] = await db
+        .select()
+        .from(profiles)
+        .where(eq(profiles.id, updatedSession.profileId));
+
+      // Auto-award badges and check challenge completion
+      if (updatedProfile) {
+        await this.checkAndAwardBadges(updatedProfile.userId, updatedProfile.sparks, correctAnswers, totalQuestions, accuracyPercentage);
+        await this.checkAndCompleteCharlenges(updatedProfile.userId, finalSparks);
+      }
+
       return {
         sessionId,
         correctAnswers,
@@ -356,6 +369,120 @@ export class QuizEngine {
       case 'easy': return QUIZ_CONSTANTS.SPARKS.EASY_QUESTION;
       case 'hard': return QUIZ_CONSTANTS.SPARKS.HARD_QUESTION;
       default: return QUIZ_CONSTANTS.SPARKS.MEDIUM_QUESTION;
+    }
+  }
+
+  /**
+   * Check and award badges based on user progress
+   */
+  private static async checkAndAwardBadges(userId: string, totalSparks: number, correctAnswers: number, totalQuestions: number, accuracyPercentage: number): Promise<void> {
+    try {
+      const { storage } = await import('./storage');
+      
+      // Get user's current badges to avoid duplicates
+      const userBadges = await storage.getUserBadges(userId);
+      const userBadgeIds = userBadges.map(ub => ub.badgeId);
+
+      // Check conditions for different badges based on seeded data
+      const badgeConditions = [
+        {
+          id: 'daily-fire',
+          condition: totalSparks >= 50,
+          description: 'Earned 50+ total sparks'
+        },
+        {
+          id: 'spark-collector', 
+          condition: totalSparks >= 100,
+          description: 'Earned 100+ total sparks'
+        },
+        {
+          id: 'quiz-master',
+          condition: totalSparks >= 300, // Based on completing multiple quizzes
+          description: 'Quiz master achievement'
+        },
+        {
+          id: 'spark-badge',
+          condition: totalSparks >= 1000,
+          description: 'Collected 1000+ sparks'
+        }
+      ];
+
+      // Award eligible badges
+      for (const badge of badgeConditions) {
+        if (badge.condition && !userBadgeIds.includes(badge.id)) {
+          try {
+            await storage.awardBadge(userId, badge.id, 0);
+            console.log(`🏆 Badge awarded: ${badge.id} to user ${userId} (${badge.description})`);
+          } catch (error) {
+            console.error(`Failed to award badge ${badge.id}:`, error);
+          }
+        }
+      }
+
+      // Check for trophy conditions (Bronze, Silver, Gold based on performance)
+      const trophyConditions = [
+        {
+          id: 'bronze-trophy',
+          condition: totalSparks >= 50 && totalSparks < 200,
+          description: 'Bronze achievement'
+        },
+        {
+          id: 'silver-trophy',
+          condition: totalSparks >= 200 && totalSparks < 500,
+          description: 'Silver achievement'  
+        },
+        {
+          id: 'gold-trophy',
+          condition: totalSparks >= 500,
+          description: 'Gold achievement'
+        }
+      ];
+
+      // Award trophies (users can have multiple trophies)
+      for (const trophy of trophyConditions) {
+        if (trophy.condition) {
+          try {
+            await storage.awardTrophy(userId, trophy.id);
+            console.log(`🏆 Trophy awarded: ${trophy.id} to user ${userId} (${trophy.description})`);
+          } catch (error) {
+            // Silently handle if trophy already exists
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error in badge/trophy awarding:', error);
+    }
+  }
+
+  /**
+   * Check and complete challenges based on sparks earned
+   */
+  private static async checkAndCompleteCharlenges(userId: string, sparksEarned: number): Promise<void> {
+    try {
+      const { storage } = await import('./storage');
+      
+      // Get user's active challenges
+      const userChallenges = await storage.getUserChallenges(userId);
+      
+      for (const userChallenge of userChallenges) {
+        if (!userChallenge.completed) {
+          // Update challenge progress
+          const newProgress = (userChallenge.progress || 0) + sparksEarned;
+          
+          // Check if challenge should be completed
+          const challenge = await db.select().from(challenges).where(eq(challenges.id, userChallenge.challengeId)).limit(1);
+          if (challenge[0] && newProgress >= challenge[0].sparks) {
+            // Complete the challenge
+            await storage.completeChallenge(userId, userChallenge.challengeId);
+            console.log(`✅ Challenge completed: ${challenge[0].title} for user ${userId}`);
+          } else {
+            // Update progress
+            await storage.updateChallengeProgress(userId, userChallenge.challengeId, newProgress);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error in challenge completion:', error);
     }
   }
 

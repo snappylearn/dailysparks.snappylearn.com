@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Target, Trophy, Zap, Clock, CheckCircle, Calendar } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 
 export default function Challenges() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
 
   // Fetch all challenges
   const { data: challenges = [] } = useQuery<any[]>({
@@ -113,7 +115,11 @@ export default function Challenges() {
                       </div>
                     )}
                   </div>
-                  <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                  <Button 
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    onClick={() => setLocation('/home')}
+                    data-testid="button-start-featured-challenge"
+                  >
                     Start Challenge
                   </Button>
                 </div>
@@ -202,7 +208,12 @@ export default function Challenges() {
                       
                       <div className="ml-4">
                         {!isCompleted ? (
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setLocation('/home')}
+                            data-testid={`button-start-challenge-${challenge.id}`}
+                          >
                             Start
                           </Button>
                         ) : (
