@@ -1270,7 +1270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Single answer submission (kept for backward compatibility)
-  app.post('/api/quiz/:sessionId/answer', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/:sessionId/answer', isAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       const { questionId, userAnswer, timeSpent } = req.body;
@@ -1658,7 +1658,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Submit individual answer with session persistence
-  app.post('/api/quiz/:sessionId/answer', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/:sessionId/answer', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const sessionId = req.params.sessionId;
@@ -1720,7 +1720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete quiz  
-  app.post('/api/quiz/:sessionId/complete', isAdminAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/:sessionId/complete', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const sessionId = req.params.sessionId;
