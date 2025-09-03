@@ -37,10 +37,7 @@ import AdminLogin from "@/pages/admin/AdminLogin";
 function Router() {
   return (
     <Switch>
-      {/* Public Landing Page - no authentication check */}
-      <Route path="/" component={Landing} />
-      
-      {/* All other routes go through authentication */}
+      {/* All routes go through authentication check */}
       <Route path="/*" component={AuthenticatedRoutes} />
     </Switch>
   );
@@ -66,11 +63,12 @@ function AuthenticatedRoutes() {
     );
   }
 
-  // Redirect to landing if not authenticated (except for admin login)
+  // Show landing page or admin login for non-authenticated users
   if (!isAuthenticated) {
     return (
       <Switch>
         <Route path="/admin-login" component={AdminLogin} />
+        <Route path="/" component={Landing} />
         {/* Redirect all other paths to landing */}
         <Route>
           {() => {
@@ -90,6 +88,14 @@ function AuthenticatedRoutes() {
   // Show main app routes
   return (
     <Switch>
+      {/* Root path redirect to home for authenticated users */}
+      <Route path="/" exact>
+        {() => {
+          window.location.href = '/home';
+          return null;
+        }}
+      </Route>
+      
       {/* Admin Routes */}
       <Route path="/admin">
         <AdminAuthProvider>
