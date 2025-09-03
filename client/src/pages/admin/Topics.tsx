@@ -39,6 +39,7 @@ export default function AdminTopics() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+  const [editorKey, setEditorKey] = useState(0); // Force re-render of editor
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -174,15 +175,24 @@ export default function AdminTopics() {
       return apiRequest("POST", `/api/admin/topics/${topicId}/generate-content`);
     },
     onSuccess: (data: any) => {
+      console.log("Generated content response:", data); // Debug log
       toast({
         title: "Success",
         description: "Content generated successfully!"
       });
       // Update the form with generated content
-      editForm.setValue("summaryContent", data.content);
+      const content = data.content || data;
+      editForm.setValue("summaryContent", content, { 
+        shouldValidate: true, 
+        shouldDirty: true,
+        shouldTouch: true 
+      });
+      // Force editor re-render
+      setEditorKey(prev => prev + 1);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/topics"] });
     },
     onError: (error: any) => {
+      console.error("Content generation error:", error); // Debug log
       toast({
         title: "Error",
         description: error.message || "Failed to generate content",
@@ -824,11 +834,13 @@ export default function AdminTopics() {
                     <FormControl>
                       <div data-color-mode="light">
                         <MDEditor
+                          key={`editor-${editorKey}-${field.value ? field.value.slice(0, 10) : 'empty'}`} // Force re-render when content changes
                           value={field.value || ""}
                           onChange={(value) => field.onChange(value || "")}
                           preview="edit"
                           hideToolbar={false}
                           visibleDragBar={false}
+                          height={300}
                         />
                       </div>
                     </FormControl>
