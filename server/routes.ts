@@ -2476,8 +2476,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         autoRenew: true,
       });
 
-      console.log('✅ Test subscription created:', newSubscription);
-      res.json({ message: 'Test subscription created successfully', subscription: newSubscription });
+      console.log('✅ Test subscription created:', {
+        id: newSubscription.id,
+        userId: newSubscription.userId,
+        planId: newSubscription.planId,
+        status: newSubscription.status,
+        startDate: newSubscription.startDate,
+        endDate: newSubscription.endDate
+      });
+
+      // Immediately verify the subscription was created by looking it up
+      const verifySubscription = await storage.getUserSubscription(userId);
+      console.log('🔍 Verification check - subscription lookup result:', verifySubscription);
+
+      res.json({ 
+        message: 'Test subscription created successfully', 
+        subscription: newSubscription,
+        verification: verifySubscription 
+      });
     } catch (error) {
       console.error("Error creating test subscription:", error);
       res.status(500).json({ message: "Failed to create test subscription" });
