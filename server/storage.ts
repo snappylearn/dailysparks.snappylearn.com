@@ -1030,18 +1030,6 @@ export class DatabaseStorage implements IStorage {
     return leaderboard;
   }
 
-  async updateProfile(profileId: string, data: Partial<Profile>): Promise<Profile> {
-    const [updatedProfile] = await db
-      .update(profiles)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
-      .where(eq(profiles.id, profileId))
-      .returning();
-
-    return updatedProfile;
-  }
 
   // Quiz types operations
   async getQuizTypes() {
@@ -1802,17 +1790,6 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(userChallenges).where(eq(userChallenges.userId, userId));
   }
 
-  async updateChallengeProgress(userId: string, challengeId: string, progress: number): Promise<UserChallenge> {
-    const [userChallenge] = await db
-      .insert(userChallenges)
-      .values({ userId, challengeId, progress })
-      .onConflictDoUpdate({
-        target: [userChallenges.userId, userChallenges.challengeId],
-        set: { progress, updatedAt: new Date() },
-      })
-      .returning();
-    return userChallenge;
-  }
 
   async completeChallenge(userId: string, challengeId: string): Promise<UserChallenge> {
     const [userChallenge] = await db
@@ -1987,19 +1964,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Examination Systems CRUD
-  async createExaminationSystem(data: any): Promise<any> {
-    try {
-      const [newSystem] = await db.insert(examinationSystems).values({
-        name: data.name,
-        description: data.description
-      }).returning();
-      return newSystem;
-    } catch (error) {
-      console.error('Error creating examination system:', error);
-      throw error;
-    }
-  }
 
   async updateExaminationSystem(id: string, data: any): Promise<any> {
     try {
@@ -2026,20 +1990,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Levels CRUD
-  async createLevel(data: any): Promise<any> {
-    try {
-      const [newLevel] = await db.insert(levels).values({
-        examinationSystemId: data.examinationSystemId,
-        title: data.title,
-        description: data.description
-      }).returning();
-      return newLevel;
-    } catch (error) {
-      console.error('Error creating level:', error);
-      throw error;
-    }
-  }
 
   async updateLevel(id: string, data: any): Promise<any> {
     try {
@@ -2067,20 +2017,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Subjects CRUD
-  async createSubject(data: any): Promise<any> {
-    try {
-      const [newSubject] = await db.insert(subjects).values({
-        examinationSystemId: data.examinationSystemId,
-        name: data.name,
-        description: data.description
-      }).returning();
-      return newSubject;
-    } catch (error) {
-      console.error('Error creating subject:', error);
-      throw error;
-    }
-  }
 
   async updateSubject(id: string, data: any): Promise<any> {
     try {
@@ -2399,13 +2335,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createTopic(topicData: InsertTopic): Promise<Topic> {
-    const [topic] = await db
-      .insert(topics)
-      .values(topicData)
-      .returning();
-    return topic;
-  }
 
   async updateTopic(topicId: string, updateData: Partial<InsertTopic>): Promise<Topic> {
     const [topic] = await db
@@ -2422,16 +2351,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(topics.id, topicId));
   }
 
-  // Quiz types management implementation
-  async getQuizTypes(): Promise<any[]> {
-    try {
-      const quizTypesData = await db.select().from(quizTypes).orderBy(quizTypes.title);
-      return quizTypesData;
-    } catch (error) {
-      console.error('Error fetching quiz types:', error);
-      return [];
-    }
-  }
 
   async createQuizType(data: any): Promise<any> {
     const [quizType] = await db
