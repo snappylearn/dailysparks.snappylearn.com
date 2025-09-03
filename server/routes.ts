@@ -2519,6 +2519,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Process existing payments and create missing subscriptions
+  app.post('/api/subscription/process-payments', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      console.log('🔄 Processing existing payments for user:', userId);
+
+      // Get all successful subscription payments for this user
+      const paymentHistory = await storage.getPaymentHistory(userId);
+      const subscriptionPayments = paymentHistory.filter(payment => 
+        payment.type === 'subscription' && 
+        payment.status === 'success'
+      );
+
+      console.log('💳 Found', subscriptionPayments.length, 'successful subscription payments');
+
+      const createdSubscriptions = [];
+      
+      for (const payment of subscriptionPayments) {
+        // Skip if we already have an active subscription (process only once)
+        const existingSubscription = await storage.getUserSubscription(userId);
+        if (existingSubscription && existingSubscription.status === 'active') {
+          console.log('ℹ️ User already has active subscription, using latest payment for new subscription');
+          // Only process the most recent payment
+          const latestPayment = subscriptionPayments[0]; // Already sorted by date DESC
+          if (payment.id !== latestPayment.id) {
+            continue; // Skip older payments if there's already a subscription
+          }
+        }
+
+        // Extract plan information from payment description
+        let planId = null;
+        let billingCycle = payment.metadata?.billingCycle || 'monthly';
+        
+        // Parse plan from description - matches "Subscription: Premium Plan (monthly)"
+        const descMatch = payment.description?.match(/Subscription:\s*(.+?)\s*\(/);
+        if (descMatch) {
+          const planName = descMatch[1].trim();
+          const plans = await storage.getSubscriptionPlans();
+          const matchedPlan = plans.find(p => p.name === planName);
+          if (matchedPlan) {
+            planId = matchedPlan.id;
+          }
+        }
+
+        if (!planId) {
+          console.log('❌ Could not determine plan for payment:', payment.id, payment.description);
+          continue;
+        }
+
+        console.log('✅ Creating subscription for payment:', payment.id, 'plan:', planId);
+
+        // Calculate subscription dates
+        const startDate = new Date(payment.processedAt || payment.createdAt);
+        const endDate = new Date(startDate);
+        
+        switch (billingCycle) {
+          case 'weekly':
+            endDate.setDate(endDate.getDate() + 7);
+            break;
+          case 'monthly':
+            endDate.setMonth(endDate.getMonth() + 1);
+            break;
+          case 'yearly':
+            endDate.setFullYear(endDate.getFullYear() + 1);
+            break;
+          default:
+            endDate.setDate(endDate.getDate() + 7);
+            break;
+        }
+
+        // Create the subscription
+        const subscriptionData = {
+          userId,
+          planId,
+          status: 'active',
+          startDate,
+          endDate,
+          paymentMethod: 'paystack',
+          autoRenew: true,
+        };
+
+        const newSubscription = await storage.createSubscription(subscriptionData);
+        console.log('✅ Created subscription:', newSubscription.id, 'for payment:', payment.id);
+        createdSubscriptions.push({
+          paymentId: payment.id,
+          subscriptionId: newSubscription.id,
+          planId,
+          amount: payment.amount
+        });
+      }
+
+      res.json({ 
+        message: `Successfully processed ${createdSubscriptions.length} payments and created subscriptions`,
+        subscriptions: createdSubscriptions
+      });
+
+    } catch (error) {
+      console.error("❌ Error processing payments for subscriptions:", error);
+      res.status(500).json({ message: "Failed to process payments" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

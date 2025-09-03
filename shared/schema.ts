@@ -901,6 +901,7 @@ export const paymentTransactions = pgTable("payment_transactions", {
   currency: varchar("currency").default("KES"),
   status: varchar("status").notNull().default("pending"), // pending, success, failed, cancelled
   description: text("description"),
+  planId: varchar("plan_id").references(() => subscriptionPlans.id), // Add planId field for subscription payments
   paystackReference: varchar("paystack_reference"),
   paystackTransactionId: varchar("paystack_transaction_id"),
   subscriptionId: varchar("subscription_id").references(() => userSubscriptions.id),
