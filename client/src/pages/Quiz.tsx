@@ -589,8 +589,14 @@ export default function Quiz() {
                 }}
                 className="w-full"
                 data-testid="button-select-topical"
+                disabled={startQuizMutation.isPending}
               >
-                Start Topical Quiz
+                {startQuizMutation.isPending && selectedQuizType === 'topical' ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Preparing your quiz...
+                  </div>
+                ) : 'Start Topical Quiz'}
               </Button>
             </CardContent>
           </Card>
@@ -619,8 +625,14 @@ export default function Quiz() {
                 }}
                 className="w-full"
                 data-testid="button-select-termly"
+                disabled={startQuizMutation.isPending}
               >
-                Start Termly Quiz
+                {startQuizMutation.isPending && selectedQuizType === 'termly' ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Preparing your quiz...
+                  </div>
+                ) : 'Start Termly Quiz'}
               </Button>
             </CardContent>
           </Card>
