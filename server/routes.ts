@@ -2242,7 +2242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/subscription/create-with-credits', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { planId, paymentMethod } = req.body;
+      const { planId, paymentMethod, billingCycle } = req.body;
 
       // Get plan details
       const plans = await storage.getSubscriptionPlans();
@@ -2269,10 +2269,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.deductCredits(userId, planPrice, `Subscription: ${plan.name}`);
       }
 
-      // Create subscription
+      // Create subscription with proper duration based on billing cycle
       const startDate = new Date();
       const endDate = new Date();
-      endDate.setDate(endDate.getDate() + 7); // 7 days for weekly billing
+      
+      // Calculate end date based on selected billing cycle or plan's default
+      const selectedBillingCycle = billingCycle || plan.billingCycle;
+      switch (selectedBillingCycle) {
+        case 'weekly':
+          endDate.setDate(endDate.getDate() + 7); // 7 days
+          break;
+        case 'monthly':
+          endDate.setMonth(endDate.getMonth() + 1); // 1 month
+          break;
+        case 'yearly':
+          endDate.setFullYear(endDate.getFullYear() + 1); // 1 year
+          break;
+        default:
+          endDate.setDate(endDate.getDate() + 7); // Default to weekly
+          break;
+      }
 
       const subscription = await storage.createSubscription({
         userId,
@@ -2317,7 +2333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payment/create', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { amount, type, description, planId } = req.body;
+      const { amount, type, description, planId, billingCycle } = req.body;
 
       const transaction = await storage.createPaymentTransaction({
         userId,
@@ -2327,6 +2343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'pending',
         description,
         planId: planId,
+        metadata: billingCycle ? { billingCycle } : undefined,
       });
 
       res.json(transaction);
@@ -2367,7 +2384,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (plan) {
           const startDate = new Date();
           const endDate = new Date();
-          endDate.setDate(endDate.getDate() + 7); // 7 days for weekly billing
+          
+          // Calculate end date based on transaction billing cycle or plan's default
+          const transactionBillingCycle = transaction.metadata?.billingCycle || plan.billingCycle;
+          switch (transactionBillingCycle) {
+            case 'weekly':
+              endDate.setDate(endDate.getDate() + 7); // 7 days
+              break;
+            case 'monthly':
+              endDate.setMonth(endDate.getMonth() + 1); // 1 month
+              break;
+            case 'yearly':
+              endDate.setFullYear(endDate.getFullYear() + 1); // 1 year
+              break;
+            default:
+              endDate.setDate(endDate.getDate() + 7); // Default to weekly
+              break;
+          }
 
           await storage.createSubscription({
             userId,
