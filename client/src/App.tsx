@@ -85,6 +85,13 @@ function AuthenticatedRoutes() {
     );
   }
 
+  // Redirect authenticated users away from auth pages
+  const currentPath = window.location.pathname;
+  if (currentPath === '/signin' || currentPath === '/signup' || currentPath === '/') {
+    window.location.href = '/home';
+    return null;
+  }
+
   // Show onboarding if no profiles exist
   if (profiles && profiles.length === 0) {
     return <Onboarding onComplete={() => window.location.reload()} />;

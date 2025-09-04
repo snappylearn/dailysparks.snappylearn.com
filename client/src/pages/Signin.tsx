@@ -31,7 +31,8 @@ export default function Signin() {
       return response.json();
     },
     onSuccess: () => {
-      setLocation("/home");
+      // Force a page reload to refresh authentication state
+      window.location.href = "/home";
     },
     onError: (error: any) => {
       console.error("Signin failed:", error);
