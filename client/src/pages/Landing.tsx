@@ -5,7 +5,11 @@ import { CheckCircle, Zap, Trophy, Users, BookOpen, Target, Star, ArrowRight } f
 
 export default function Landing() {
   const handleLogin = () => {
-    window.location.href = "/api/login";
+    window.location.href = "/signin";
+  };
+
+  const handleSignup = () => {
+    window.location.href = "/signup";
   };
 
   return (
@@ -25,9 +29,14 @@ export default function Landing() {
               <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 transition-colors">How it Works</a>
               <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
             </div>
-            <Button variant="outline" onClick={handleLogin}>
-              Sign In
-            </Button>
+            <div className="space-x-4">
+              <Button variant="outline" onClick={handleLogin}>
+                Sign In
+              </Button>
+              <Button onClick={handleSignup}>
+                Sign Up
+              </Button>
+            </div>
           </div>
         </div>
       </nav>
@@ -53,7 +62,7 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
               <Button 
                 size="lg"
-                onClick={handleLogin}
+                onClick={handleSignup}
                 className="bg-gradient-to-r from-orange-500 to-yellow-400 hover:from-orange-600 hover:to-yellow-500 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
               >
                 Start Your Journey
@@ -207,7 +216,7 @@ export default function Landing() {
           </p>
           <Button 
             size="lg"
-            onClick={handleLogin}
+            onClick={handleSignup}
             className="bg-white text-orange-600 hover:bg-gray-50 px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
           >
             Start Your Journey Today

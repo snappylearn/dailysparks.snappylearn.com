@@ -6,13 +6,13 @@ Daily Sparks is an AI-powered revision platform specifically designed for Kenyan
 
 The application offers gamified quiz experiences where students can take random quizzes, topical quizzes, or term-specific quizzes. The AI engine analyzes user performance to optimize question difficulty, schedule reviews, and provide personalized explanations. Students earn "sparks" (points) and maintain learning streaks to encourage consistent study habits.
 
-**Recent Updates (August 22, 2025):**
-- **Currency Migration:** Converted entire platform from KES to USD, including credits display, payment processing, and payment history
-- **Credit Top-up System:** Implemented Paystack-integrated credit top-up functionality with default $20 amount and custom input
-- **Subscription Validation:** Enhanced quiz access control to require active subscriptions, with automatic redirection to subscription page
-- **Subject Cards Enhancement:** Added real-time quiz count display on dashboard subject cards showing available quizzes per subject
-- **Admin Dashboard Fix:** Resolved TypeScript errors and undefined variable issues (leaderboard, metrics properties) with proper type casting
-- **Payment Integration:** Updated Paystack integration to process USD payments with proper amount conversion and callback handling
+**Recent Updates (September 4, 2025):**
+- **Authentication System Overhaul:** Replaced Replit OIDC authentication with form-based signup/signin system
+- **User Schema Enhancement:** Added password field with bcrypt hashing, email verification, and account status tracking
+- **New Auth Pages:** Created professional signup and signin forms with validation, password visibility toggle, and error handling
+- **Session Management:** Implemented secure session-based authentication using PostgreSQL session store
+- **Landing Page Update:** Modified landing page to use new form-based authentication flows instead of Replit auth
+- **Database Migration:** Successfully migrated user table to support password authentication while preserving existing data structure
 
 ## User Preferences
 
@@ -39,7 +39,7 @@ The UI follows a mobile-first approach with three simple navigation choices to m
 The backend follows a RESTful API design using Node.js and Express:
 - **Express.js** server with TypeScript for the API layer
 - **Modular route organization** with separate authentication, quiz, and data management endpoints
-- **Session-based authentication** integrated with Replit's OIDC system
+- **Session-based authentication** using form-based signup/signin with bcrypt password hashing
 - **Middleware pattern** for request logging, error handling, and authentication checks
 - **Storage abstraction layer** that separates business logic from database operations
 - **Enhanced Quiz Engine** implementing LMS best practices with question snapshots and session management
@@ -61,12 +61,12 @@ Key entities include:
 - **Quiz workflow engine** supporting Random, Topical, and Termly quiz generation
 
 ### Authentication System
-Authentication is handled through Replit's integrated OIDC system:
-- **OpenID Connect (OIDC)** integration with Replit's authentication service
-- **Passport.js** strategy for handling OAuth flows
+Authentication is handled through a secure form-based system:
+- **Form-based signup/signin** with email and password validation
+- **bcrypt password hashing** with 12 salt rounds for security
 - **Express sessions** with PostgreSQL session store for persistence
 - **Route-level protection** using authentication middleware
-- **User profile management** with automatic account creation on first login
+- **User profile management** with automatic account creation and email verification support
 
 ### State Management
 Client-side state is managed using a combination of approaches:

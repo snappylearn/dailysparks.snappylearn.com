@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { AdminAuthProvider } from "@/hooks/useAdminAuth";
 import { Profile as ProfileType } from "@shared/schema";
 import Landing from "@/pages/Landing";
+import Signup from "@/pages/Signup";
+import Signin from "@/pages/Signin";
 import SimpleHome from "@/pages/SimpleHome";
 import Quiz from "@/pages/Quiz";
 import QuizHistory from "@/pages/QuizHistory";
@@ -63,10 +65,12 @@ function AuthenticatedRoutes() {
     );
   }
 
-  // Show landing page or admin login for non-authenticated users
+  // Show auth pages or landing for non-authenticated users
   if (!isAuthenticated) {
     return (
       <Switch>
+        <Route path="/signup" component={Signup} />
+        <Route path="/signin" component={Signin} />
         <Route path="/admin-login" component={AdminLogin} />
         <Route path="/admin/login" component={AdminLogin} />
         <Route path="/" component={Landing} />
