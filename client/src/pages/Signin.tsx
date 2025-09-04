@@ -27,8 +27,24 @@ export default function Signin() {
 
   const signinMutation = useMutation({
     mutationFn: async (data: SigninData) => {
-      const response = await apiRequest("POST", "/api/auth/signin", data);
-      return response.json();
+      try {
+        const response = await apiRequest("POST", "/api/auth/signin", data);
+        return response.json();
+      } catch (error: any) {
+        // Parse the error message from apiRequest
+        const errorMessage = error.message;
+        if (errorMessage.includes('401:')) {
+          // Extract the JSON message from the error string
+          const jsonPart = errorMessage.substring(errorMessage.indexOf('{'));
+          try {
+            const parsed = JSON.parse(jsonPart);
+            throw new Error(parsed.message || "Invalid email or password");
+          } catch {
+            throw new Error("Invalid email or password");
+          }
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       // Force a page reload to refresh authentication state
