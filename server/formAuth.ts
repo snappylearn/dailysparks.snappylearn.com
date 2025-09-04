@@ -78,6 +78,11 @@ export async function authenticateUser(credentials: SigninData) {
     return null;
   }
   
+  // Check if user needs password setup (migrated from Replit auth)
+  if (!user.password || user.needsPasswordSetup) {
+    return { needsPasswordSetup: true, userId: user.id, email: user.email };
+  }
+  
   const isValidPassword = await verifyPassword(credentials.password, user.password);
   if (!isValidPassword) {
     return null;
@@ -94,6 +99,28 @@ export async function authenticateUser(credentials: SigninData) {
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
+  };
+}
+
+// Setup password for existing user
+export async function setupUserPassword(userId: string, password: string) {
+  const hashedPassword = await hashPassword(password);
+  
+  const [updatedUser] = await db
+    .update(users)
+    .set({ 
+      password: hashedPassword, 
+      needsPasswordSetup: false,
+      lastLoginAt: new Date()
+    })
+    .where(eq(users.id, userId))
+    .returning();
+    
+  return {
+    id: updatedUser.id,
+    email: updatedUser.email,
+    firstName: updatedUser.firstName,
+    lastName: updatedUser.lastName,
   };
 }
 

@@ -55,7 +55,7 @@ export const adminUsers = pgTable("admin_users", {
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique().notNull(),
-  password: varchar("password").notNull(), // hashed password
+  password: varchar("password"), // hashed password - nullable for migration
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -64,6 +64,7 @@ export const users = pgTable("users", {
   credits: decimal("credits", { precision: 10, scale: 2 }).default("0.00"),
   isActive: boolean("is_active").default(true),
   emailVerified: boolean("email_verified").default(false),
+  needsPasswordSetup: boolean("needs_password_setup").default(false),
   lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -555,6 +556,16 @@ export const signinSchema = createInsertSchema(users).pick({
   password: true,
 });
 
+export const passwordSetupSchema = createInsertSchema(users).pick({
+  email: true,
+}).extend({
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -759,6 +770,7 @@ export type UserChallengeProgress = typeof userChallengeProgress.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type SignupData = z.infer<typeof signupSchema>;
 export type SigninData = z.infer<typeof signinSchema>;
+export type PasswordSetupData = z.infer<typeof passwordSetupSchema>;
 export type InsertExaminationSystem = z.infer<typeof insertExaminationSystemSchema>;
 export type InsertLevel = z.infer<typeof insertLevelSchema>;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
