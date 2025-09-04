@@ -1,10 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, createUser, authenticateUser, getCurrentUser } from "./formAuth";
+import { setupAuth, isAuthenticated, createUser, authenticateUser, getCurrentUser, setupUserPassword } from "./formAuth";
 import { setupAdminAuth, isAdminAuthenticated } from "./adminAuth";
 import { generateQuestions } from "./aiService";
-import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects, levels, terms, signupSchema, signinSchema } from "@shared/schema";
+import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects, levels, terms, signupSchema, signinSchema, passwordSetupSchema } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
@@ -54,18 +54,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/signin', async (req, res) => {
     try {
       const validatedData = signinSchema.parse(req.body);
-      const user = await authenticateUser(validatedData);
+      const result = await authenticateUser(validatedData);
       
-      if (!user) {
+      if (!result) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
       
+      // Check if user needs password setup
+      if ((result as any).needsPasswordSetup) {
+        return res.json({
+          needsPasswordSetup: true,
+          userId: (result as any).userId,
+          email: (result as any).email,
+          message: "Please set up your password to continue"
+        });
+      }
+      
       // Store user in session
-      (req.session as any).user = user;
+      (req.session as any).user = result;
       
       res.json({
         message: "Signed in successfully",
-        user
+        user: result
       });
     } catch (error: any) {
       console.error("Signin error:", error);
@@ -73,6 +83,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(400).json({ message: "Validation error", errors: error.issues });
       } else {
         res.status(500).json({ message: "Failed to sign in" });
+      }
+    }
+  });
+
+  app.post('/api/auth/setup-password', async (req, res) => {
+    try {
+      const validatedData = passwordSetupSchema.parse(req.body);
+      
+      // Find user by email to get ID
+      const [existingUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, validatedData.email))
+        .limit(1);
+        
+      if (!existingUser || !existingUser.needsPasswordSetup) {
+        return res.status(400).json({ message: "Invalid request" });
+      }
+      
+      const user = await setupUserPassword(existingUser.id, validatedData.password);
+      
+      // Store user in session
+      (req.session as any).user = user;
+      
+      res.json({
+        message: "Password set up successfully",
+        user
+      });
+    } catch (error: any) {
+      console.error("Password setup error:", error);
+      if (error.issues) {
+        res.status(400).json({ message: "Validation error", errors: error.issues });
+      } else {
+        res.status(500).json({ message: "Failed to set up password" });
       }
     }
   });

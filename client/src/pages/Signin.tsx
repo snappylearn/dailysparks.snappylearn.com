@@ -12,10 +12,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { signinSchema, type SigninData } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import PasswordSetup from "./PasswordSetup";
 
 export default function Signin() {
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
+  const [needsPasswordSetup, setNeedsPasswordSetup] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
   const form = useForm<SigninData>({
     resolver: zodResolver(signinSchema),
@@ -30,8 +33,13 @@ export default function Signin() {
       const response = await apiRequest("POST", "/api/auth/signin", data);
       return response.json();
     },
-    onSuccess: () => {
-      setLocation("/");
+    onSuccess: (data) => {
+      if (data.needsPasswordSetup) {
+        setUserEmail(data.email);
+        setNeedsPasswordSetup(true);
+      } else {
+        setLocation("/");
+      }
     },
     onError: (error: any) => {
       console.error("Signin failed:", error);
@@ -41,6 +49,15 @@ export default function Signin() {
   const onSubmit = (data: SigninData) => {
     signinMutation.mutate(data);
   };
+
+  const handlePasswordSetupComplete = () => {
+    setLocation("/");
+  };
+
+  // Show password setup if needed
+  if (needsPasswordSetup) {
+    return <PasswordSetup email={userEmail} onComplete={handlePasswordSetupComplete} />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
