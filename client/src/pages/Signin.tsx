@@ -31,7 +31,7 @@ export default function Signin() {
       return response.json();
     },
     onSuccess: () => {
-      setLocation("/");
+      setLocation("/home");
     },
     onError: (error: any) => {
       console.error("Signin failed:", error);
