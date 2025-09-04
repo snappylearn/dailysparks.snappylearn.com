@@ -11,8 +11,15 @@ import { eq } from "drizzle-orm";
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
+  
+  // Use connection pooling for sessions too
+  let connectionString = process.env.DATABASE_URL;
+  if (process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT) {
+    connectionString = connectionString?.replace('.us-east-2', '-pooler.us-east-2');
+  }
+  
   const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
+    conString: connectionString,
     createTableIfMissing: false,
     ttl: sessionTtl,
     tableName: "sessions",

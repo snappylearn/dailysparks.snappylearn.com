@@ -12,8 +12,18 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Configure pool
+// Configure pool with connection pooling for deployment
+let connectionString = process.env.DATABASE_URL;
+
+// Enable Neon connection pooler for production/deployment
+if (process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT) {
+  connectionString = connectionString?.replace('.us-east-2', '-pooler.us-east-2');
+}
+
 export const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL
+  connectionString,
+  max: 10, // Limit concurrent connections
+  idleTimeoutMillis: 30000, // Close idle connections after 30s
+  connectionTimeoutMillis: 5000, // Timeout connection attempts after 5s
 });
 export const db = drizzle({ client: pool, schema });
