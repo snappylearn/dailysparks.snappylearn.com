@@ -1741,10 +1741,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Complete quiz  
   app.post('/api/quiz/:sessionId/complete', isAuthenticated, async (req: any, res) => {
     try {
-      console.log('=== UPDATED QUIZ COMPLETION ROUTE HIT ===');
       const userId = getCurrentUser(req)?.id;
       const sessionId = req.params.sessionId;
-      console.log('Session ID:', sessionId);
 
       if (!sessionId) {
         return res.status(400).json({ message: "Session ID is required" });
