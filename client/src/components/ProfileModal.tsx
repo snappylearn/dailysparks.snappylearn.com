@@ -14,8 +14,19 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
     queryKey: ["/api/user/stats"],
   });
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      // Redirect to landing page after successful logout
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Force redirect anyway
+      window.location.href = '/';
+    }
   };
 
   return (
