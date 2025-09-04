@@ -232,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get quiz history for current user
   app.get('/api/quiz-history', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const quizHistory = await storage.getQuizHistoryForUser(userId);
       res.json(quizHistory);
     } catch (error) {
@@ -244,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user stats for dashboard
   app.get('/api/user-stats', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const stats = await storage.getUserStats(userId);
       res.json(stats);
     } catch (error) {
@@ -258,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const updateData = req.body;
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       
       // Handle empty levelId - remove it from update data to avoid constraint violation
       if (updateData.levelId === '') {
@@ -290,7 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate and start a new quiz
   app.post('/api/quizzes/generate', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const { 
         examinationSystemId, 
         levelId, 
@@ -344,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/quiz-sessions/:sessionId', isAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       
       const { LLMQuizEngine } = await import('./llmQuizEngine');
       const sessionData = await LLMQuizEngine.getQuizSession(sessionId);
@@ -366,7 +366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/quiz-sessions/:sessionId/review', isAuthenticated, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       
       // Get the quiz session with subject name
       const session = await db
@@ -539,7 +539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new quiz
   app.post('/api/admin/quizzes', isAdminAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const quizData = { ...req.body, createdBy: userId };
       
       const newQuiz = await storage.createQuiz(quizData);
@@ -711,7 +711,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin generate quiz endpoint
   app.post('/api/admin/generate-quiz', isAdminAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const quizData = req.body;
       
       // Use LLM to generate quiz with admin privileges
@@ -1006,7 +1006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Primary quiz start endpoint - uses existing admin-created quizzes
   app.post('/api/quiz/start', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const { profileId, subjectId, quizType, topicId, termId } = req.body;
       
       // Check if user has active subscription
@@ -1248,7 +1248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Profile routes
   app.get('/api/profiles', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const profiles = await storage.getUserProfiles(userId);
       res.json(profiles);
     } catch (error) {
@@ -1259,7 +1259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/profiles', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const { examinationSystemId, levelId } = req.body;
       
       console.log('=== CREATE PROFILE REQUEST ===');
@@ -1295,7 +1295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/profiles/:profileId/default', isAdminAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const { profileId } = req.params;
       
       const user = await storage.setDefaultProfile(userId, profileId);
@@ -1321,7 +1321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/subjects/:systemId', isAuthenticated, async (req: any, res) => {
     try {
       const { systemId } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       
       // Get user's current profile to filter questions by their level
       const profiles = await storage.getUserProfiles(userId);
@@ -1400,7 +1400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sessionId } = req.params;
       const { questionId, userAnswer, timeSpent } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
 
       console.log('Submitting answer for session:', sessionId, 'question:', questionId, 'answer:', userAnswer);
 
@@ -1747,7 +1747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       // Create new session
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const quizSession = await storage.createQuizSession({
         userId,
         profileId,
@@ -1786,7 +1786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Submit individual answer with session persistence
   app.post('/api/quiz/:sessionId/answer', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const sessionId = req.params.sessionId;
       const { questionId, userAnswer, timeSpent } = req.body;
 
@@ -1848,7 +1848,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Complete quiz  
   app.post('/api/quiz/:sessionId/complete', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const sessionId = req.params.sessionId;
 
       if (!sessionId) {
@@ -1908,7 +1908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get today's challenge
   app.get('/api/challenge/today', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const challenge = await storage.getTodaysChallenge();
       
       if (!challenge) {
@@ -1930,7 +1930,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user stats
   app.get('/api/user/stats', isAdminAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       // const stats = await storage.getProfileStats(profileId);
       res.json({ message: "Stats endpoint not implemented yet" });
     } catch (error) {
@@ -1942,7 +1942,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get subject performance
   app.get('/api/subjects/:subjectId/performance', isAdminAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const { subjectId } = req.params;
       
       const performance = await storage.getSubjectPerformance(userId, subjectId);
@@ -2274,7 +2274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/admin/settings/general', isAdminAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const settings = await storage.updateGeneralSettings(req.body, userId);
       res.json(settings);
     } catch (error) {
@@ -2296,7 +2296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/admin/settings/quiz', isAdminAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const settings = await storage.updateQuizSettings(req.body, userId);
       res.json(settings);
     } catch (error) {
@@ -2318,7 +2318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/admin/settings/notifications', isAdminAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const settings = await storage.updateNotificationSettings(req.body, userId);
       res.json(settings);
     } catch (error) {
@@ -2343,7 +2343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's current subscription
   app.get('/api/subscription/current', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       console.log('SUBSCRIPTION CHECK FOR USER:', userId);
       
       const subscription = await storage.getUserSubscription(userId);
@@ -2361,7 +2361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user credits
   app.get('/api/user/credits', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const credits = await storage.getUserCredits(userId);
       res.json({ credits });
     } catch (error) {
@@ -2373,7 +2373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create subscription with credits
   app.post('/api/subscription/create-with-credits', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const { planId, paymentMethod, billingCycle } = req.body;
 
       // Get plan details
@@ -2442,7 +2442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get payment history
   app.get('/api/payment/history', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const [paymentHistory, creditTransactions] = await Promise.all([
         storage.getPaymentHistory(userId),
         storage.getCreditTransactions(userId),
@@ -2464,7 +2464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create payment transaction (for Paystack integration)
   app.post('/api/payment/create', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const { amount, type, description, planId, billingCycle } = req.body;
 
       const transaction = await storage.createPaymentTransaction({
@@ -2489,7 +2489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payment/confirm', isAuthenticated, async (req: any, res) => {
     console.log('PAYMENT CONFIRM ENDPOINT HIT!!!');
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const { transactionId, paystackReference } = req.body;
 
       console.log('🔄 Processing payment confirmation for user:', userId, 'transaction:', transactionId);
@@ -2616,7 +2616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Confirm credit top-up payment transaction
   app.post('/api/payment/confirm-topup', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       const { transactionId, paystackReference, amount } = req.body;
 
       // Update transaction status
@@ -2648,7 +2648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Process existing payments and create missing subscriptions
   app.post('/api/subscription/process-payments', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getCurrentUser(req)?.id;
       console.log('🔄 Processing existing payments for user:', userId);
 
       // Get all successful subscription payments for this user
