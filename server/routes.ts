@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, createUser, authenticateUser, getCurrentUser, setupUserPassword } from "./formAuth";
+import { setupAuth, isAuthenticated, createUser, authenticateUser, getCurrentUser, hashPassword, verifyPassword } from "./formAuth";
 import { setupAdminAuth, isAdminAuthenticated } from "./adminAuth";
 import { generateQuestions } from "./aiService";
 import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects, levels, terms, signupSchema, signinSchema, passwordSetupSchema } from "@shared/schema";
@@ -54,28 +54,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/signin', async (req, res) => {
     try {
       const validatedData = signinSchema.parse(req.body);
-      const result = await authenticateUser(validatedData);
+      const user = await authenticateUser(validatedData);
       
-      if (!result) {
+      if (!user) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
       
-      // Check if user needs password setup
-      if ((result as any).needsPasswordSetup) {
-        return res.json({
-          needsPasswordSetup: true,
-          userId: (result as any).userId,
-          email: (result as any).email,
-          message: "Please set up your password to continue"
-        });
-      }
-      
       // Store user in session
-      (req.session as any).user = result;
+      (req.session as any).user = user;
       
       res.json({
         message: "Signed in successfully",
-        user: result
+        user
       });
     } catch (error: any) {
       console.error("Signin error:", error);
@@ -87,37 +77,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/setup-password', async (req, res) => {
+  app.post('/api/auth/change-password', isAuthenticated, async (req, res) => {
     try {
-      const validatedData = passwordSetupSchema.parse(req.body);
+      const { currentPassword, newPassword } = req.body;
       
-      // Find user by email to get ID
-      const [existingUser] = await db
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current password and new password are required" });
+      }
+      
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "New password must be at least 6 characters" });
+      }
+      
+      const userId = (req.session as any).user.id;
+      
+      // Get current user
+      const [user] = await db
         .select()
         .from(users)
-        .where(eq(users.email, validatedData.email))
+        .where(eq(users.id, userId))
         .limit(1);
         
-      if (!existingUser || !existingUser.needsPasswordSetup) {
-        return res.status(400).json({ message: "Invalid request" });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
       }
       
-      const user = await setupUserPassword(existingUser.id, validatedData.password);
+      // Verify current password
+      const isValidPassword = await verifyPassword(currentPassword, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
       
-      // Store user in session
-      (req.session as any).user = user;
+      // Hash new password
+      const hashedPassword = await hashPassword(newPassword);
       
-      res.json({
-        message: "Password set up successfully",
-        user
-      });
+      // Update password
+      await db
+        .update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, userId));
+      
+      res.json({ message: "Password updated successfully" });
     } catch (error: any) {
-      console.error("Password setup error:", error);
-      if (error.issues) {
-        res.status(400).json({ message: "Validation error", errors: error.issues });
-      } else {
-        res.status(500).json({ message: "Failed to set up password" });
-      }
+      console.error("Password change error:", error);
+      res.status(500).json({ message: "Failed to change password" });
     }
   });
 

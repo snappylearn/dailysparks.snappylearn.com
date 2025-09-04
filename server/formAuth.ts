@@ -78,11 +78,6 @@ export async function authenticateUser(credentials: SigninData) {
     return null;
   }
   
-  // Check if user needs password setup (migrated from Replit auth)
-  if (!user.password || user.needsPasswordSetup) {
-    return { needsPasswordSetup: true, userId: user.id, email: user.email };
-  }
-  
   const isValidPassword = await verifyPassword(credentials.password, user.password);
   if (!isValidPassword) {
     return null;
