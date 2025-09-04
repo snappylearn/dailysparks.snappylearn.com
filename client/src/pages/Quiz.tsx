@@ -33,12 +33,14 @@ interface QuizSession {
 }
 
 interface QuizResults {
-  sessionId: string;
-  totalQuestions: number;
   correctAnswers: number;
+  totalQuestions: number;
+  score: string;
+  percentage: number;
+  accuracy: number;
+  grade: string;
   sparksEarned: number;
-  timeSpent: number;
-  completed: boolean;
+  bonusMultiplier?: number;
 }
 
 export default function Quiz() {
@@ -314,8 +316,8 @@ export default function Quiz() {
 
   // Show quiz results
   if (showResults && quizResults) {
-    const accuracy = Math.round((quizResults.correctAnswers / quizResults.totalQuestions) * 100);
-    const grade = accuracy >= 80 ? 'A' : accuracy >= 70 ? 'B' : accuracy >= 60 ? 'C' : accuracy >= 50 ? 'D' : 'E';
+    const accuracy = quizResults.accuracy || 0; // Use accuracy from backend response
+    const grade = quizResults.grade || 'F'; // Use grade from backend response
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-100 via-white to-teal-50 p-4">

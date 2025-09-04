@@ -1756,11 +1756,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const correctAnswers = answers.filter(a => a.isCorrect).length;
       const totalQuestions = answers.length;
       
-      // Calculate sparks earned
-      let sparksEarned = correctAnswers * 10;
-      if (correctAnswers === totalQuestions) {
-        sparksEarned += 500; // Perfect quiz bonus
+      // Get platform settings for sparks calculation
+      const quizSettings = await storage.getQuizSettings();
+      
+      // Calculate accuracy percentage
+      const accuracy = totalQuestions > 0 ? correctAnswers / totalQuestions : 0;
+      const percentage = totalQuestions > 0 ? Math.round(accuracy * 100) : 0;
+      
+      console.log(`Quiz completion - Correct: ${correctAnswers}, Total: ${totalQuestions}, Accuracy: ${accuracy}, Percentage: ${percentage}`);
+      
+      // Calculate sparks earned using platform settings
+      const baseSparks = correctAnswers * quizSettings.sparksPerCorrectAnswer;
+      
+      // Apply accuracy bonuses based on platform settings
+      let bonusMultiplier = 1;
+      if (accuracy >= Number(quizSettings.accuracyBonusThreshold)) {
+        bonusMultiplier = Number(quizSettings.accuracyBonusMultiplier);
+      } else if (accuracy >= Number(quizSettings.goodAccuracyThreshold)) {
+        bonusMultiplier = Number(quizSettings.goodAccuracyMultiplier);
       }
+      
+      const sparksEarned = Math.round(baseSparks * bonusMultiplier);
 
       // Update quiz session
       await db.update(quizSessions).set({
@@ -1770,12 +1786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         completedAt: new Date(),
       }).where(eq(quizSessions.id, sessionId));
 
-      // Update profile sparks and streak (placeholder - implement if needed)
-      // await storage.updateProfileSparks(profileId, sparksEarned);
-      // const updatedProfile = await storage.updateProfileStreak(profileId);
-
       // Calculate grade
-      const percentage = Math.round((correctAnswers / totalQuestions) * 100);
       let grade = 'F';
       if (percentage >= 90) grade = 'A';
       else if (percentage >= 80) grade = 'B+';
@@ -1784,14 +1795,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       else if (percentage >= 50) grade = 'C';
       else if (percentage >= 40) grade = 'D';
 
-      res.json({
+      const responseObj = {
+        correctAnswers,
+        totalQuestions,
         score: `${correctAnswers}/${totalQuestions}`,
         percentage,
+        accuracy: percentage, // Send percentage as accuracy for frontend
         grade,
         sparksEarned,
-        // currentStreak: updatedProfile?.streak || 0,
-        // totalSparks: updatedProfile?.sparks || 0,
-      });
+        bonusMultiplier: bonusMultiplier > 1 ? bonusMultiplier : null,
+      };
+      
+      console.log('Sending quiz completion response:', JSON.stringify(responseObj));
+      res.json(responseObj);
     } catch (error) {
       console.error("Error completing quiz:", error);
       res.status(500).json({ message: "Failed to complete quiz" });
