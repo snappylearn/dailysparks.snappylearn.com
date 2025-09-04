@@ -1,10 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, createUser, authenticateUser, getCurrentUser } from "./formAuth";
 import { setupAdminAuth, isAdminAuthenticated } from "./adminAuth";
 import { generateQuestions } from "./aiService";
-import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects, levels, terms } from "@shared/schema";
+import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects, levels, terms, signupSchema, signinSchema } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
@@ -17,10 +17,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAdminAuth(app);
 
   // Auth routes
+  app.post('/api/auth/signup', async (req, res) => {
+    try {
+      const validatedData = signupSchema.parse(req.body);
+      const newUser = await createUser(validatedData);
+      
+      // Store user in session
+      (req.session as any).user = {
+        id: newUser.id,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+      };
+      
+      res.status(201).json({
+        message: "Account created successfully",
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+        }
+      });
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      if (error.code === '23505') { // Unique constraint violation
+        res.status(400).json({ message: "Email already exists" });
+      } else if (error.issues) {
+        res.status(400).json({ message: "Validation error", errors: error.issues });
+      } else {
+        res.status(500).json({ message: "Failed to create account" });
+      }
+    }
+  });
+
+  app.post('/api/auth/signin', async (req, res) => {
+    try {
+      const validatedData = signinSchema.parse(req.body);
+      const user = await authenticateUser(validatedData);
+      
+      if (!user) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+      
+      // Store user in session
+      (req.session as any).user = user;
+      
+      res.json({
+        message: "Signed in successfully",
+        user
+      });
+    } catch (error: any) {
+      console.error("Signin error:", error);
+      if (error.issues) {
+        res.status(400).json({ message: "Validation error", errors: error.issues });
+      } else {
+        res.status(500).json({ message: "Failed to sign in" });
+      }
+    }
+  });
+
+  app.post('/api/auth/logout', (req, res) => {
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Logout error:", err);
+          return res.status(500).json({ message: "Failed to logout" });
+        }
+        res.clearCookie('connect.sid');
+        res.json({ message: "Logged out successfully" });
+      });
+    } else {
+      res.json({ message: "Already logged out" });
+    }
+  });
+
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const currentUser = getCurrentUser(req);
+      if (!currentUser) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const user = await storage.getUser(currentUser.id);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);

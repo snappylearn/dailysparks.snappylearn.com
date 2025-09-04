@@ -51,16 +51,20 @@ export const adminUsers = pgTable("admin_users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// User storage table (required for Replit Auth)
+// User storage table (form-based authentication)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  email: varchar("email").unique().notNull(),
+  password: varchar("password").notNull(), // hashed password
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   defaultProfileId: varchar("default_profile_id"),
   isPremium: boolean("is_premium").default(false),
   credits: decimal("credits", { precision: 10, scale: 2 }).default("0.00"),
+  isActive: boolean("is_active").default(true),
+  emailVerified: boolean("email_verified").default(false),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -533,11 +537,30 @@ export const userChallengeProgressRelations = relations(userChallengeProgress, (
   }),
 }));
 
+// Authentication schemas
+export const signupSchema = createInsertSchema(users).pick({
+  email: true,
+  password: true,
+  firstName: true,
+  lastName: true,
+}).extend({
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+export const signinSchema = createInsertSchema(users).pick({
+  email: true,
+  password: true,
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  password: true, // Don't expose password in general user inserts
 });
 
 export const insertExaminationSystemSchema = createInsertSchema(examinationSystems).omit({
@@ -734,6 +757,8 @@ export type DailyChallenge = typeof dailyChallenges.$inferSelect;
 export type UserChallengeProgress = typeof userChallengeProgress.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type SignupData = z.infer<typeof signupSchema>;
+export type SigninData = z.infer<typeof signinSchema>;
 export type InsertExaminationSystem = z.infer<typeof insertExaminationSystemSchema>;
 export type InsertLevel = z.infer<typeof insertLevelSchema>;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
