@@ -68,18 +68,36 @@ export async function createUser(userData: SignupData) {
 
 // Authenticate user
 export async function authenticateUser(credentials: SigninData) {
+  console.log('Authenticating user:', credentials.email);
+  
   const [user] = await db
     .select()
     .from(users)
     .where(eq(users.email, credentials.email))
     .limit(1);
     
+  console.log('Found user:', user ? 'Yes' : 'No');
+  if (user) {
+    console.log('User active:', user.isActive);
+    console.log('User has password:', !!user.password);
+  }
+    
   if (!user || !user.isActive) {
+    console.log('User not found or inactive');
     return null;
   }
   
+  if (!user.password) {
+    console.log('User has no password');
+    return null;
+  }
+  
+  console.log('Verifying password...');
   const isValidPassword = await verifyPassword(credentials.password, user.password);
+  console.log('Password valid:', isValidPassword);
+  
   if (!isValidPassword) {
+    console.log('Invalid password');
     return null;
   }
   
@@ -89,6 +107,7 @@ export async function authenticateUser(credentials: SigninData) {
     .set({ lastLoginAt: new Date() })
     .where(eq(users.id, user.id));
     
+  console.log('Authentication successful');
   return {
     id: user.id,
     email: user.email,
