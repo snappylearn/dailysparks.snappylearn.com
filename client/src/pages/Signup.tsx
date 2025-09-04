@@ -35,7 +35,8 @@ export default function Signup() {
       return response.json();
     },
     onSuccess: () => {
-      setLocation("/");
+      // Force a page reload to refresh authentication state
+      window.location.href = "/home";
     },
     onError: (error: any) => {
       console.error("Signup failed:", error);
