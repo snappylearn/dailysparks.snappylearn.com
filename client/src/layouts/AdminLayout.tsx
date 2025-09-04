@@ -170,7 +170,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => window.location.href = '/api/logout'}>
+              <DropdownMenuItem onClick={async () => {
+                try {
+                  await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                  });
+                  window.location.href = '/';
+                } catch (error) {
+                  console.error('Logout failed:', error);
+                  window.location.href = '/';
+                }
+              }}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
@@ -211,7 +222,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => window.location.href = '/api/logout'}>
+              <DropdownMenuItem onClick={async () => {
+                try {
+                  await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                  });
+                  window.location.href = '/';
+                } catch (error) {
+                  console.error('Logout failed:', error);
+                  window.location.href = '/';
+                }
+              }}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
