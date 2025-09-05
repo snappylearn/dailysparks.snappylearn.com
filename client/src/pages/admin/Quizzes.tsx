@@ -1280,7 +1280,9 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
         title: "Success",
         description: "Quiz updated successfully"
       });
+      // Invalidate both the quiz list and the specific quiz data
       queryClient.invalidateQueries({ queryKey: ["/api/admin/quizzes"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/quizzes/${quiz.id}`] });
       onClose();
     },
     onError: (error: any) => {
