@@ -702,7 +702,7 @@ export default function AdminQuizzes() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {addFilteredTopics?.map((topic: any) => (
+                                {editFilteredTopics?.map((topic: any) => (
                                   <SelectItem key={topic.id} value={topic.id}>
                                     {topic.title}
                                   </SelectItem>
@@ -1259,11 +1259,11 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
   console.log("Filtered terms:", filteredTerms);
   console.log("Current termId:", form.watch("termId"));
 
-  // Filter topics by selected examination system, level, and subject for Add Quiz form
-  const addFilteredTopics = topics?.filter((topic: any) => {
-    const currentExamSystemId = addForm.watch("examinationSystemId");
-    const currentLevelId = addForm.watch("levelId"); 
-    const currentSubjectId = addForm.watch("subjectId");
+  // Filter topics by selected examination system, level, and subject for Edit Quiz form
+  const editFilteredTopics = topics?.filter((topic: any) => {
+    const currentExamSystemId = form.watch("examinationSystemId");
+    const currentLevelId = form.watch("levelId"); 
+    const currentSubjectId = form.watch("subjectId");
     
     // Only show topics that match all three criteria
     return topic.examinationSystemId === currentExamSystemId &&
