@@ -40,20 +40,27 @@ export default function AdminUsers() {
   const blockUserMutation = useMutation({
     mutationFn: async ({ userId, isBlocked }: { userId: string; isBlocked: boolean }) => {
       const res = await apiRequest("PATCH", `/api/admin/users/${userId}/status`, { isBlocked });
+      if (!res.ok) {
+        throw new Error("Failed to update user status");
+      }
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Force refetch of all related queries
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/user-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/analytics"] });
+      
+      const action = variables.isBlocked ? "suspended" : "unsuspended";
       toast({
         title: "Success",
-        description: "User status updated successfully",
+        description: `User ${action} successfully`,
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update user status. Please try again.",
         variant: "destructive",
       });
     },
