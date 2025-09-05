@@ -134,13 +134,22 @@ export default function AdminTopics() {
       const response = await apiRequest("PUT", `/api/admin/topics/${data.id}`, data.updateData);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedTopic, variables) => {
+      // Update the selected topic with the new data to maintain form state
+      if (selectedTopic) {
+        const updatedSelectedTopic = {
+          ...selectedTopic,
+          ...variables.updateData
+        };
+        setSelectedTopic(updatedSelectedTopic);
+      }
+      
       toast({
         title: "Success",
         description: "Topic updated successfully!"
       });
-      setEditDialogOpen(false);
-      setSelectedTopic(null);
+      
+      // Invalidate queries to refresh the table data
       queryClient.invalidateQueries({ queryKey: ["/api/admin/topics"] });
     },
     onError: (error: any) => {
