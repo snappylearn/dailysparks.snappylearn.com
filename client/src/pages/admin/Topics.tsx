@@ -848,7 +848,7 @@ export default function AdminTopics() {
                     <FormControl>
                       <div data-color-mode="light">
                         <MDEditor
-                          key={`editor-${editorKey}-${field.value && typeof field.value === 'string' ? field.value.slice(0, 10) : 'empty'}`}
+                          key={`editor-${selectedTopic?.id || 'new'}-${editorKey}`}
                           value={field.value || ""}
                           onChange={(value) => field.onChange(value || "")}
                           preview="edit"
