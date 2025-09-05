@@ -180,6 +180,7 @@ export interface IStorage {
   getAdminUserStats(): Promise<any>;
   getAdminUserDetails(userId: string): Promise<any>;
   updateUserStatus(userId: string, isBlocked: boolean): Promise<any>;
+  deleteUser(userId: string): Promise<any>;
   
   // Quiz History
   getQuizHistoryForUser(userId: string): Promise<any[]>;
@@ -2219,6 +2220,49 @@ export class DatabaseStorage implements IStorage {
       return { success: true, isBlocked };
     } catch (error) {
       console.error('Error updating user status:', error);
+      throw error;
+    }
+  }
+
+  async deleteUser(userId: string): Promise<any> {
+    try {
+      // Delete user and all related data in the correct order (to respect foreign key constraints)
+      
+      // Delete user answers first (references quiz sessions)
+      await db.delete(userAnswers).where(eq(userAnswers.profileId, userId));
+      
+      // Delete quiz sessions 
+      await db.delete(quizSessions).where(eq(quizSessions.profileId, userId));
+      
+      // Delete enhanced quiz sessions
+      await db.delete(enhancedQuizSessions).where(eq(enhancedQuizSessions.profileId, userId));
+      
+      // Delete user challenge progress
+      await db.delete(userChallengeProgress).where(eq(userChallengeProgress.profileId, userId));
+      
+      // Delete user badges, trophies, and challenges
+      await db.delete(userBadges).where(eq(userBadges.profileId, userId));
+      await db.delete(userTrophies).where(eq(userTrophies.profileId, userId));
+      await db.delete(userChallenges).where(eq(userChallenges.profileId, userId));
+      await db.delete(userSparkBoost).where(eq(userSparkBoost.profileId, userId));
+      
+      // Delete subscription and payment data
+      await db.delete(userSubscriptions).where(eq(userSubscriptions.userId, userId));
+      await db.delete(paymentTransactions).where(eq(paymentTransactions.userId, userId));
+      await db.delete(creditTransactions).where(eq(creditTransactions.userId, userId));
+      
+      // Delete user preference changes
+      await db.delete(userPreferenceChanges).where(eq(userPreferenceChanges.userId, userId));
+      
+      // Delete profiles (which should cascade to related data)
+      await db.delete(profiles).where(eq(profiles.userId, userId));
+      
+      // Finally delete the user
+      await db.delete(users).where(eq(users.id, userId));
+      
+      return { success: true, message: "User deleted successfully" };
+    } catch (error) {
+      console.error('Error deleting user:', error);
       throw error;
     }
   }
