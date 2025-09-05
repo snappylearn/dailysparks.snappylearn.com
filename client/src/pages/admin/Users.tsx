@@ -102,21 +102,13 @@ export default function AdminUsers() {
   }) || [];
 
   const getStatusBadge = (status: string, isActive?: boolean) => {
-    // Check if user is blocked based on isActive field
+    // Use isActive as the primary source of truth for user status
     if (isActive === false) {
-      return <Badge variant="destructive">Blocked</Badge>;
+      return <Badge variant="destructive">Suspended</Badge>;
     }
     
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case 'inactive':
-        return <Badge variant="secondary">Inactive</Badge>;
-      case 'suspended':
-        return <Badge variant="destructive">Suspended</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
+    // If user is active, show as active regardless of status field
+    return <Badge className="bg-green-100 text-green-800">Active</Badge>;
   };
 
   const getExamSystemBadge = (system: string) => {
