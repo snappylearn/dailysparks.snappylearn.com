@@ -43,6 +43,29 @@ interface QuizResults {
   bonusMultiplier?: number;
 }
 
+interface QuizReviewData {
+  sessionId: string;
+  subjectName: string;
+  quizType: string;
+  totalQuestions: number;
+  correctAnswers: number;
+  completed: boolean;
+  questions: Array<{
+    id: string;
+    content: string;
+    choices: Array<{
+      id: string;
+      content: string;
+      isCorrect: boolean;
+      orderIndex: number;
+    }>;
+    explanation?: string;
+    userAnswer: string | null;
+    isCorrect: boolean;
+    timeSpent: number;
+  }>;
+}
+
 export default function Quiz() {
   const [, setLocation] = useLocation();
   const [match, params] = useRoute("/quiz/:sessionId?");
@@ -945,7 +968,7 @@ function QuizReviewModal({ sessionId, isOpen, onClose }: {
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const { data: reviewData, isLoading } = useQuery({
+  const { data: reviewData, isLoading } = useQuery<QuizReviewData>({
     queryKey: ['/api/quiz-sessions', sessionId, 'review'],
     enabled: isOpen && !!sessionId,
   });
