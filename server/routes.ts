@@ -929,6 +929,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete user completely
+  app.delete('/api/admin/users/:id', isAdminAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.params.id;
+      const result = await storage.deleteUser(userId);
+      res.json({ success: true, message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
   // Quiz types management routes
   app.get('/api/admin/quiz-types', isAdminAuthenticated, async (req: any, res) => {
     try {

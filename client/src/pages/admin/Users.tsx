@@ -9,8 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Filter, Mail, Calendar, Trophy, Zap, TrendingUp, Eye, Ban, Settings, User, Clock, Star } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Search, Filter, Mail, Calendar, Trophy, Zap, TrendingUp, Eye, Ban, Settings, User, Clock, Star, Trash2 } from "lucide-react";
 
 export default function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,6 +18,8 @@ export default function AdminUsers() {
   const [sortBy, setSortBy] = useState<string>("recent");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
   const { toast } = useToast();
 
   const { data: users, isLoading } = useQuery({
@@ -42,9 +44,35 @@ export default function AdminUsers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/user-stats"] });
       toast({
         title: "Success",
         description: "User status updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await apiRequest("DELETE", `/api/admin/users/${userId}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/user-stats"] });
+      setShowDeleteConfirm(false);
+      setUserToDelete(null);
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
       });
     },
     onError: (error: Error) => {
@@ -358,10 +386,23 @@ export default function AdminUsers() {
                             });
                           }}
                           disabled={blockUserMutation.isPending}
+                          className={user.isActive === false ? "bg-green-600 hover:bg-green-700 text-white" : ""}
                           data-testid={`button-${user.isActive === false ? 'unsuspend' : 'suspend'}-user-${user.id}`}
                         >
                           <Ban className="h-4 w-4 mr-2" />
                           {user.isActive === false ? 'Unsuspend' : 'Suspend'}
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setUserToDelete(user);
+                            setShowDeleteConfirm(true);
+                          }}
+                          className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                          data-testid={`button-delete-user-${user.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -516,6 +557,43 @@ export default function AdminUsers() {
               <div className="text-muted-foreground">Failed to load user details</div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete this user? This action cannot be undone.
+              <br /><br />
+              <strong>User: {userToDelete?.name || userToDelete?.email}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                setUserToDelete(null);
+              }}
+              disabled={deleteUserMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => {
+                if (userToDelete) {
+                  deleteUserMutation.mutate(userToDelete.id);
+                }
+              }}
+              disabled={deleteUserMutation.isPending}
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
