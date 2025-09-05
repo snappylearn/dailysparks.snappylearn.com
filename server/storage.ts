@@ -2226,54 +2226,17 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(userId: string): Promise<any> {
     try {
-      // First get all profile IDs for this user
-      const userProfiles = await db
-        .select({ id: profiles.id })
-        .from(profiles)
-        .where(eq(profiles.userId, userId));
+      // Simple approach: just delete the user and profiles
+      // The database should handle cascade deletes for most related data
       
-      const profileIds = userProfiles.map(p => p.id);
+      // Delete profiles first (most related data should cascade)
+      await db.delete(profiles).where(eq(profiles.userId, userId));
       
-      if (profileIds.length > 0) {
-        // Delete user answers first (references quiz sessions)
-        for (const profileId of profileIds) {
-          await db.delete(userAnswers).where(eq(userAnswers.profileId, profileId));
-        }
-        
-        // Delete quiz sessions 
-        for (const profileId of profileIds) {
-          await db.delete(quizSessions).where(eq(quizSessions.profileId, profileId));
-        }
-        
-        // Delete enhanced quiz sessions
-        for (const profileId of profileIds) {
-          await db.delete(enhancedQuizSessions).where(eq(enhancedQuizSessions.profileId, profileId));
-        }
-        
-        // Delete user challenge progress
-        for (const profileId of profileIds) {
-          await db.delete(userChallengeProgress).where(eq(userChallengeProgress.profileId, profileId));
-        }
-        
-        // Delete user badges, trophies, and challenges
-        for (const profileId of profileIds) {
-          await db.delete(userBadges).where(eq(userBadges.profileId, profileId));
-          await db.delete(userTrophies).where(eq(userTrophies.profileId, profileId));
-          await db.delete(userChallenges).where(eq(userChallenges.profileId, profileId));
-          await db.delete(userSparkBoost).where(eq(userSparkBoost.profileId, profileId));
-        }
-      }
-      
-      // Delete subscription and payment data
+      // Delete direct user references
       await db.delete(userSubscriptions).where(eq(userSubscriptions.userId, userId));
       await db.delete(paymentTransactions).where(eq(paymentTransactions.userId, userId));
       await db.delete(creditTransactions).where(eq(creditTransactions.userId, userId));
-      
-      // Delete user preference changes
       await db.delete(userPreferenceChanges).where(eq(userPreferenceChanges.userId, userId));
-      
-      // Delete profiles
-      await db.delete(profiles).where(eq(profiles.userId, userId));
       
       // Finally delete the user
       await db.delete(users).where(eq(users.id, userId));
