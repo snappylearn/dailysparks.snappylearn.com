@@ -1709,16 +1709,24 @@ export class DatabaseStorage implements IStorage {
   // Update quiz
   async updateQuiz(quizId: string, updateData: any): Promise<any> {
     try {
+      // Prepare update object with questions if provided
+      const updateFields: any = {
+        title: updateData.title,
+        description: updateData.description,
+        timeLimit: updateData.timeLimit,
+        totalQuestions: updateData.totalQuestions,
+        updatedAt: new Date()
+      };
+
+      // Include questions if provided in updateData
+      if (updateData.questions) {
+        updateFields.questions = updateData.questions;
+      }
+
       // Update the quiz in the database
       const [updatedQuiz] = await db
         .update(quizzes)
-        .set({
-          title: updateData.title,
-          description: updateData.description,
-          timeLimit: updateData.timeLimit,
-          totalQuestions: updateData.totalQuestions,
-          updatedAt: new Date()
-        })
+        .set(updateFields)
         .where(eq(quizzes.id, quizId))
         .returning();
       
