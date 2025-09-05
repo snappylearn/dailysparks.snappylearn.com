@@ -1348,6 +1348,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get study notes for a specific topic
+  app.get('/api/study-notes/:topicId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { topicId } = req.params;
+      
+      // Get topic with study notes
+      const topic = await storage.getTopicById(topicId);
+      if (!topic) {
+        return res.status(404).json({ message: "Topic not found" });
+      }
+
+      // If no study notes exist, generate them
+      if (!topic.summaryContent) {
+        console.log('No study notes found, generating content for topic:', topic.title);
+        
+        // Import AI service
+        const { generateTopicContent } = await import('./aiService');
+        
+        // Generate content
+        const content = await generateTopicContent({
+          subject: topic.subject || 'Unknown Subject',
+          level: topic.level || 'Unknown Level',
+          topicTitle: topic.title,
+          topicDescription: topic.description,
+          termTitle: topic.term
+        });
+
+        // Update topic with generated content
+        await storage.updateTopic(topicId, { summaryContent: content });
+        
+        // Return the generated content
+        res.json({
+          id: topic.id,
+          title: topic.title,
+          description: topic.description,
+          content: content,
+          subject: topic.subject,
+          level: topic.level,
+          term: topic.term
+        });
+      } else {
+        // Return existing content
+        res.json({
+          id: topic.id,
+          title: topic.title,
+          description: topic.description,
+          content: topic.summaryContent,
+          subject: topic.subject,
+          level: topic.level,
+          term: topic.term
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching study notes:", error);
+      res.status(500).json({ message: "Failed to fetch study notes" });
+    }
+  });
+
   // Quiz session routes are now handled by the primary quiz start endpoint above
 
   // Batch answer submission for better performance

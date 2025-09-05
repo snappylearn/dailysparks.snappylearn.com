@@ -33,6 +33,7 @@ import QuizPreview from "@/pages/QuizPreview";
 import BadgesAndTrophies from "@/pages/BadgesAndTrophies";
 import Challenges from "@/pages/Challenges";
 import Subscriptions from "@/pages/Subscriptions";
+import StudyNotes from "@/pages/StudyNotes";
 import Profile from "@/pages/Profile";
 import AdminLogin from "@/pages/admin/AdminLogin";
 
@@ -203,6 +204,7 @@ function AuthenticatedRoutes() {
       {/* Student Routes */}
       <Route path="/home" component={SimpleHome} />
       <Route path="/quiz/:sessionId?" component={Quiz} />
+      <Route path="/study-notes/:topicId" component={StudyNotes} />
       <Route path="/quiz-history" component={QuizHistory} />
       <Route path="/results/:sessionId" component={Results} />
       <Route path="/leaderboard" component={Leaderboard} />
