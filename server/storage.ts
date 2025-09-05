@@ -250,7 +250,7 @@ export interface IStorage {
   awardTrophy(userId: string, trophyId: string): Promise<UserTrophy>;
   getChallenges(): Promise<Challenge[]>;
   getUserChallenges(userId: string): Promise<UserChallenge[]>;
-  updateChallengeProgress(userId: string, challengeId: string, progress: number): Promise<UserChallenge>;
+  updateChallengeProgress(userId: string, challengeId: string, progress: number): Promise<void>;
   completeChallenge(userId: string, challengeId: string): Promise<UserChallenge>;
   getUserSparkBoosts(userId: string): Promise<UserSparkBoost[]>;
   createSparkBoost(fromUserId: string, toUserId: string, sparks: number): Promise<UserSparkBoost>;
@@ -888,20 +888,25 @@ export class DatabaseStorage implements IStorage {
     return progress;
   }
 
-  async updateChallengeProgress(profileId: string, challengeId: string, progress: Partial<InsertUserChallengeProgress>): Promise<UserChallengeProgress> {
-    const [updatedProgress] = await db
-      .insert(userChallengeProgress)
-      .values({
-        profileId,
-        challengeId,
-        ...progress,
-      })
-      .onConflictDoUpdate({
-        target: [userChallengeProgress.profileId, userChallengeProgress.challengeId],
-        set: progress,
-      })
-      .returning();
-    return updatedProgress;
+  async updateChallengeProgress(userId: string, challengeId: string, progressValue: number): Promise<void> {
+    // Get user's default profile
+    const userProfiles = await this.getUserProfiles(userId);
+    const profile = userProfiles.find(p => p.isDefault) || userProfiles[0];
+    
+    if (profile) {
+      await db
+        .insert(userChallengeProgress)
+        .values({
+          profileId: profile.id,
+          challengeId,
+          progress: progressValue,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [userChallengeProgress.profileId, userChallengeProgress.challengeId],
+          set: { progress: progressValue, updatedAt: new Date() },
+        });
+    }
   }
 
   // Analytics operations
@@ -2796,6 +2801,75 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
 
     return subscription[0] || null;
+  }
+
+  async getDailyQuizUsage(profileId: string): Promise<number> {
+    try {
+      // Get today's date range (start and end of day)
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+      // Count quiz sessions started today
+      const result = await db
+        .select({ count: sql`count(*)` })
+        .from(quizSessions)
+        .where(
+          and(
+            eq(quizSessions.profileId, profileId),
+            gte(quizSessions.createdAt, startOfDay),
+            lt(quizSessions.createdAt, endOfDay)
+          )
+        );
+
+      return Number(result[0]?.count || 0);
+    } catch (error) {
+      console.error("Error getting daily quiz usage:", error);
+      return 0;
+    }
+  }
+
+  async checkDailyQuizLimit(userId: string, profileId: string): Promise<{ canTakeQuiz: boolean; usageInfo: any }> {
+    try {
+      const subscription = await this.getUserSubscription(userId);
+      
+      if (!subscription || subscription.status !== 'active') {
+        return { 
+          canTakeQuiz: false, 
+          usageInfo: { error: 'No active subscription', requiresSubscription: true } 
+        };
+      }
+
+      const dailyLimit = subscription.dailyQuizLimit;
+      
+      // If dailyQuizLimit is null, user has unlimited quizzes
+      if (dailyLimit === null) {
+        return { 
+          canTakeQuiz: true, 
+          usageInfo: { unlimited: true, planName: subscription.planName } 
+        };
+      }
+
+      const dailyUsage = await this.getDailyQuizUsage(profileId);
+      const remaining = dailyLimit - dailyUsage;
+
+      return {
+        canTakeQuiz: remaining > 0,
+        usageInfo: {
+          dailyLimit,
+          dailyUsage,
+          remaining,
+          planName: subscription.planName,
+          limitExceeded: remaining <= 0
+        }
+      };
+    } catch (error) {
+      console.error("Error checking daily quiz limit:", error);
+      return { 
+        canTakeQuiz: false, 
+        usageInfo: { error: 'Failed to check quiz limits' } 
+      };
+    }
   }
 
   async createSubscription(subscription: InsertUserSubscription): Promise<UserSubscription> {

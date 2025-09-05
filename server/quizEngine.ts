@@ -304,8 +304,18 @@ export class QuizEngine {
         ? Math.round((correctAnswers / answers.length) * 100) 
         : 0;
 
-      // Add completion bonus
-      let finalSparks = totalSparks + QUIZ_CONSTANTS.SPARKS.COMPLETION_BONUS;
+      // Apply accuracy bonus multiplier to base sparks (excluding completion bonus)
+      let adjustedBaseSparks = totalSparks;
+      if (accuracyPercentage >= 80) {
+        adjustedBaseSparks = Math.floor(totalSparks * 1.5); // 1.5x multiplier for 80%+ accuracy
+      } else if (accuracyPercentage >= 60) {
+        adjustedBaseSparks = Math.floor(totalSparks * 1.2); // 1.2x multiplier for 60%+ accuracy
+      }
+
+      // Add completion bonus to adjusted base sparks
+      let finalSparks = adjustedBaseSparks + QUIZ_CONSTANTS.SPARKS.COMPLETION_BONUS;
+      
+      // Add perfect score bonus if applicable
       if (accuracyPercentage === 100) {
         finalSparks += QUIZ_CONSTANTS.SPARKS.PERFECT_SCORE_BONUS;
       }
@@ -342,7 +352,7 @@ export class QuizEngine {
       // Auto-award badges and check challenge completion
       if (updatedProfile) {
         await this.checkAndAwardBadges(updatedProfile.userId, updatedProfile.sparks, correctAnswers, totalQuestions, accuracyPercentage);
-        await this.checkAndCompleteCharlenges(updatedProfile.userId, finalSparks);
+        await this.checkAndCompleteChallenges(updatedProfile.userId, finalSparks);
       }
 
       return {
