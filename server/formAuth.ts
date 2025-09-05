@@ -138,6 +138,40 @@ export const isAuthenticated: RequestHandler = (req, res, next) => {
   return res.status(401).json({ message: "Unauthorized" });
 };
 
+// Enhanced authentication middleware that also checks if user is suspended
+export const isAuthenticatedAndActive: RequestHandler = async (req, res, next) => {
+  if (!req.session || !(req.session as any).user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const currentUser = (req.session as any).user;
+    
+    // Check if user is still active (not suspended)
+    const [user] = await db.select().from(users).where(eq(users.id, currentUser.id)).limit(1);
+    
+    if (!user) {
+      // Clear session if user no longer exists
+      req.session.destroy(() => {});
+      return res.status(401).json({ message: "User not found" });
+    }
+    
+    if (!user.isActive) {
+      // Clear session for suspended users
+      req.session.destroy(() => {});
+      return res.status(403).json({ 
+        message: "Account suspended", 
+        suspended: true 
+      });
+    }
+    
+    return next();
+  } catch (error) {
+    console.error("Error checking user status:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 // Get current user from session
 export function getCurrentUser(req: any) {
   return (req.session as any)?.user || null;

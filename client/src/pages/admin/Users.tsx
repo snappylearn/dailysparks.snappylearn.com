@@ -348,7 +348,7 @@ export default function AdminUsers() {
                           <Mail className="h-4 w-4" />
                         </Button>
                         <Button 
-                          variant="outline" 
+                          variant={user.isActive === false ? "default" : "destructive"}
                           size="sm"
                           onClick={() => {
                             const isCurrentlyBlocked = user.isActive === false;
@@ -358,9 +358,10 @@ export default function AdminUsers() {
                             });
                           }}
                           disabled={blockUserMutation.isPending}
-                          data-testid={`button-block-user-${user.id}`}
+                          data-testid={`button-${user.isActive === false ? 'unsuspend' : 'suspend'}-user-${user.id}`}
                         >
-                          <Ban className="h-4 w-4" />
+                          <Ban className="h-4 w-4 mr-2" />
+                          {user.isActive === false ? 'Unsuspend' : 'Suspend'}
                         </Button>
                       </div>
                     </TableCell>
