@@ -288,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced Quiz API Routes
   
   // Generate and start a new quiz
-  app.post('/api/quizzes/generate', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quizzes/generate', isAuthenticatedAndActive, async (req: any, res) => {
     try {
       const userId = getCurrentUser(req)?.id;
       const { 
@@ -1088,6 +1088,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           requiresSubscription: true 
         });
       }
+
+      // Check daily quiz limit with comprehensive enforcement
+      const limitCheck = await storage.checkDailyQuizLimit(userId, profileId);
+      
+      if (!limitCheck.canTakeQuiz) {
+        const usageInfo = limitCheck.usageInfo;
+        
+        if (usageInfo.requiresSubscription) {
+          return res.status(403).json({ 
+            message: "Active subscription required", 
+            requiresSubscription: true 
+          });
+        }
+        
+        if (usageInfo.limitExceeded) {
+          return res.status(403).json({ 
+            message: `Daily quiz limit reached. You've used ${usageInfo.dailyUsage}/${usageInfo.dailyLimit} quizzes today.`, 
+            limitExceeded: true,
+            dailyLimit: usageInfo.dailyLimit,
+            dailyUsage: usageInfo.dailyUsage,
+            planName: usageInfo.planName
+          });
+        }
+        
+        return res.status(403).json({ 
+          message: "Cannot start quiz at this time", 
+          error: usageInfo.error 
+        });
+      }
       
       // Get profile to access examination system and level
       const profile = await storage.getProfile(profileId);
@@ -1722,10 +1751,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Start a completely new quiz session (ignoring incomplete ones)
   app.post('/api/quiz/start-fresh', isAuthenticatedAndActive, async (req: any, res) => {
     try {
+      const userId = getCurrentUser(req)?.id;
       const { profileId, subjectId, quizType } = req.body;
 
       if (!profileId || !subjectId) {
         return res.status(400).json({ message: "Profile ID and Subject ID are required" });
+      }
+
+      // Check if user has active subscription
+      const subscription = await storage.getUserSubscription(userId);
+      if (!subscription || subscription.status !== 'active') {
+        return res.status(403).json({ 
+          message: "Active subscription required", 
+          requiresSubscription: true 
+        });
+      }
+
+      // Check daily quiz limit with comprehensive enforcement
+      const limitCheck = await storage.checkDailyQuizLimit(userId, profileId);
+      
+      if (!limitCheck.canTakeQuiz) {
+        const usageInfo = limitCheck.usageInfo;
+        
+        if (usageInfo.limitExceeded) {
+          return res.status(403).json({ 
+            message: `Daily quiz limit reached. You've used ${usageInfo.dailyUsage}/${usageInfo.dailyLimit} quizzes today.`, 
+            limitExceeded: true,
+            dailyLimit: usageInfo.dailyLimit,
+            dailyUsage: usageInfo.dailyUsage,
+            planName: usageInfo.planName
+          });
+        }
+        
+        return res.status(403).json({ 
+          message: "Cannot start quiz at this time", 
+          error: usageInfo.error 
+        });
       }
 
       // Delete any incomplete sessions for this subject
@@ -1769,7 +1830,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       // Create new session
-      const userId = getCurrentUser(req)?.id;
       const quizSession = await storage.createQuizSession({
         userId,
         profileId,
