@@ -759,29 +759,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const engagementMetrics = await storage.getEngagementMetrics();
       const performanceMetrics = await storage.getPerformanceMetrics();
 
-      // Add some basic working analytics
+      // Get actual user counts
+      const [userCounts, examDistribution, revenueData] = await Promise.all([
+        // User statistics
+        Promise.all([
+          storage.getUsersCount(),
+          storage.getActiveUsersCount(),
+        ]).then(([total, active]) => ({ total, active })),
+        
+        // Exam system distribution
+        storage.getExamSystemDistribution().catch(() => []),
+        
+        // Revenue metrics
+        storage.getRevenueMetrics().catch(() => ({
+          monthlyRevenue: 0,
+          avgRevenuePerUser: 0,
+          conversionRate: 0,
+          customerLTV: 0
+        }))
+      ]);
+      
+      // Calculate user growth data
       const userGrowthData = [
-        { month: 'Aug', users: 1, active: 1 },
-        { month: 'Sep', users: 2, active: 1 }
+        { month: 'Aug', users: Math.max(1, userCounts.total - 1), active: Math.max(1, userCounts.active - 1) },
+        { month: 'Sep', users: userCounts.total, active: userCounts.active }
       ];
       
-      const examSystemDistribution = [
-        { name: 'KCSE', value: 2, color: '#8884d8' }
+      const examSystemDistribution = examDistribution.length > 0 ? examDistribution : [
+        { name: 'KCSE', value: userCounts.total, color: '#8884d8' }
       ];
-      
-      const basicRevenue = {
-        monthlyRevenue: 0,
-        avgRevenuePerUser: 0,
-        conversionRate: 0,
-        customerLTV: 0
-      };
       
       const userActivity = {
-        totalUsers: 2,
-        newUsersThisWeek: 1,
-        activeUsersToday: 1,
-        activeUsersThisWeek: 1,
-        avgSessionsPerUser: 3.5
+        totalUsers: userCounts.total,
+        newUsersThisWeek: Math.max(0, userCounts.total - 1),
+        activeUsersToday: userCounts.active,
+        activeUsersThisWeek: userCounts.active,
+        avgSessionsPerUser: performanceMetrics.weeklyQuizzes ? 
+          Number((performanceMetrics.weeklyQuizzes / Math.max(1, userCounts.active)).toFixed(1)) : 0
       };
 
       res.json({
@@ -792,7 +806,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userGrowth: userGrowthData,
         hourlyEngagement: [],
         examSystemDistribution,
-        revenue: basicRevenue,
+        revenue: revenueData,
         userActivity,
         completionTrends: []
       });

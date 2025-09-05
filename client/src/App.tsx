@@ -40,7 +40,10 @@ import AdminLogin from "@/pages/admin/AdminLogin";
 function Router() {
   return (
     <Switch>
-      {/* All routes go through authentication check */}
+      {/* Admin login routes - accessible independently */}
+      <Route path="/admin-login" component={AdminLogin} />
+      <Route path="/admin/login" component={AdminLogin} />
+      {/* All other routes go through authentication check */}
       <Route path="/*" component={AuthenticatedRoutes} />
     </Switch>
   );
@@ -72,8 +75,6 @@ function AuthenticatedRoutes() {
       <Switch>
         <Route path="/signup" component={Signup} />
         <Route path="/signin" component={Signin} />
-        <Route path="/admin-login" component={AdminLogin} />
-        <Route path="/admin/login" component={AdminLogin} />
         <Route path="/" component={Landing} />
         {/* Redirect all other paths to landing */}
         <Route>
@@ -101,8 +102,6 @@ function AuthenticatedRoutes() {
   // Show main app routes
   return (
     <Switch>
-      {/* Admin login route - accessible to all users */}
-      <Route path="/admin/login" component={AdminLogin} />
       
       {/* Root path redirect to home for authenticated users */}
       <Route path="/" exact>
@@ -213,8 +212,6 @@ function AuthenticatedRoutes() {
       <Route path="/subscriptions" component={Subscriptions} />
       <Route path="/profile" component={Profile} />
 
-      {/* Admin login route - accessible without main auth */}
-      <Route path="/admin-login" component={AdminLogin} />
 
       {/* Default route for authenticated users */}
       <Route component={SimpleHome} />
