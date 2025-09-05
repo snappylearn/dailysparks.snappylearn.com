@@ -4,14 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
-import { Profile, Subject, Topic } from "@shared/schema";
-import { Book, Flame, Zap, TrendingUp, Plus, FileText, BookOpen, ArrowRight } from "lucide-react";
+import { Profile, Subject } from "@shared/schema";
+import { Book, Flame, Zap, TrendingUp, Plus, ArrowRight } from "lucide-react";
 import { MainLayout } from "@/components/MainLayout";
 
 export default function Home() {
   const { user } = useAuth();
-  const [selectedSubjectForNotes, setSelectedSubjectForNotes] = useState<Subject | null>(null);
-  const [showTopicModal, setShowTopicModal] = useState(false);
 
   // Get user profiles
   const { data: profiles = [], isLoading: profilesLoading } = useQuery<Profile[]>({
@@ -42,23 +40,6 @@ export default function Home() {
     enabled: !!user,
   });
 
-  // Get topics for study notes when a subject is selected
-  const { data: topics = [], isLoading: topicsLoading } = useQuery<Topic[]>({
-    queryKey: ['/api/topics', selectedSubjectForNotes?.id, currentProfile?.levelId],
-    enabled: !!selectedSubjectForNotes && !!currentProfile?.levelId && showTopicModal,
-  });
-
-  // Handle study notes topic selection
-  const handleStudyNotesClick = (subject: Subject) => {
-    setSelectedSubjectForNotes(subject);
-    setShowTopicModal(true);
-  };
-
-  // Navigate to study notes page
-  const handleTopicSelect = (topic: Topic) => {
-    setShowTopicModal(false);
-    window.location.href = `/study-notes/${topic.id}?subject=${selectedSubjectForNotes?.name}`;
-  };
 
   if (profilesLoading) {
     return (
@@ -133,43 +114,6 @@ export default function Home() {
                   </Card>
                 ))}
               </div>
-
-              {/* Study Notes Card - spans 3 columns */}
-              <Card className="col-span-full md:col-span-3 lg:col-span-3 mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:shadow-lg transition-all duration-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-blue-700">
-                    <FileText className="h-5 w-5" />
-                    <span>Study Notes</span>
-                  </CardTitle>
-                  <CardDescription className="text-blue-600">
-                    Access comprehensive study materials for any subject and topic
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-blue-600 mb-4">
-                    Get AI-generated study notes tailored to your level and examination system. Select any subject to browse topics and start studying.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {subjects.slice(0, 6).map((subject) => (
-                      <Button
-                        key={subject.id}
-                        variant="outline"
-                        size="sm"
-                        className="border-blue-300 text-blue-700 hover:bg-blue-100"
-                        onClick={() => handleStudyNotesClick(subject)}
-                      >
-                        <BookOpen className="h-4 w-4 mr-1" />
-                        {subject.name}
-                      </Button>
-                    ))}
-                    {subjects.length > 6 && (
-                      <span className="text-sm text-blue-500 flex items-center">
-                        +{subjects.length - 6} more subjects
-                      </span>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
             </>
           ) : (
             <Card className="mb-6">
@@ -246,63 +190,6 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        {/* Topic Selection Modal for Study Notes */}
-        <Dialog open={showTopicModal} onOpenChange={setShowTopicModal}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-blue-600" />
-                <span>Select Topic for Study Notes</span>
-              </DialogTitle>
-              <DialogDescription>
-                Choose a topic from <strong>{selectedSubjectForNotes?.name}</strong> to access study notes
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              {topicsLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading topics...</p>
-                </div>
-              ) : topics.length > 0 ? (
-                <div className="grid gap-3">
-                  {topics.map((topic) => (
-                    <Card 
-                      key={topic.id}
-                      className="hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.02] border hover:border-blue-300"
-                      onClick={() => handleTopicSelect(topic)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-medium text-gray-900 mb-1">
-                              {topic.title}
-                            </h3>
-                            {topic.description && (
-                              <p className="text-sm text-gray-600 line-clamp-2">
-                                {topic.description}
-                              </p>
-                            )}
-                          </div>
-                          <ArrowRight className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Book className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-2">No topics available yet</p>
-                  <p className="text-sm text-gray-400">
-                    Topics for {selectedSubjectForNotes?.name} haven't been added yet.
-                  </p>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </MainLayout>
   );
