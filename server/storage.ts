@@ -2226,25 +2226,43 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(userId: string): Promise<any> {
     try {
-      // Delete user and all related data in the correct order (to respect foreign key constraints)
+      // First get all profile IDs for this user
+      const userProfiles = await db
+        .select({ id: profiles.id })
+        .from(profiles)
+        .where(eq(profiles.userId, userId));
       
-      // Delete user answers first (references quiz sessions)
-      await db.delete(userAnswers).where(eq(userAnswers.profileId, userId));
+      const profileIds = userProfiles.map(p => p.id);
       
-      // Delete quiz sessions 
-      await db.delete(quizSessions).where(eq(quizSessions.profileId, userId));
-      
-      // Delete enhanced quiz sessions
-      await db.delete(enhancedQuizSessions).where(eq(enhancedQuizSessions.profileId, userId));
-      
-      // Delete user challenge progress
-      await db.delete(userChallengeProgress).where(eq(userChallengeProgress.profileId, userId));
-      
-      // Delete user badges, trophies, and challenges
-      await db.delete(userBadges).where(eq(userBadges.profileId, userId));
-      await db.delete(userTrophies).where(eq(userTrophies.profileId, userId));
-      await db.delete(userChallenges).where(eq(userChallenges.profileId, userId));
-      await db.delete(userSparkBoost).where(eq(userSparkBoost.profileId, userId));
+      if (profileIds.length > 0) {
+        // Delete user answers first (references quiz sessions)
+        for (const profileId of profileIds) {
+          await db.delete(userAnswers).where(eq(userAnswers.profileId, profileId));
+        }
+        
+        // Delete quiz sessions 
+        for (const profileId of profileIds) {
+          await db.delete(quizSessions).where(eq(quizSessions.profileId, profileId));
+        }
+        
+        // Delete enhanced quiz sessions
+        for (const profileId of profileIds) {
+          await db.delete(enhancedQuizSessions).where(eq(enhancedQuizSessions.profileId, profileId));
+        }
+        
+        // Delete user challenge progress
+        for (const profileId of profileIds) {
+          await db.delete(userChallengeProgress).where(eq(userChallengeProgress.profileId, profileId));
+        }
+        
+        // Delete user badges, trophies, and challenges
+        for (const profileId of profileIds) {
+          await db.delete(userBadges).where(eq(userBadges.profileId, profileId));
+          await db.delete(userTrophies).where(eq(userTrophies.profileId, profileId));
+          await db.delete(userChallenges).where(eq(userChallenges.profileId, profileId));
+          await db.delete(userSparkBoost).where(eq(userSparkBoost.profileId, profileId));
+        }
+      }
       
       // Delete subscription and payment data
       await db.delete(userSubscriptions).where(eq(userSubscriptions.userId, userId));
@@ -2254,7 +2272,7 @@ export class DatabaseStorage implements IStorage {
       // Delete user preference changes
       await db.delete(userPreferenceChanges).where(eq(userPreferenceChanges.userId, userId));
       
-      // Delete profiles (which should cascade to related data)
+      // Delete profiles
       await db.delete(profiles).where(eq(profiles.userId, userId));
       
       // Finally delete the user
