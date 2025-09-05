@@ -376,7 +376,7 @@ export default function AdminUsers() {
                           <Mail className="h-4 w-4" />
                         </Button>
                         <Button 
-                          variant={user.isActive === false ? "default" : "destructive"}
+                          variant="outline"
                           size="sm"
                           onClick={() => {
                             const isCurrentlyBlocked = user.isActive === false;
@@ -386,7 +386,10 @@ export default function AdminUsers() {
                             });
                           }}
                           disabled={blockUserMutation.isPending}
-                          className={user.isActive === false ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+                          className={user.isActive === false 
+                            ? "bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700" 
+                            : "bg-red-600 hover:bg-red-700 text-white border-red-600 hover:border-red-700"
+                          }
                           data-testid={`button-${user.isActive === false ? 'unsuspend' : 'suspend'}-user-${user.id}`}
                         >
                           <Ban className="h-4 w-4 mr-2" />
