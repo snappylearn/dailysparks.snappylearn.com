@@ -25,7 +25,7 @@ const generateQuizSchema = z.object({
   topicId: z.string().optional(),
   termId: z.string().optional(),
   questionCount: z.number().min(5).max(50).default(15),
-  timeLimit: z.number().min(5).max(120).default(30)
+  timeLimit: z.number().min(5).max(3000).default(30)
 });
 
 const addQuizSchema = z.object({
@@ -37,7 +37,7 @@ const addQuizSchema = z.object({
   quizType: z.string().min(1, "Quiz type is required"),
   topicId: z.string().optional(),
   termId: z.string().optional(),
-  timeLimit: z.number().min(5).max(120).default(30),
+  timeLimit: z.number().min(5).max(3000).default(30),
   difficulty: z.string().default("medium"),
   questions: z.array(z.object({
     questionText: z.string().min(1, "Question text is required"),
@@ -1209,7 +1209,7 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
     quizType: z.string().min(1, "Quiz type is required"),
     topicId: z.string().optional(),
     termId: z.string().optional(),
-    timeLimit: z.number().min(5).max(120),
+    timeLimit: z.number().min(5).max(3000),
     totalQuestions: z.number().min(1).max(50)
   });
 
