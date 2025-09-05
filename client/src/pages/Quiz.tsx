@@ -928,9 +928,9 @@ export default function Quiz() {
       </Dialog>
 
       {/* Quiz Review Modal */}
-      {quizResults && (
+      {quizResults && quizSession && (
         <QuizReviewModal
-          sessionId={quizResults.sessionId}
+          sessionId={quizSession.sessionId}
           isOpen={showReviewModal}
           onClose={() => setShowReviewModal(false)}
         />
