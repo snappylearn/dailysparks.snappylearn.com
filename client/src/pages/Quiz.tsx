@@ -92,10 +92,10 @@ export default function Quiz() {
     enabled: selectedQuizType === 'termly',
   });
 
-  // Get topics for topical quizzes
+  // Get topics for topical quizzes and study notes
   const { data: topics, isLoading: topicsLoading, error: topicsError } = useQuery<Topic[]>({
     queryKey: ['/api/topics', subjectId, currentProfile?.levelId],
-    enabled: !!subjectId && !!currentProfile?.levelId && selectedQuizType === 'topical',
+    enabled: !!subjectId && !!currentProfile?.levelId && (selectedQuizType === 'topical' || showStudyNotesModal),
   });
 
   // Debug topics loading
