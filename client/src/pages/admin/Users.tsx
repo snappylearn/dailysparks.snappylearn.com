@@ -46,10 +46,22 @@ export default function AdminUsers() {
       return await res.json();
     },
     onSuccess: (data, variables) => {
-      // Force refetch of all related queries
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/user-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/analytics"] });
+      // Force refetch of all related queries with refetchType: 'all' to bypass cache
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/admin/users"], 
+        refetchType: 'all' 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/admin/user-stats"], 
+        refetchType: 'all' 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/admin/analytics"], 
+        refetchType: 'all' 
+      });
+      
+      // Also force an immediate refetch
+      queryClient.refetchQueries({ queryKey: ["/api/admin/users"] });
       
       const action = variables.isBlocked ? "suspended" : "unsuspended";
       toast({
@@ -107,7 +119,7 @@ export default function AdminUsers() {
       return <Badge variant="destructive">Suspended</Badge>;
     }
     
-    // If user is active, show as active regardless of status field
+    // If user is active, show as active
     return <Badge className="bg-green-100 text-green-800">Active</Badge>;
   };
 
