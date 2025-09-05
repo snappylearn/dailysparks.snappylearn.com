@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-import { ArrowLeft, Clock, Target, Shuffle, BookOpen, Calendar, CheckCircle, XCircle, Zap, Trophy, Eye } from "lucide-react";
+import { ArrowLeft, Clock, Target, Shuffle, BookOpen, Calendar, CheckCircle, XCircle, Zap, Trophy, Eye, FileText } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -70,6 +70,7 @@ export default function Quiz() {
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [incompleteSession, setIncompleteSession] = useState<any>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showStudyNotesModal, setShowStudyNotesModal] = useState(false);
   
   // Get URL parameters
   const urlParams = new URLSearchParams(window.location.search);
@@ -290,6 +291,12 @@ export default function Quiz() {
       };
       startQuizMutation.mutate(data);
     }
+  };
+
+  // Handle study notes topic selection
+  const handleStudyNotesTopicSelect = (topic: Topic) => {
+    setShowStudyNotesModal(false);
+    setLocation(`/study-notes/${topic.id}?subject=${encodeURIComponent(subjectName)}`);
   };
 
   const handleAnswerSubmit = () => {
@@ -528,6 +535,36 @@ export default function Quiz() {
           <p className="text-gray-600">Ready to test your knowledge? Let's get started!</p>
         </div>
 
+        {/* Study Notes Card - spans full width */}
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-blue-800">Study Notes</h3>
+                </div>
+                <p className="text-blue-700 mb-3">
+                  Access comprehensive AI-generated study materials for {subjectName} topics
+                </p>
+                <p className="text-sm text-blue-600">
+                  Get detailed notes, explanations, and examples tailored to your curriculum level
+                </p>
+              </div>
+              <div className="ml-6">
+                <Button
+                  onClick={() => setShowStudyNotesModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  data-testid="button-start-studying"
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Start Studying
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Quiz Type Selection */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           {/* Random Quiz */}
@@ -689,6 +726,56 @@ export default function Quiz() {
             ) : (
               <div className="text-center py-8">
                 <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No topics found for your current level and examination system.</p>
+                <p className="text-sm text-gray-400 mt-2">Please check your profile settings or try a different subject.</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Study Notes Topic Selection Modal */}
+      <Dialog open={showStudyNotesModal} onOpenChange={setShowStudyNotesModal}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              Select Topic for Study Notes
+            </DialogTitle>
+            <DialogDescription>
+              Choose a topic from {subjectName} to access comprehensive study materials.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-96">
+            {topicsLoading ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
+                <span className="text-sm text-gray-600">Loading topics...</span>
+              </div>
+            ) : topics && topics.length > 0 ? (
+              <div className="space-y-2">
+                {topics.map((topic) => (
+                  <Button
+                    key={topic.id}
+                    variant="ghost"
+                    className="w-full justify-start h-auto py-3 px-4 hover:bg-blue-50"
+                    onClick={() => handleStudyNotesTopicSelect(topic)}
+                  >
+                    <div className="text-left flex-1">
+                      <div className="font-medium flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-blue-600" />
+                        {topic.title}
+                      </div>
+                      {topic.description && (
+                        <div className="text-sm text-gray-500 mt-1">{topic.description}</div>
+                      )}
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">No topics found for your current level and examination system.</p>
                 <p className="text-sm text-gray-400 mt-2">Please check your profile settings or try a different subject.</p>
               </div>
