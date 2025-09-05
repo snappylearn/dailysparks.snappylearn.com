@@ -302,21 +302,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeLimit = 30 
       } = req.body;
 
-      // Check if user has active subscription
-      const subscription = await storage.getUserSubscription(userId);
-      if (!subscription || subscription.status !== 'active') {
-        return res.status(403).json({ 
-          message: "Active subscription required", 
-          requiresSubscription: true 
-        });
-      }
-
-      // Get user's active profile
+      // Get user's active profile first (needed for limit checking)
       const profiles = await storage.getUserProfiles(userId);
       const currentProfile = profiles.find(p => p.isDefault) || profiles[0];
       
       if (!currentProfile) {
         return res.status(400).json({ message: "No profile found" });
+      }
+
+      // Check daily quiz limit with comprehensive enforcement
+      const limitCheck = await storage.checkDailyQuizLimit(userId, currentProfile.id);
+      
+      if (!limitCheck.canTakeQuiz) {
+        const usageInfo = limitCheck.usageInfo;
+        
+        if (usageInfo.requiresSubscription) {
+          return res.status(403).json({ 
+            message: "Active subscription required", 
+            requiresSubscription: true 
+          });
+        }
+        
+        if (usageInfo.limitExceeded) {
+          return res.status(403).json({ 
+            message: `Daily quiz limit reached. You've used ${usageInfo.dailyUsage}/${usageInfo.dailyLimit} quizzes today.`, 
+            limitExceeded: true,
+            dailyLimit: usageInfo.dailyLimit,
+            dailyUsage: usageInfo.dailyUsage,
+            planName: usageInfo.planName
+          });
+        }
+        
+        return res.status(403).json({ 
+          message: "Cannot start quiz at this time", 
+          error: usageInfo.error 
+        });
       }
 
       const params = {
@@ -2372,6 +2392,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user subscription:", error);
       res.status(500).json({ message: "Failed to fetch subscription" });
+    }
+  });
+
+  // Get user's daily quiz usage and limits
+  app.get('/api/user/quiz-usage', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getCurrentUser(req)?.id;
+      
+      // Get user's active profile
+      const profiles = await storage.getUserProfiles(userId);
+      const currentProfile = profiles.find(p => p.isDefault) || profiles[0];
+      
+      if (!currentProfile) {
+        return res.status(400).json({ message: "No profile found" });
+      }
+
+      // Get comprehensive usage info
+      const limitCheck = await storage.checkDailyQuizLimit(userId, currentProfile.id);
+      
+      res.json({
+        canTakeQuiz: limitCheck.canTakeQuiz,
+        ...limitCheck.usageInfo
+      });
+    } catch (error) {
+      console.error("Error fetching quiz usage:", error);
+      res.status(500).json({ message: "Failed to fetch quiz usage" });
     }
   });
 
