@@ -757,19 +757,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quizActivity,
         subjectDistribution,
         engagementMetrics,
-        performanceMetrics
+        performanceMetrics,
+        userGrowthData,
+        hourlyEngagement,
+        examSystemDistribution,
+        revenueMetrics,
+        userActivityMetrics,
+        completionTrends
       ] = await Promise.all([
         storage.getQuizActivityByDay(),
         storage.getSubjectDistribution(),
         storage.getEngagementMetrics(),
-        storage.getPerformanceMetrics()
+        storage.getPerformanceMetrics(),
+        storage.getUserGrowthData(),
+        storage.getHourlyEngagementData(),
+        storage.getExamSystemDistribution(),
+        storage.getRevenueMetrics(),
+        storage.getUserActivityMetrics(),
+        storage.getQuizCompletionTrends()
       ]);
 
       res.json({
         quizActivity,
         subjectDistribution,
         engagement: engagementMetrics,
-        performance: performanceMetrics
+        performance: performanceMetrics,
+        userGrowth: userGrowthData,
+        hourlyEngagement,
+        examSystemDistribution,
+        revenue: revenueMetrics,
+        userActivity: userActivityMetrics,
+        completionTrends
       });
     } catch (error) {
       console.error("Error fetching analytics:", error);

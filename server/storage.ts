@@ -200,6 +200,12 @@ export interface IStorage {
   getMonthlyTopPerformers(): Promise<any[]>;
   getEngagementMetrics(): Promise<any>;
   getPerformanceMetrics(): Promise<any>;
+  getUserGrowthData(): Promise<any[]>;
+  getHourlyEngagementData(): Promise<any[]>;
+  getExamSystemDistribution(): Promise<any[]>;
+  getRevenueMetrics(): Promise<any>;
+  getUserActivityMetrics(): Promise<any>;
+  getQuizCompletionTrends(): Promise<any[]>;
 
   // Subscription Management Operations
   getSubscriptionPlans(): Promise<any[]>;
@@ -2937,6 +2943,221 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date(),
       })
       .where(eq(adminUsers.id, adminId));
+  }
+
+  async getUserGrowthData(): Promise<any[]> {
+    const monthsAgo = new Date();
+    monthsAgo.setMonth(monthsAgo.getMonth() - 8);
+    
+    const growthData = await db
+      .select({
+        month: sql<string>`TO_CHAR(${users.createdAt}, 'Mon')`,
+        monthNum: sql<number>`EXTRACT(MONTH FROM ${users.createdAt})`,
+        users: sql<number>`count(*)`,
+      })
+      .from(users)
+      .where(gte(users.createdAt, monthsAgo))
+      .groupBy(sql`TO_CHAR(${users.createdAt}, 'Mon')`, sql`EXTRACT(MONTH FROM ${users.createdAt})`)
+      .orderBy(sql`EXTRACT(MONTH FROM ${users.createdAt})`);
+
+    // Also get active users for the same months
+    const activeData = await db
+      .select({
+        month: sql<string>`TO_CHAR(${quizSessions.startedAt}, 'Mon')`,
+        monthNum: sql<number>`EXTRACT(MONTH FROM ${quizSessions.startedAt})`,
+        active: sql<number>`count(DISTINCT ${quizSessions.userId})`,
+      })
+      .from(quizSessions)
+      .where(gte(quizSessions.startedAt, monthsAgo))
+      .groupBy(sql`TO_CHAR(${quizSessions.startedAt}, 'Mon')`, sql`EXTRACT(MONTH FROM ${quizSessions.startedAt})`)
+      .orderBy(sql`EXTRACT(MONTH FROM ${quizSessions.startedAt})`);
+
+    // Combine the data
+    const combined = growthData.map(item => ({
+      month: item.month,
+      users: item.users,
+      active: activeData.find(a => a.monthNum === item.monthNum)?.active || 0
+    }));
+
+    return combined;
+  }
+
+  async getHourlyEngagementData(): Promise<any[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const hourlyData = await db
+      .select({
+        hour: sql<number>`EXTRACT(HOUR FROM ${quizSessions.startedAt})`,
+        users: sql<number>`count(DISTINCT ${quizSessions.userId})`,
+      })
+      .from(quizSessions)
+      .where(gte(quizSessions.startedAt, today))
+      .groupBy(sql`EXTRACT(HOUR FROM ${quizSessions.startedAt})`)
+      .orderBy(sql`EXTRACT(HOUR FROM ${quizSessions.startedAt})`);
+
+    // Format hour display
+    return hourlyData.map(item => ({
+      hour: `${item.hour}:00`,
+      users: item.users
+    }));
+  }
+
+  async getExamSystemDistribution(): Promise<any[]> {
+    const distribution = await db
+      .select({
+        name: examinationSystems.name,
+        count: sql<number>`count(DISTINCT ${profiles.userId})`,
+      })
+      .from(profiles)
+      .leftJoin(examinationSystems, eq(profiles.examinationSystemId, examinationSystems.id))
+      .groupBy(examinationSystems.name, examinationSystems.id)
+      .orderBy(sql`count(DISTINCT ${profiles.userId}) DESC`);
+
+    // Add colors and format for pie chart
+    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1'];
+    return distribution.map((item, index) => ({
+      name: item.name || 'Unknown',
+      value: item.count,
+      color: colors[index % colors.length]
+    }));
+  }
+
+  async getRevenueMetrics(): Promise<any> {
+    const thisMonth = new Date();
+    thisMonth.setDate(1);
+    thisMonth.setHours(0, 0, 0, 0);
+    
+    const [monthlyRevenue, totalUsers, activeSubscriptions] = await Promise.all([
+      // Monthly revenue from successful transactions
+      db.select({
+        revenue: sql<number>`COALESCE(SUM(CAST(${paymentTransactions.amount} AS DECIMAL)), 0)`
+      })
+      .from(paymentTransactions)
+      .where(and(
+        gte(paymentTransactions.createdAt, thisMonth),
+        eq(paymentTransactions.status, 'completed')
+      )),
+      
+      // Total users
+      db.select({ count: sql<number>`count(*)` }).from(users),
+      
+      // Active subscriptions
+      db.select({ count: sql<number>`count(*)` })
+      .from(userSubscriptions)
+      .where(eq(userSubscriptions.status, 'active'))
+    ]);
+
+    const revenue = monthlyRevenue[0]?.revenue || 0;
+    const userCount = totalUsers[0]?.count || 1;
+    const subsCount = activeSubscriptions[0]?.count || 0;
+
+    return {
+      monthlyRevenue: revenue,
+      avgRevenuePerUser: revenue / userCount,
+      conversionRate: (subsCount / userCount) * 100,
+      customerLTV: revenue * 8 // Rough estimate based on 8-month retention
+    };
+  }
+
+  async getUserActivityMetrics(): Promise<any> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const monthAgo = new Date(today);
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+    const [
+      totalUsers,
+      newUsersThisWeek,
+      activeUsersToday,
+      activeUsersThisWeek,
+      totalQuizSessions,
+      avgUserSessions,
+      topActiveUsers
+    ] = await Promise.all([
+      // Total users
+      db.select({ count: sql<number>`count(*)` }).from(users),
+      
+      // New users this week
+      db.select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(gte(users.createdAt, weekAgo)),
+      
+      // Active users today
+      db.select({ count: sql<number>`count(DISTINCT ${quizSessions.userId})` })
+        .from(quizSessions)
+        .where(gte(quizSessions.startedAt, today)),
+      
+      // Active users this week
+      db.select({ count: sql<number>`count(DISTINCT ${quizSessions.userId})` })
+        .from(quizSessions)
+        .where(gte(quizSessions.startedAt, weekAgo)),
+      
+      // Total quiz sessions
+      db.select({ count: sql<number>`count(*)` }).from(quizSessions),
+      
+      // Average sessions per user
+      db.select({
+        avgSessions: sql<number>`AVG(user_sessions.session_count)`
+      }).from(sql`(
+        SELECT user_id, COUNT(*) as session_count
+        FROM quiz_sessions
+        GROUP BY user_id
+      ) as user_sessions`),
+      
+      // Top 5 most active users this week
+      db.select({
+        userId: users.id,
+        email: users.email,
+        sessionCount: sql<number>`count(${quizSessions.id})`,
+        totalSparks: users.totalSparks
+      })
+      .from(users)
+      .leftJoin(quizSessions, eq(users.id, quizSessions.userId))
+      .where(gte(quizSessions.startedAt, weekAgo))
+      .groupBy(users.id, users.email, users.totalSparks)
+      .orderBy(sql`count(${quizSessions.id}) DESC`)
+      .limit(5)
+    ]);
+
+    return {
+      totalUsers: totalUsers[0]?.count || 0,
+      newUsersThisWeek: newUsersThisWeek[0]?.count || 0,
+      activeUsersToday: activeUsersToday[0]?.count || 0,
+      activeUsersThisWeek: activeUsersThisWeek[0]?.count || 0,
+      totalQuizSessions: totalQuizSessions[0]?.count || 0,
+      avgSessionsPerUser: Number((avgUserSessions[0]?.avgSessions || 0).toFixed(1)),
+      topActiveUsers: topActiveUsers
+    };
+  }
+
+  async getQuizCompletionTrends(): Promise<any[]> {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    
+    const trends = await db
+      .select({
+        date: sql<string>`DATE(${quizSessions.startedAt})`,
+        started: sql<number>`count(*)`,
+        completed: sql<number>`count(CASE WHEN ${quizSessions.completed} = true THEN 1 END)`,
+        completionRate: sql<number>`ROUND(
+          (count(CASE WHEN ${quizSessions.completed} = true THEN 1 END)::float / count(*)) * 100, 
+          1
+        )`
+      })
+      .from(quizSessions)
+      .where(gte(quizSessions.startedAt, weekAgo))
+      .groupBy(sql`DATE(${quizSessions.startedAt})`)
+      .orderBy(sql`DATE(${quizSessions.startedAt})`);
+
+    return trends.map(trend => ({
+      date: trend.date,
+      started: trend.started,
+      completed: trend.completed,
+      completionRate: trend.completionRate || 0
+    }));
   }
 }
 

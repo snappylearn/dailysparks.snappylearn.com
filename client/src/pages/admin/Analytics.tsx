@@ -19,9 +19,15 @@ export default function AdminAnalytics() {
   const subjectPerformanceData = analytics?.subjectDistribution || [];
   const engagementMetrics = analytics?.engagement || {};
   const performanceMetrics = analytics?.performance || {};
+  const userGrowthData = analytics?.userGrowth || [];
+  const hourlyEngagementData = analytics?.hourlyEngagement || [];
+  const examSystemDistribution = analytics?.examSystemDistribution || [];
+  const revenueMetrics = analytics?.revenue || {};
+  const userActivityMetrics = analytics?.userActivity || {};
+  const completionTrends = analytics?.completionTrends || [];
 
-  // Mock data for features not yet implemented in backend
-  const userGrowthData = [
+  // Fallback data for user growth if no live data available
+  const fallbackUserGrowthData = [
     { month: 'Jan', users: 150, active: 120 },
     { month: 'Feb', users: 240, active: 190 },
     { month: 'Mar', users: 380, active: 300 },
@@ -32,26 +38,28 @@ export default function AdminAnalytics() {
     { month: 'Aug', users: 1350, active: 1080 },
   ];
 
-  // These are still using mock data - can be implemented later if needed
-
-  const timeEngagementData = [
-    { hour: '6AM', users: 45 },
-    { hour: '8AM', users: 120 },
-    { hour: '10AM', users: 180 },
-    { hour: '12PM', users: 240 },
-    { hour: '2PM', users: 290 },
-    { hour: '4PM', users: 350 },
-    { hour: '6PM', users: 420 },
-    { hour: '8PM', users: 380 },
-    { hour: '10PM', users: 280 },
+  // Fallback data for hourly engagement if no live data available
+  const fallbackHourlyData = [
+    { hour: '6:00', users: 45 },
+    { hour: '8:00', users: 120 },
+    { hour: '10:00', users: 180 },
+    { hour: '12:00', users: 240 },
+    { hour: '14:00', users: 290 },
+    { hour: '16:00', users: 350 },
+    { hour: '18:00', users: 420 },
+    { hour: '20:00', users: 380 },
+    { hour: '22:00', users: 280 },
   ];
 
-  // Exam system distribution - using subject distribution as fallback for now
-  const examSystemDistribution = subjectPerformanceData.length > 0 ? subjectPerformanceData : [
+  // Fallback exam system distribution if no live data available
+  const fallbackExamSystemData = [
     { name: 'KCSE', value: 65, color: '#8884d8' },
     { name: 'IGCSE', value: 25, color: '#82ca9d' },
     { name: 'KPSEA', value: 10, color: '#ffc658' },
   ];
+  
+  // Use live exam system distribution or fallback
+  const examSystemChartData = examSystemDistribution.length > 0 ? examSystemDistribution : fallbackExamSystemData;
 
   return (
     <div className="space-y-6">
@@ -89,7 +97,7 @@ export default function AdminAnalytics() {
             </Badge>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{isLoading ? '...' : '$12,450'}</div>
+            <div className="text-2xl font-bold">{isLoading ? '...' : `$${revenueMetrics.monthlyRevenue || 0}`}</div>
             <p className="text-xs text-muted-foreground">
               From subscriptions and premium features
             </p>
@@ -155,7 +163,7 @@ export default function AdminAnalytics() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={userGrowthData}>
+                  <AreaChart data={userGrowthData.length > 0 ? userGrowthData : fallbackUserGrowthData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -202,6 +210,42 @@ export default function AdminAnalytics() {
             </Card>
           </div>
 
+          {/* Quiz Completion Trends */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Quiz Completion Trends</CardTitle>
+              <CardDescription>Daily completion rates over the past week</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={completionTrends}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area 
+                    type="monotone" 
+                    dataKey="started" 
+                    stackId="1"
+                    stroke="#8884d8" 
+                    fill="#8884d8" 
+                    fillOpacity={0.4}
+                    name="Started"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="completed" 
+                    stackId="2"
+                    stroke="#82ca9d" 
+                    fill="#82ca9d" 
+                    fillOpacity={0.8}
+                    name="Completed"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
           <div className="grid gap-4 lg:grid-cols-2">
             {/* Exam System Distribution */}
             <Card>
@@ -213,7 +257,7 @@ export default function AdminAnalytics() {
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={examSystemDistribution}
+                      data={examSystemChartData}
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
@@ -221,7 +265,7 @@ export default function AdminAnalytics() {
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      {examSystemDistribution.map((entry, index) => (
+                      {examSystemChartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -239,7 +283,7 @@ export default function AdminAnalytics() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={timeEngagementData}>
+                  <LineChart data={hourlyEngagementData.length > 0 ? hourlyEngagementData : fallbackHourlyData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="hour" />
                     <YAxis />
@@ -270,19 +314,19 @@ export default function AdminAnalytics() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">New Users (7d)</span>
-                  <Badge className="bg-green-100 text-green-800">+156</Badge>
+                  <Badge className="bg-green-100 text-green-800">+{userActivityMetrics.newUsersThisWeek || 0}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Returning Users</span>
-                  <span className="font-medium">2,341</span>
+                  <span className="text-sm text-muted-foreground">Total Users</span>
+                  <span className="font-medium">{userActivityMetrics.totalUsers || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Churn Rate</span>
-                  <Badge variant="outline" className="text-red-600">2.3%</Badge>
+                  <span className="text-sm text-muted-foreground">Active Today</span>
+                  <Badge variant="outline" className="text-blue-600">{userActivityMetrics.activeUsersToday || 0}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Avg. Streak</span>
-                  <span className="font-medium">5.7 days</span>
+                  <span className="text-sm text-muted-foreground">Active This Week</span>
+                  <span className="font-medium">{userActivityMetrics.activeUsersThisWeek || 0}</span>
                 </div>
               </CardContent>
             </Card>
@@ -297,19 +341,19 @@ export default function AdminAnalytics() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Daily Active Users</span>
-                  <span className="font-medium">1,842</span>
+                  <span className="font-medium">{engagementMetrics.dailyActiveUsers || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Weekly Active Users</span>
-                  <span className="font-medium">2,156</span>
+                  <span className="font-medium">{engagementMetrics.weeklyActiveUsers || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Monthly Active Users</span>
-                  <span className="font-medium">2,847</span>
+                  <span className="text-sm text-muted-foreground">Engagement Rate</span>
+                  <Badge className="bg-blue-100 text-blue-800">{engagementMetrics.weeklyEngagementRate || 0}%</Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Stickiness Ratio</span>
-                  <Badge className="bg-blue-100 text-blue-800">64.7%</Badge>
+                  <span className="text-sm text-muted-foreground">Avg Sessions/User</span>
+                  <span className="font-medium">{userActivityMetrics.avgSessionsPerUser || 0}</span>
                 </div>
               </CardContent>
             </Card>
@@ -323,20 +367,20 @@ export default function AdminAnalytics() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Avg. Quizzes/User</span>
-                  <span className="font-medium">12.4</span>
+                  <span className="text-sm text-muted-foreground">Total Quiz Sessions</span>
+                  <span className="font-medium">{performanceMetrics.totalSessions || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Avg. Score</span>
-                  <Badge className="bg-green-100 text-green-800">78.3%</Badge>
+                  <Badge className="bg-green-100 text-green-800">{performanceMetrics.avgScore || 0}%</Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Total Sparks Earned</span>
-                  <span className="font-medium">4.2M</span>
+                  <span className="text-sm text-muted-foreground">Best Performance</span>
+                  <span className="font-medium">{subjectPerformanceData.length > 0 ? subjectPerformanceData[0]?.subject || 'N/A' : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Study Streak &gt; 7d</span>
-                  <span className="font-medium">34.2%</span>
+                  <span className="text-sm text-muted-foreground">Active Subjects</span>
+                  <span className="font-medium">{subjectPerformanceData.length}</span>
                 </div>
               </CardContent>
             </Card>
@@ -353,12 +397,10 @@ export default function AdminAnalytics() {
               <ResponsiveContainer width="100%" height={400}>
                 <BarChart data={subjectPerformanceData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="subject" />
-                  <YAxis yAxisId="left" orientation="left" />
-                  <YAxis yAxisId="right" orientation="right" />
+                  <XAxis dataKey="subjectName" />
+                  <YAxis />
                   <Tooltip />
-                  <Bar yAxisId="left" dataKey="attempts" fill="#8884d8" name="Attempts" />
-                  <Bar yAxisId="right" dataKey="avgScore" fill="#82ca9d" name="Avg Score %" />
+                  <Bar dataKey="count" fill="#8884d8" name="Quiz Sessions" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -400,19 +442,19 @@ export default function AdminAnalytics() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Monthly Revenue</span>
-                  <span className="font-medium">$45,231</span>
+                  <span className="font-medium">${revenueMetrics.monthlyRevenue || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Avg Revenue/User</span>
-                  <span className="font-medium">$15.89</span>
+                  <span className="font-medium">${(revenueMetrics.avgRevenuePerUser || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Conversion Rate</span>
-                  <Badge className="bg-blue-100 text-blue-800">3.4%</Badge>
+                  <Badge className="bg-blue-100 text-blue-800">{(revenueMetrics.conversionRate || 0).toFixed(1)}%</Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Customer LTV</span>
-                  <span className="font-medium">$127.50</span>
+                  <span className="font-medium">${(revenueMetrics.customerLTV || 0).toFixed(0)}</span>
                 </div>
               </CardContent>
             </Card>
