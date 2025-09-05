@@ -546,8 +546,21 @@ export class DatabaseStorage implements IStorage {
 
       const averageScore = Math.round(Number(avgScoreResult[0]?.avgScore || 0));
 
+      // Calculate total sparks from quiz sessions (this is the correct source)
+      const totalSparksResult = await db
+        .select({ 
+          totalSparks: sql`COALESCE(sum(${quizSessions.sparksEarned}), 0)` 
+        })
+        .from(quizSessions)
+        .where(and(
+          eq(quizSessions.userId, userId),
+          eq(quizSessions.completed, true)
+        ));
+
+      const totalSparks = Number(totalSparksResult[0]?.totalSparks || 0);
+
       return {
-        totalSparks: activeProfile.sparks || 0,
+        totalSparks,
         totalQuizzes,
         averageScore,
         currentStreak: activeProfile.streak || 0
