@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, createUser, authenticateUser, getCurrentUser, hashPassword, verifyPassword } from "./formAuth";
+import { setupAuth, isAuthenticated, isAuthenticatedAndActive, createUser, authenticateUser, getCurrentUser, hashPassword, verifyPassword } from "./formAuth";
 import { setupAdminAuth, isAdminAuthenticated } from "./adminAuth";
 import { generateQuestions } from "./aiService";
 import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects, levels, terms, signupSchema, signinSchema, passwordSetupSchema } from "@shared/schema";
@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', isAuthenticatedAndActive, async (req: any, res) => {
     try {
       const currentUser = getCurrentUser(req);
       if (!currentUser) {
@@ -230,7 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get quiz history for current user
-  app.get('/api/quiz-history', isAuthenticated, async (req: any, res) => {
+  app.get('/api/quiz-history', isAuthenticatedAndActive, async (req: any, res) => {
     try {
       const userId = getCurrentUser(req)?.id;
       const quizHistory = await storage.getQuizHistoryForUser(userId);
@@ -242,7 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user stats for dashboard
-  app.get('/api/user-stats', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user-stats', isAuthenticatedAndActive, async (req: any, res) => {
     try {
       const userId = getCurrentUser(req)?.id;
       const stats = await storage.getUserStats(userId);
@@ -443,7 +443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Submit answer for quiz question
-  app.post('/api/quiz-sessions/:sessionId/answers', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz-sessions/:sessionId/answers', isAuthenticatedAndActive, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       const { questionId, choiceId, answer, timeSpent } = req.body;
@@ -459,7 +459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete quiz session
-  app.post('/api/quiz-sessions/:sessionId/complete', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz-sessions/:sessionId/complete', isAuthenticatedAndActive, async (req: any, res) => {
     try {
       const { sessionId } = req.params;
       
@@ -1004,7 +1004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Primary quiz start endpoint - uses existing admin-created quizzes
-  app.post('/api/quiz/start', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/start', isAuthenticatedAndActive, async (req: any, res) => {
     try {
       const userId = getCurrentUser(req)?.id;
       const { profileId, subjectId, quizType, topicId, termId } = req.body;
@@ -1246,7 +1246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Profile routes
-  app.get('/api/profiles', isAuthenticated, async (req: any, res) => {
+  app.get('/api/profiles', isAuthenticatedAndActive, async (req: any, res) => {
     try {
       const userId = getCurrentUser(req)?.id;
       const profiles = await storage.getUserProfiles(userId);
@@ -1649,7 +1649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Start a completely new quiz session (ignoring incomplete ones)
-  app.post('/api/quiz/start-fresh', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/start-fresh', isAuthenticatedAndActive, async (req: any, res) => {
     try {
       const { profileId, subjectId, quizType } = req.body;
 
@@ -1735,7 +1735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Submit individual answer with session persistence
-  app.post('/api/quiz/:sessionId/answer', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/:sessionId/answer', isAuthenticatedAndActive, async (req: any, res) => {
     try {
       const userId = getCurrentUser(req)?.id;
       const sessionId = req.params.sessionId;
@@ -1797,7 +1797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complete quiz  
-  app.post('/api/quiz/:sessionId/complete', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz/:sessionId/complete', isAuthenticatedAndActive, async (req: any, res) => {
     try {
       const userId = getCurrentUser(req)?.id;
       const sessionId = req.params.sessionId;
