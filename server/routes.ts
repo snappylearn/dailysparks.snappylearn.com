@@ -6,7 +6,7 @@ import { setupAdminAuth, isAdminAuthenticated } from "./adminAuth";
 import { generateQuestions } from "./aiService";
 import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects, levels, terms, signupSchema, signinSchema, passwordSetupSchema } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql, gt } from "drizzle-orm";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -238,6 +238,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching quiz history:', error);
       res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  // Get current user's rank
+  app.get('/api/user/rank', isAuthenticatedAndActive, async (req: any, res) => {
+    try {
+      const userId = getCurrentUser(req)?.id;
+      
+      // Get user's current profile
+      const profiles = await storage.getUserProfiles(userId);
+      if (!profiles.length) {
+        return res.json({ rank: null, totalUsers: 0 });
+      }
+      
+      const currentProfile = profiles[0];
+      const userSparks = currentProfile.sparks || 0;
+      
+      // Count users with more sparks (to determine rank)
+      const usersWithMoreSparks = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(profiles)
+        .where(and(
+          gt(profiles.sparks, userSparks),
+          eq(profiles.isActive, true)
+        ));
+      
+      const rank = (usersWithMoreSparks[0]?.count || 0) + 1;
+      
+      // Get total active users for context
+      const totalUsers = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(profiles)
+        .where(eq(profiles.isActive, true));
+      
+      res.json({ 
+        rank,
+        totalUsers: totalUsers[0]?.count || 0,
+        sparks: userSparks
+      });
+    } catch (error) {
+      console.error("Error fetching user rank:", error);
+      res.status(500).json({ message: "Failed to fetch user rank" });
     }
   });
 

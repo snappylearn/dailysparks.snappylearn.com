@@ -26,6 +26,74 @@ import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Profile, ExaminationSystem, Level } from '@shared/schema';
 
+// Quick Stats Component
+function QuickStatsContent({ currentProfile }: { currentProfile: any }) {
+  const { data: rankData } = useQuery({
+    queryKey: ["/api/user/rank"],
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-2 text-gray-600">
+          <Star className="h-4 w-4 text-yellow-500" />
+          Total Sparks
+        </span>
+        <span className="font-semibold text-lg">{currentProfile?.sparks || 0}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-2 text-gray-600">
+          <Flame className="h-4 w-4 text-orange-500" />
+          Current Streak
+        </span>
+        <span className="font-semibold text-lg">{currentProfile?.currentStreak || 0} days</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-2 text-gray-600">
+          <Crown className="h-4 w-4 text-purple-500" />
+          Current Rank
+        </span>
+        <span className="font-semibold text-lg">
+          #{rankData?.rank || '—'}
+          {rankData?.totalUsers && (
+            <span className="text-sm text-gray-500 ml-1">
+              / {rankData.totalUsers}
+            </span>
+          )}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// Navbar Stats Component
+function NavbarStats({ currentProfile }: { currentProfile: any }) {
+  const { data: rankData } = useQuery({
+    queryKey: ["/api/user/rank"],
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  return (
+    <>
+      <div className="flex items-center gap-1 text-purple-600">
+        <Crown className="h-4 w-4" />
+        <span className="font-semibold">#{rankData?.rank || '-'}</span>
+      </div>
+      
+      <div className="flex items-center gap-1 text-orange-500">
+        <Zap className="h-4 w-4" />
+        <span className="font-semibold">{currentProfile?.sparks || 0}</span>
+      </div>
+      
+      <div className="flex items-center gap-1 text-orange-600">
+        <Flame className="h-4 w-4" />
+        <span className="font-semibold">{currentProfile?.currentStreak || currentProfile?.streak || 0}</span>
+      </div>
+    </>
+  );
+}
+
 interface MainLayoutProps {
   children: ReactNode;
 }
@@ -215,20 +283,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             <div className="flex items-center gap-4">
               {/* Stats */}
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1 text-purple-600">
-                  <Crown className="h-4 w-4" />
-                  <span className="font-semibold">#{currentProfile?.rank || '-'}</span>
-                </div>
-                
-                <div className="flex items-center gap-1 text-orange-500">
-                  <Zap className="h-4 w-4" />
-                  <span className="font-semibold">{currentProfile?.sparks || 0}</span>
-                </div>
-                
-                <div className="flex items-center gap-1 text-orange-600">
-                  <Flame className="h-4 w-4" />
-                  <span className="font-semibold">{currentProfile?.currentStreak || currentProfile?.streak || 0}</span>
-                </div>
+                <NavbarStats currentProfile={currentProfile} />
               </div>
 
               {/* User Avatar with Dropdown */}
@@ -308,29 +363,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             <Card>
               <CardContent className="p-6">
                 <h3 className="font-semibold text-lg text-gray-800 mb-4">Quick Stats</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-gray-600">
-                      <Star className="h-4 w-4 text-yellow-500" />
-                      Total Sparks
-                    </span>
-                    <span className="font-semibold text-lg">{currentProfile?.sparks || 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-gray-600">
-                      <Flame className="h-4 w-4 text-orange-500" />
-                      Current Streak
-                    </span>
-                    <span className="font-semibold text-lg">{currentProfile?.currentStreak || 0} days</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-gray-600">
-                      <Crown className="h-4 w-4 text-purple-500" />
-                      Today's Rank
-                    </span>
-                    <span className="font-semibold text-lg">#{currentProfile?.rank || '—'}</span>
-                  </div>
-                </div>
+                <QuickStatsContent currentProfile={currentProfile} />
               </CardContent>
             </Card>
 
