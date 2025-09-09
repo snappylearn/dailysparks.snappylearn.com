@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAuthenticatedAndActive, createUser, authenticateUser, getCurrentUser, hashPassword, verifyPassword } from "./formAuth";
 import { setupAdminAuth, isAdminAuthenticated } from "./adminAuth";
 import { generateQuestions } from "./aiService";
-import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects, levels, terms, signupSchema, signinSchema, passwordSetupSchema } from "@shared/schema";
+import { insertQuizSessionSchema, insertUserAnswerSchema, topics, questions, quizSessions, userAnswers, subjects, levels, terms, signupSchema, signinSchema, passwordSetupSchema, profiles } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, gt } from "drizzle-orm";
 import { z } from "zod";
@@ -255,26 +255,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentProfile = profiles[0];
       const userSparks = currentProfile.sparks || 0;
       
-      // Count users with more sparks (to determine rank)
-      const usersWithMoreSparks = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(profiles)
-        .where(and(
-          gt(profiles.sparks, userSparks),
-          eq(profiles.isActive, true)
-        ));
+      // Get leaderboard to calculate rank
+      const leaderboard = await storage.getLeaderboard();
       
-      const rank = (usersWithMoreSparks[0]?.count || 0) + 1;
-      
-      // Get total active users for context
-      const totalUsers = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(profiles)
-        .where(eq(profiles.isActive, true));
+      // Find user's position in leaderboard
+      const userIndex = leaderboard.findIndex(user => user.id === userId);
+      const rank = userIndex >= 0 ? userIndex + 1 : leaderboard.length + 1;
       
       res.json({ 
         rank,
-        totalUsers: totalUsers[0]?.count || 0,
+        totalUsers: leaderboard.length,
         sparks: userSparks
       });
     } catch (error) {
