@@ -2085,6 +2085,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(profiles.id, updatedSession.profileId));
 
       let newStreak = 1;
+      let newlyAwarded = [];
+      
       if (currentProfile) {
         const today = new Date();
         const yesterday = new Date(today);
