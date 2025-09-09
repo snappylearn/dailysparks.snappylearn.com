@@ -64,7 +64,7 @@ async function importData() {
     console.log('🚀 Starting data import...');
     
     // Read and parse the JSON file
-    const jsonData = readFileSync('attached_assets/neon_export_1756733723908.json', 'utf8');
+    const jsonData = readFileSync('attached_assets/neon_export (1)_1757399020679.json', 'utf8');
     const data: ImportData = JSON.parse(jsonData);
     
     console.log('📊 Data structure found:');
@@ -128,10 +128,18 @@ async function importData() {
       console.log(`✅ Imported ${data.subjects.length} subjects`);
     }
 
-    // 4. Import users
+    // 4. Import users (preserve existing users)
     if (data.users?.length) {
       console.log('\n👥 Importing users...');
-      for (const user of data.users) {
+      
+      // Get existing users to avoid overwriting them
+      const existingUsers = await db.select({ id: users.id }).from(users);
+      const existingUserIds = new Set(existingUsers.map(u => u.id));
+      
+      const newUsers = data.users.filter(user => !existingUserIds.has(user.id));
+      console.log(`🔍 Found ${existingUserIds.size} existing users to preserve, importing ${newUsers.length} new users`);
+      
+      for (const user of newUsers) {
         await db.insert(users)
           .values({
             id: user.id,
@@ -145,7 +153,7 @@ async function importData() {
           })
           .onConflictDoNothing();
       }
-      console.log(`✅ Imported ${data.users.length} users`);
+      console.log(`✅ Imported ${newUsers.length} new users (preserved ${existingUserIds.size} existing)`);
     }
 
     // 4.5. Import terms (needed before topics)
