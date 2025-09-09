@@ -139,21 +139,27 @@ async function importData() {
       const newUsers = data.users.filter(user => !existingUserIds.has(user.id));
       console.log(`🔍 Found ${existingUserIds.size} existing users to preserve, importing ${newUsers.length} new users`);
       
+      let importedCount = 0;
       for (const user of newUsers) {
-        await db.insert(users)
-          .values({
-            id: user.id,
-            email: user.email,
-            firstName: user.first_name || user.firstName,
-            lastName: user.last_name || user.lastName,
-            profileImageUrl: user.profile_image_url || user.profileImageUrl,
-            defaultProfileId: user.default_profile_id || user.defaultProfileId,
-            isPremium: user.is_premium || user.isPremium || false,
-            credits: user.credits?.toString() || "0.00",
-          })
-          .onConflictDoNothing();
+        try {
+          await db.insert(users)
+            .values({
+              id: user.id,
+              email: user.email,
+              firstName: user.first_name || user.firstName,
+              lastName: user.last_name || user.lastName,
+              profileImageUrl: user.profile_image_url || user.profileImageUrl,
+              defaultProfileId: user.default_profile_id || user.defaultProfileId,
+              isPremium: user.is_premium || user.isPremium || false,
+              credits: user.credits?.toString() || "0.00",
+            })
+            .onConflictDoNothing();
+          importedCount++;
+        } catch (error) {
+          console.log(`⚠️ Skipped user ${user.id} due to error:`, error);
+        }
       }
-      console.log(`✅ Imported ${newUsers.length} new users (preserved ${existingUserIds.size} existing)`);
+      console.log(`✅ Imported ${importedCount} new users (preserved ${existingUserIds.size} existing)`);
     }
 
     // 4.5. Import terms (needed before topics)
@@ -173,29 +179,48 @@ async function importData() {
       console.log(`✅ Imported ${data.terms.length} terms`);
     }
 
-    // 5. Import profiles
+    // 5. Import profiles (with user validation)
     if (data.profiles?.length) {
       console.log('\n👤 Importing profiles...');
-      for (const profile of data.profiles) {
-        await db.insert(profiles)
-          .values({
-            id: profile.id,
-            userId: profile.user_id,
-            examinationSystemId: profile.examination_system_id,
-            levelId: profile.level_id,
-            currentTerm: profile.current_term || 'Term 1',
-            sparks: profile.sparks || 0,
-            streak: profile.streak || 0,
-            currentStreak: profile.current_streak || 0,
-            longestStreak: profile.longest_streak || 0,
-            rank: profile.rank,
-            lastQuizDate: profile.last_quiz_date ? new Date(profile.last_quiz_date) : null,
-            lastActivity: profile.last_activity ? new Date(profile.last_activity) : new Date(),
-            isActive: profile.is_active ?? true,
-          })
-          .onConflictDoNothing();
+      
+      // Get all users to validate profile references
+      const allUsers = await db.select({ id: users.id }).from(users);
+      const userIds = new Set(allUsers.map(u => u.id));
+      
+      const validProfiles = data.profiles.filter(profile => userIds.has(profile.user_id));
+      const invalidProfiles = data.profiles.filter(profile => !userIds.has(profile.user_id));
+      
+      if (invalidProfiles.length > 0) {
+        console.log(`⚠️ Skipping ${invalidProfiles.length} profiles with invalid user references`);
+        invalidProfiles.forEach(p => console.log(`   - Profile ${p.id} references missing user ${p.user_id}`));
       }
-      console.log(`✅ Imported ${data.profiles.length} profiles`);
+      
+      let importedCount = 0;
+      for (const profile of validProfiles) {
+        try {
+          await db.insert(profiles)
+            .values({
+              id: profile.id,
+              userId: profile.user_id,
+              examinationSystemId: profile.examination_system_id,
+              levelId: profile.level_id,
+              currentTerm: profile.current_term || 'Term 1',
+              sparks: profile.sparks || 0,
+              streak: profile.streak || 0,
+              currentStreak: profile.current_streak || 0,
+              longestStreak: profile.longest_streak || 0,
+              rank: profile.rank,
+              lastQuizDate: profile.last_quiz_date ? new Date(profile.last_quiz_date) : null,
+              lastActivity: profile.last_activity ? new Date(profile.last_activity) : new Date(),
+              isActive: profile.is_active ?? true,
+            })
+            .onConflictDoNothing();
+          importedCount++;
+        } catch (error) {
+          console.log(`⚠️ Skipped profile ${profile.id} due to error:`, error);
+        }
+      }
+      console.log(`✅ Imported ${importedCount} profiles (skipped ${data.profiles.length - importedCount} invalid)`);
     }
 
     // 6. Import topics
@@ -241,51 +266,93 @@ async function importData() {
       console.log(`✅ Imported ${data.questions.length} questions`);
     }
 
-    // 8. Import quiz sessions
+    // 8. Import quiz sessions (with user validation)
     if (data.quiz_sessions?.length) {
       console.log('\n🎯 Importing quiz sessions...');
-      for (const session of data.quiz_sessions) {
-        await db.insert(quizSessions)
-          .values({
-            id: session.id,
-            userId: session.user_id,
-            profileId: session.profile_id,
-            subjectId: session.subject_id,
-            quizType: session.quiz_type,
-            topicId: session.topic_id,
-            termId: session.term_id,
-            quizQuestions: session.quiz_questions || null,
-            totalQuestions: session.total_questions || 30,
-            currentQuestionIndex: session.current_question_index || 0,
-            correctAnswers: session.correct_answers || 0,
-            sparksEarned: session.sparks_earned || 0,
-            timeSpent: session.time_spent,
-            completed: session.completed || false,
-            startedAt: session.started_at ? new Date(session.started_at) : new Date(),
-            completedAt: session.completed_at ? new Date(session.completed_at) : null,
-          })
-          .onConflictDoNothing();
+      
+      // Get all users and profiles to validate references
+      const allUsers = await db.select({ id: users.id }).from(users);
+      const allProfiles = await db.select({ id: profiles.id }).from(profiles);
+      const userIds = new Set(allUsers.map(u => u.id));
+      const profileIds = new Set(allProfiles.map(p => p.id));
+      
+      const validSessions = data.quiz_sessions.filter(session => 
+        userIds.has(session.user_id) && profileIds.has(session.profile_id)
+      );
+      const invalidSessions = data.quiz_sessions.filter(session => 
+        !userIds.has(session.user_id) || !profileIds.has(session.profile_id)
+      );
+      
+      if (invalidSessions.length > 0) {
+        console.log(`⚠️ Skipping ${invalidSessions.length} quiz sessions with invalid references`);
       }
-      console.log(`✅ Imported ${data.quiz_sessions.length} quiz sessions`);
+      
+      let importedCount = 0;
+      for (const session of validSessions) {
+        try {
+          await db.insert(quizSessions)
+            .values({
+              id: session.id,
+              userId: session.user_id,
+              profileId: session.profile_id,
+              subjectId: session.subject_id,
+              quizType: session.quiz_type,
+              topicId: session.topic_id,
+              termId: session.term_id,
+              quizQuestions: session.quiz_questions || null,
+              totalQuestions: session.total_questions || 30,
+              currentQuestionIndex: session.current_question_index || 0,
+              correctAnswers: session.correct_answers || 0,
+              sparksEarned: session.sparks_earned || 0,
+              timeSpent: session.time_spent,
+              completed: session.completed || false,
+              startedAt: session.started_at ? new Date(session.started_at) : new Date(),
+              completedAt: session.completed_at ? new Date(session.completed_at) : null,
+            })
+            .onConflictDoNothing();
+          importedCount++;
+        } catch (error) {
+          console.log(`⚠️ Skipped quiz session ${session.id} due to error:`, error);
+        }
+      }
+      console.log(`✅ Imported ${importedCount} quiz sessions (skipped ${data.quiz_sessions.length - importedCount} invalid)`);
     }
 
-    // 9. Import user answers
+    // 9. Import user answers (with quiz session validation)
     if (data.user_answers?.length) {
       console.log('\n💡 Importing user answers...');
-      for (const answer of data.user_answers) {
-        await db.insert(userAnswers)
-          .values({
-            id: answer.id,
-            quizSessionId: answer.quiz_session_id,
-            questionId: answer.question_id,
-            userAnswer: answer.user_answer,
-            isCorrect: answer.is_correct,
-            timeSpent: answer.time_spent,
-            answeredAt: answer.answered_at ? new Date(answer.answered_at) : new Date(),
-          })
-          .onConflictDoNothing();
+      
+      // Get all quiz sessions to validate references
+      const allQuizSessions = await db.select({ id: quizSessions.id }).from(quizSessions);
+      const sessionIds = new Set(allQuizSessions.map(s => s.id));
+      
+      const validAnswers = data.user_answers.filter(answer => sessionIds.has(answer.quiz_session_id));
+      const invalidCount = data.user_answers.length - validAnswers.length;
+      
+      if (invalidCount > 0) {
+        console.log(`⚠️ Skipping ${invalidCount} user answers with invalid quiz session references`);
       }
-      console.log(`✅ Imported ${data.user_answers.length} user answers`);
+      
+      let importedCount = 0;
+      for (const answer of validAnswers) {
+        try {
+          await db.insert(userAnswers)
+            .values({
+              id: answer.id,
+              quizSessionId: answer.quiz_session_id,
+              questionId: answer.question_id,
+              userAnswer: answer.user_answer,
+              isCorrect: answer.is_correct,
+              timeSpent: answer.time_spent,
+              answeredAt: answer.answered_at ? new Date(answer.answered_at) : new Date(),
+            })
+            .onConflictDoNothing();
+          importedCount++;
+        } catch (error) {
+          console.log(`⚠️ Skipped user answer ${answer.id} due to error`);
+        }
+      }
+      console.log(`✅ Imported ${importedCount} user answers (skipped ${invalidCount} invalid)`);
     }
 
     // 10. Import sessions (for session management)
@@ -370,51 +437,105 @@ async function importData() {
 
     if (data.user_challenges?.length) {
       console.log('\n👤🎯 Importing user challenges...');
-      for (const userChallenge of data.user_challenges) {
-        await db.insert(userChallenges)
-          .values({
-            id: userChallenge.id,
-            userId: userChallenge.user_id,
-            challengeId: userChallenge.challenge_id,
-            completed: userChallenge.completed || false,
-            progress: userChallenge.progress || 0,
-          })
-          .onConflictDoNothing();
+      
+      // Validate user references
+      const allUsers = await db.select({ id: users.id }).from(users);
+      const userIds = new Set(allUsers.map(u => u.id));
+      
+      const validUserChallenges = data.user_challenges.filter(uc => userIds.has(uc.user_id));
+      const invalidCount = data.user_challenges.length - validUserChallenges.length;
+      
+      if (invalidCount > 0) {
+        console.log(`⚠️ Skipping ${invalidCount} user challenges with invalid user references`);
       }
-      console.log(`✅ Imported ${data.user_challenges.length} user challenges`);
+      
+      let importedCount = 0;
+      for (const userChallenge of validUserChallenges) {
+        try {
+          await db.insert(userChallenges)
+            .values({
+              id: userChallenge.id,
+              userId: userChallenge.user_id,
+              challengeId: userChallenge.challenge_id,
+              completed: userChallenge.completed || false,
+              progress: userChallenge.progress || 0,
+            })
+            .onConflictDoNothing();
+          importedCount++;
+        } catch (error) {
+          console.log(`⚠️ Skipped user challenge ${userChallenge.id} due to error`);
+        }
+      }
+      console.log(`✅ Imported ${importedCount} user challenges`);
     }
 
     if (data.user_badges?.length) {
       console.log('\n👤🥇 Importing user badges...');
-      for (const userBadge of data.user_badges) {
-        await db.insert(userBadges)
-          .values({
-            id: userBadge.id,
-            userId: userBadge.user_id,
-            badgeId: userBadge.badge_id,
-            count: userBadge.count || 1,
-            streaks: userBadge.streaks || 0,
-            lastEarnedAt: userBadge.last_earned_at ? new Date(userBadge.last_earned_at) : new Date(),
-          })
-          .onConflictDoNothing();
+      
+      // Validate user references
+      const allUsers = await db.select({ id: users.id }).from(users);
+      const userIds = new Set(allUsers.map(u => u.id));
+      
+      const validUserBadges = data.user_badges.filter(ub => userIds.has(ub.user_id));
+      const invalidCount = data.user_badges.length - validUserBadges.length;
+      
+      if (invalidCount > 0) {
+        console.log(`⚠️ Skipping ${invalidCount} user badges with invalid user references`);
       }
-      console.log(`✅ Imported ${data.user_badges.length} user badges`);
+      
+      let importedCount = 0;
+      for (const userBadge of validUserBadges) {
+        try {
+          await db.insert(userBadges)
+            .values({
+              id: userBadge.id,
+              userId: userBadge.user_id,
+              badgeId: userBadge.badge_id,
+              count: userBadge.count || 1,
+              streaks: userBadge.streaks || 0,
+              lastEarnedAt: userBadge.last_earned_at ? new Date(userBadge.last_earned_at) : new Date(),
+            })
+            .onConflictDoNothing();
+          importedCount++;
+        } catch (error) {
+          console.log(`⚠️ Skipped user badge ${userBadge.id} due to error`);
+        }
+      }
+      console.log(`✅ Imported ${importedCount} user badges`);
     }
 
     if (data.user_trophies?.length) {
       console.log('\n👤🏆 Importing user trophies...');
-      for (const userTrophy of data.user_trophies) {
-        await db.insert(userTrophies)
-          .values({
-            id: userTrophy.id,
-            userId: userTrophy.user_id,
-            trophyId: userTrophy.trophy_id,
-            count: userTrophy.count || 1,
-            lastEarnedAt: userTrophy.last_earned_at ? new Date(userTrophy.last_earned_at) : new Date(),
-          })
-          .onConflictDoNothing();
+      
+      // Validate user references
+      const allUsers = await db.select({ id: users.id }).from(users);
+      const userIds = new Set(allUsers.map(u => u.id));
+      
+      const validUserTrophies = data.user_trophies.filter(ut => userIds.has(ut.user_id));
+      const invalidCount = data.user_trophies.length - validUserTrophies.length;
+      
+      if (invalidCount > 0) {
+        console.log(`⚠️ Skipping ${invalidCount} user trophies with invalid user references`);
       }
-      console.log(`✅ Imported ${data.user_trophies.length} user trophies`);
+      
+      let importedCount = 0;
+      for (const userTrophy of validUserTrophies) {
+        try {
+          await db.insert(userTrophies)
+            .values({
+              id: userTrophy.id,
+              userId: userTrophy.user_id,
+              trophyId: userTrophy.trophy_id,
+              count: userTrophy.count || 1,
+              lastEarnedAt: userTrophy.last_earned_at ? new Date(userTrophy.last_earned_at) : new Date(),
+            })
+            .onConflictDoNothing();
+          importedCount++;
+        } catch (error) {
+          console.log(`⚠️ Skipped user trophy ${userTrophy.id} due to error`);
+        }
+      }
+      console.log(`✅ Imported ${importedCount} user trophies`);
     }
 
     console.log('\n🎉 Data import completed successfully!');
