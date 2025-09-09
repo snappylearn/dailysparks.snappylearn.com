@@ -515,6 +515,9 @@ Generate exactly ${params.questionCount} questions following this format.`;
    * Complete quiz and calculate final results
    */
   static async completeQuiz(sessionId: string) {
+    const { profiles } = await import("@shared/schema");
+    const { sql } = await import("drizzle-orm");
+    
     // Get session data
     const [session] = await db
       .select()
@@ -545,13 +548,65 @@ Generate exactly ${params.questionCount} questions following this format.`;
       })
       .where(eq(quizSessions.id, sessionId));
 
+    // Get current profile to update sparks and streaks
+    const [currentProfile] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.id, session.profileId));
+
+    if (currentProfile) {
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const lastQuizDate = currentProfile.lastQuizDate ? new Date(currentProfile.lastQuizDate) : null;
+      let newStreak = currentProfile.currentStreak || 0;
+      
+      // Update streak logic
+      if (!lastQuizDate) {
+        // First quiz ever
+        newStreak = 1;
+      } else {
+        const lastQuizDay = new Date(lastQuizDate.getFullYear(), lastQuizDate.getMonth(), lastQuizDate.getDate());
+        const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const yesterdayDay = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+        
+        if (lastQuizDay.getTime() === yesterdayDay.getTime()) {
+          // Consecutive day - increment streak
+          newStreak += 1;
+        } else if (lastQuizDay.getTime() === todayDay.getTime()) {
+          // Already took quiz today - keep current streak
+          newStreak = currentProfile.currentStreak || 0;
+        } else {
+          // Gap in days - reset streak
+          newStreak = 1;
+        }
+      }
+      
+      // Update profile with sparks, streak, and last quiz date
+      await db
+        .update(profiles)
+        .set({
+          sparks: sql`${profiles.sparks} + ${finalSparks}`,
+          currentStreak: newStreak,
+          longestStreak: sql`GREATEST(${profiles.longestStreak}, ${newStreak})`,
+          lastQuizDate: today,
+          lastActivity: today,
+          updatedAt: today
+        })
+        .where(eq(profiles.id, session.profileId));
+
+      console.log(`✨ Profile updated - Added ${finalSparks} sparks, streak: ${newStreak}`);
+    }
+
     return {
       sessionId,
       totalQuestions,
       correctAnswers,
       sparksEarned: finalSparks,
       accuracy,
-      completed: true
+      completed: true,
+      newStreak: currentProfile ? (currentProfile.currentStreak || 0) + 1 : 1
     };
   }
 
