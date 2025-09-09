@@ -1527,7 +1527,7 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {filteredTopics?.map((topic: any) => (
+                      {editFilteredTopics?.map((topic: any) => (
                         <SelectItem key={topic.id} value={topic.id}>
                           {topic.title}
                         </SelectItem>
