@@ -1959,6 +1959,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Auto-award badges and trophies based on user achievements
+  async function awardBadgesAndTrophies(userId: string, totalSparks: number, currentStreak: number, sparksEarnedThisSession: number) {
+    const newlyAwarded = [];
+    
+    try {
+      // Get all available badges and trophies
+      const allBadges = await storage.getBadges();
+      const allTrophies = await storage.getTrophies();
+      
+      // Get user's current badges and trophies
+      const userBadges = await storage.getUserBadges(userId);
+      const userTrophies = await storage.getUserTrophies(userId);
+      
+      const userBadgeIds = userBadges.map(b => b.id);
+      const userTrophyIds = userTrophies.map(t => t.id);
+      
+      // Check badges based on total sparks
+      if (totalSparks >= 100 && !userBadgeIds.includes('spark-collector')) {
+        await storage.awardBadge(userId, 'spark-collector');
+        newlyAwarded.push({ type: 'badge', title: 'Spark Collector', icon: '⚡' });
+      }
+      
+      // Check for higher spark badge (not in current badge list but good to have)
+      if (totalSparks >= 500 && !userBadgeIds.includes('spark-badge')) {
+        await storage.awardBadge(userId, 'spark-badge');
+        newlyAwarded.push({ type: 'badge', title: 'Spark Badge', icon: '⚡' });
+      }
+      
+      // Check streak badges
+      if (currentStreak >= 7 && !userBadgeIds.includes('streak-warrior')) {
+        await storage.awardBadge(userId, 'streak-warrior');
+        newlyAwarded.push({ type: 'badge', title: 'Streak Warrior', icon: '🔥' });
+      }
+      
+      // Check for longer streak badge
+      if (currentStreak >= 30 && !userBadgeIds.includes('streak-badge')) {
+        await storage.awardBadge(userId, 'streak-badge');
+        newlyAwarded.push({ type: 'badge', title: 'Streak Master', icon: '🔥' });
+      }
+      
+      // Check daily fire badge (50 sparks in one session as approximation)
+      if (sparksEarnedThisSession >= 50 && !userBadgeIds.includes('daily-fire')) {
+        await storage.awardBadge(userId, 'daily-fire');
+        newlyAwarded.push({ type: 'badge', title: 'Daily Fire Badge', icon: '🔥' });
+      }
+      
+      // Check leaderboard position for trophies
+      const leaderboard = await storage.getLeaderboard();
+      const userIndex = leaderboard.findIndex(user => user.id === userId);
+      
+      if (userIndex >= 0) {
+        // Award trophies based on position (top 3)
+        if (userIndex === 0 && !userTrophyIds.includes('gold-trophy')) {
+          await storage.awardTrophy(userId, 'gold-trophy');
+          newlyAwarded.push({ type: 'trophy', title: 'Gold Trophy', icon: '🥇' });
+        } else if (userIndex === 1 && !userTrophyIds.includes('silver-trophy')) {
+          await storage.awardTrophy(userId, 'silver-trophy');
+          newlyAwarded.push({ type: 'trophy', title: 'Silver Trophy', icon: '🥈' });
+        } else if (userIndex === 2 && !userTrophyIds.includes('bronze-trophy')) {
+          await storage.awardTrophy(userId, 'bronze-trophy');
+          newlyAwarded.push({ type: 'trophy', title: 'Bronze Trophy', icon: '🥉' });
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error awarding badges/trophies:', error);
+    }
+    
+    return newlyAwarded;
+  }
+
   // Complete quiz  
   app.post('/api/quiz/:sessionId/complete', isAuthenticatedAndActive, async (req: any, res) => {
     try {
@@ -2057,6 +2128,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(profiles.id, updatedSession.profileId));
 
         console.log(`✨ Profile updated - Added ${sparksEarned} sparks, streak: ${newStreak}`);
+        
+        // Auto-award badges and trophies based on new totals
+        const newlyAwarded = await awardBadgesAndTrophies(userId, currentProfile.sparks + sparksEarned, newStreak, sparksEarned);
+        if (newlyAwarded.length > 0) {
+          console.log(`🏆 Awarded ${newlyAwarded.length} new badges/trophies:`, newlyAwarded.map(a => a.title));
+        }
       }
 
       // Calculate grade
@@ -2078,6 +2155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sparksEarned,
         currentStreak: newStreak,
         bonusMultiplier: bonusMultiplier > 1 ? bonusMultiplier : null,
+        newlyAwarded: newlyAwarded || [],
       };
       
       console.log('Sending quiz completion response:', JSON.stringify(responseObj));
