@@ -1968,12 +1968,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sparksEarned = Math.round(baseSparks * bonusMultiplier);
 
       // Update quiz session
-      await db.update(quizSessions).set({
+      const [updatedSession] = await db.update(quizSessions).set({
         correctAnswers,
         sparksEarned,
         completed: true,
         completedAt: new Date(),
-      }).where(eq(quizSessions.id, sessionId));
+      }).where(eq(quizSessions.id, sessionId)).returning();
+
+      // Get current profile to update sparks and streaks
+      const [currentProfile] = await db
+        .select()
+        .from(profiles)
+        .where(eq(profiles.id, updatedSession.profileId));
+
+      let newStreak = 1;
+      if (currentProfile) {
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        const lastQuizDate = currentProfile.lastQuizDate ? new Date(currentProfile.lastQuizDate) : null;
+        let currentStreak = currentProfile.currentStreak || 0;
+        
+        // Update streak logic
+        if (!lastQuizDate) {
+          // First quiz ever
+          newStreak = 1;
+        } else {
+          const lastQuizDay = new Date(lastQuizDate.getFullYear(), lastQuizDate.getMonth(), lastQuizDate.getDate());
+          const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          const yesterdayDay = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+          
+          if (lastQuizDay.getTime() === yesterdayDay.getTime()) {
+            // Consecutive day - increment streak
+            newStreak = currentStreak + 1;
+          } else if (lastQuizDay.getTime() === todayDay.getTime()) {
+            // Already took quiz today - keep current streak
+            newStreak = currentStreak;
+          } else {
+            // Gap in days - reset streak
+            newStreak = 1;
+          }
+        }
+        
+        // Update profile with sparks, streak, and last quiz date
+        await db
+          .update(profiles)
+          .set({
+            sparks: sql`${profiles.sparks} + ${sparksEarned}`,
+            currentStreak: newStreak,
+            longestStreak: sql`GREATEST(${profiles.longestStreak}, ${newStreak})`,
+            lastQuizDate: today,
+            lastActivity: today,
+            updatedAt: today
+          })
+          .where(eq(profiles.id, updatedSession.profileId));
+
+        console.log(`✨ Profile updated - Added ${sparksEarned} sparks, streak: ${newStreak}`);
+      }
 
       // Calculate grade
       let grade = 'F';
@@ -1992,6 +2044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         accuracy: percentage, // Send percentage as accuracy for frontend
         grade,
         sparksEarned,
+        currentStreak: newStreak,
         bonusMultiplier: bonusMultiplier > 1 ? bonusMultiplier : null,
       };
       
