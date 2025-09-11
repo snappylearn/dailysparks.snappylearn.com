@@ -2369,7 +2369,9 @@ export class DatabaseStorage implements IStorage {
           joinedAt: user.createdAt,
           lastActive,
           profileId: user.profileId,
-          isPremium: user.isPremium
+          isPremium: user.isPremium,
+          isActive: user.isActive,
+          isBlocked: !user.isActive  // Make semantics clear: blocked = !active
         };
       });
     } catch (error) {
