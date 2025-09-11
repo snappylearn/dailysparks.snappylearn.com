@@ -54,14 +54,27 @@ export default function AdminTopics() {
     }
   });
 
+  // Initialize edit form before watching its values
+  const editForm = useForm<CreateTopicFormData>({
+    resolver: zodResolver(createTopicSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      summaryContent: "",
+    }
+  });
+
   // Watch form values for dynamic filtering
   const selectedExamSystemId = form.watch("examinationSystemId");
   const selectedLevelId = form.watch("levelId");
   const selectedSubjectId = form.watch("subjectId");
+  
+  // Watch edit form values for dynamic filtering in edit dialog
+  const editSelectedExamSystemId = editForm.watch("examinationSystemId");
 
   // Fetch topics data with filters
   const { data: topics, isLoading: topicsLoading } = useQuery({
-    queryKey: ["/api/admin/topics"],
+    queryKey: ["/api/admin/topics", searchQuery, selectedExamSystem, selectedLevel, selectedSubject, selectedTerm],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) params.append('search', searchQuery);
@@ -87,6 +100,12 @@ export default function AdminTopics() {
     if (!selectedExamSystemId) return true;
     return level.examinationSystemId === selectedExamSystemId || level.examination_system_id === selectedExamSystemId;
   }) || [];
+  
+  // Filter levels based on selected examination system (for edit form)
+  const filteredLevelsForEdit = allLevels?.filter((level: any) => {
+    if (!editSelectedExamSystemId) return true;
+    return level.examinationSystemId === editSelectedExamSystemId || level.examination_system_id === editSelectedExamSystemId;
+  }) || [];
 
   // Filter levels based on selected examination system (for main filters)
   const filteredLevelsForFilter = allLevels?.filter((level: any) => {
@@ -98,6 +117,12 @@ export default function AdminTopics() {
   const filteredSubjects = allSubjects?.filter((subject: any) => {
     if (!selectedExamSystemId) return true;
     return subject.examinationSystemId === selectedExamSystemId || subject.examination_system_id === selectedExamSystemId;
+  }) || [];
+  
+  // Filter subjects based on selected examination system (for edit form)
+  const filteredSubjectsForEdit = allSubjects?.filter((subject: any) => {
+    if (!editSelectedExamSystemId) return true;
+    return subject.examinationSystemId === editSelectedExamSystemId || subject.examination_system_id === editSelectedExamSystemId;
   }) || [];
 
   // Filter subjects based on selected examination system (for main filters)
@@ -237,14 +262,6 @@ export default function AdminTopics() {
     }
   };
 
-  const editForm = useForm<CreateTopicFormData>({
-    resolver: zodResolver(createTopicSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      summaryContent: "",
-    }
-  });
 
   // Update edit form when selectedTopic changes
   useEffect(() => {
@@ -304,7 +321,7 @@ export default function AdminTopics() {
                           // Reset level and subject when exam system changes
                           form.setValue("levelId", "");
                           form.setValue("subjectId", "");
-                        }} defaultValue={field.value}>
+                        }} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select examination system" />
@@ -333,7 +350,7 @@ export default function AdminTopics() {
                           field.onChange(value);
                           // Reset subject when level changes
                           form.setValue("subjectId", "");
-                        }} defaultValue={field.value}>
+                        }} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select level" />
@@ -358,7 +375,7 @@ export default function AdminTopics() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Subject *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select subject" />
@@ -383,7 +400,7 @@ export default function AdminTopics() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Term (Optional)</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select term" />
@@ -703,7 +720,7 @@ export default function AdminTopics() {
                         field.onChange(value);
                         editForm.setValue("levelId", "");
                         editForm.setValue("subjectId", "");
-                      }} defaultValue={field.value}>
+                      }} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select examination system" />
@@ -731,14 +748,14 @@ export default function AdminTopics() {
                       <Select onValueChange={(value) => {
                         field.onChange(value);
                         editForm.setValue("subjectId", "");
-                      }} defaultValue={field.value}>
+                      }} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select level" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {filteredLevels?.map((level: any) => (
+                          {filteredLevelsForEdit?.map((level: any) => (
                             <SelectItem key={level.id} value={level.id}>
                               {level.title}
                             </SelectItem>
@@ -756,14 +773,14 @@ export default function AdminTopics() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Subject *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select subject" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {filteredSubjects?.map((subject: any) => (
+                          {filteredSubjectsForEdit?.map((subject: any) => (
                             <SelectItem key={subject.id} value={subject.id}>
                               {subject.name}
                             </SelectItem>
@@ -781,7 +798,7 @@ export default function AdminTopics() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Term (Optional)</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select term" />
