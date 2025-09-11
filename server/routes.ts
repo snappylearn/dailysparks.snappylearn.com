@@ -259,7 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const leaderboard = await storage.getLeaderboard();
       
       // Find user's position in leaderboard
-      const userIndex = leaderboard.findIndex(user => user.id === userId);
+      const userIndex = leaderboard.findIndex(user => user.userId === userId);
       const rank = userIndex >= 0 ? userIndex + 1 : leaderboard.length + 1;
       
       res.json({ 
