@@ -191,9 +191,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
 
       {/* Main Content */}
-      <div className={`${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'} transition-all duration-300`}>
+      <div className={`${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'} transition-all duration-300 h-screen flex flex-col`}>
         {/* Desktop Header */}
-        <div className="hidden md:flex items-center justify-between p-6 bg-white border-b">
+        <div className="hidden md:flex items-center justify-between p-6 bg-white border-b flex-shrink-0">
           <div className="flex-1" />
           
           <DropdownMenu>
@@ -242,7 +242,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Page Content */}
-        <main className="p-6">
+        <main className="p-6 flex-1 overflow-y-auto">
           {children}
         </main>
       </div>
