@@ -169,10 +169,31 @@ export default function Quiz() {
     },
     onError: (error: any) => {
       console.error('Quiz start failed:', error);
-      if (error.message?.includes('subscription required') || error.message?.includes('Active subscription required') || error.message?.includes('403')) {
+      
+      // Check for daily limit exceeded
+      if (error.message?.includes('Daily quiz limit reached') || error.status === 403) {
+        // Try to parse JSON response for more details
+        try {
+          const errorData = JSON.parse(error.message);
+          if (errorData.limitExceeded) {
+            alert(`Daily Quiz Limit Reached!\n\nYou've used ${errorData.dailyUsage}/${errorData.dailyLimit} quizzes today on your ${errorData.planName} plan.\n\nCome back tomorrow for more quizzes! Your daily limit resets at midnight.`);
+            return;
+          }
+        } catch {
+          // If parsing fails, check message directly
+          if (error.message?.includes('Daily quiz limit reached')) {
+            alert('Daily Quiz Limit Reached!\n\nYou\'ve reached your daily quiz limit. Come back tomorrow for more quizzes! Your daily limit resets at midnight.');
+            return;
+          }
+        }
+      }
+      
+      // Check for subscription required
+      if (error.message?.includes('subscription required') || error.message?.includes('Active subscription required')) {
         setShowSubscriptionModal(true);
         return;
       }
+      
       alert('Failed to start quiz: ' + error.message);
     },
   });

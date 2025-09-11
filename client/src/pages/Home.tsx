@@ -59,7 +59,7 @@ export default function Home() {
     onSuccess: (data) => {
       setLocation(`/quiz/${data.quizSession.id}`);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -71,6 +71,46 @@ export default function Home() {
         }, 500);
         return;
       }
+      
+      // Check for daily limit exceeded
+      if (error.message?.includes('Daily quiz limit reached') || error.status === 403) {
+        // Try to parse JSON response for more details
+        try {
+          const errorData = JSON.parse(error.message);
+          if (errorData.limitExceeded) {
+            toast({
+              title: "Daily Quiz Limit Reached!",
+              description: `You've used ${errorData.dailyUsage}/${errorData.dailyLimit} quizzes today on your ${errorData.planName} plan. Come back tomorrow for more quizzes!`,
+              variant: "destructive",
+            });
+            return;
+          }
+        } catch {
+          // If parsing fails, check message directly
+          if (error.message?.includes('Daily quiz limit reached')) {
+            toast({
+              title: "Daily Quiz Limit Reached!",
+              description: "You've reached your daily quiz limit. Come back tomorrow for more quizzes! Your daily limit resets at midnight.",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+      }
+      
+      // Check for subscription required
+      if (error.message?.includes('subscription required') || error.message?.includes('Active subscription required')) {
+        toast({
+          title: "Subscription Required",
+          description: "You need an active subscription to take quizzes.",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          setLocation('/subscriptions');
+        }, 1000);
+        return;
+      }
+      
       toast({
         title: "Error",
         description: "Failed to start quiz. Please try again.",
