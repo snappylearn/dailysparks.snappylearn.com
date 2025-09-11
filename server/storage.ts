@@ -2825,19 +2825,21 @@ export class DatabaseStorage implements IStorage {
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
-      // Count quiz sessions started today
+      // Count quiz sessions started today (using startedAt field)
       const result = await db
         .select({ count: sql`count(*)` })
         .from(quizSessions)
         .where(
           and(
             eq(quizSessions.profileId, profileId),
-            gte(quizSessions.createdAt, startOfDay),
-            lt(quizSessions.createdAt, endOfDay)
+            gte(quizSessions.startedAt, startOfDay),
+            lt(quizSessions.startedAt, endOfDay)
           )
         );
 
-      return Number(result[0]?.count || 0);
+      const count = Number(result[0]?.count || 0);
+      console.log(`Daily quiz usage for profile ${profileId}: ${count} sessions between ${startOfDay} and ${endOfDay}`);
+      return count;
     } catch (error) {
       console.error("Error getting daily quiz usage:", error);
       return 0;
