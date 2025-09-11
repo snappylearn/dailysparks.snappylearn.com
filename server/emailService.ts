@@ -42,10 +42,8 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 }
 
 export function generatePasswordResetEmail(resetToken: string, userEmail: string) {
-  // Use REPLIT_DEV_DOMAIN for development server URL, fallback to localhost for local development
-  const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
-    : (process.env.REPL_URL || 'http://localhost:5000');
+  // Use production URL for password reset links
+  const baseUrl = 'https://dailysparkssnappylearncom.replit.app';
   const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
   
   return {
