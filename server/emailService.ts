@@ -42,7 +42,11 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 }
 
 export function generatePasswordResetEmail(resetToken: string, userEmail: string) {
-  const resetUrl = `${process.env.REPL_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}`;
+  // Use REPLIT_DEV_DOMAIN for development server URL, fallback to localhost for local development
+  const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+    ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+    : (process.env.REPL_URL || 'http://localhost:5000');
+  const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
   
   return {
     subject: 'Reset Your Daily Sparks Password',
