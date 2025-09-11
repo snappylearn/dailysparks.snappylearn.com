@@ -9,6 +9,8 @@ import { Profile as ProfileType } from "@shared/schema";
 import Landing from "@/pages/Landing";
 import Signup from "@/pages/Signup";
 import Signin from "@/pages/Signin";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import SimpleHome from "@/pages/SimpleHome";
 import Quiz from "@/pages/Quiz";
 import QuizHistory from "@/pages/QuizHistory";
@@ -75,6 +77,8 @@ function AuthenticatedRoutes() {
       <Switch>
         <Route path="/signup" component={Signup} />
         <Route path="/signin" component={Signin} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route path="/" component={Landing} />
         {/* Redirect all other paths to landing */}
         <Route>
