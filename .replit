@@ -43,3 +43,4 @@ outputType = "webview"
 
 [agent]
 expertMode = true
+integrations = ["javascript_sendgrid:1.0.0"]
