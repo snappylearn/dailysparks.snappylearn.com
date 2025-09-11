@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, Filter, Mail, Calendar, Trophy, Zap, TrendingUp, Eye, Ban, Settings, User, Clock, Star, Trash2 } from "lucide-react";
+import { Search, Filter, Mail, Calendar, Trophy, Zap, TrendingUp, Eye, Ban, Settings, User, Clock, Star, Trash2, Download, CheckSquare, Square } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,6 +22,9 @@ export default function AdminUsers() {
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const { toast } = useToast();
 
   const { data: users, isLoading } = useQuery({
@@ -103,6 +108,61 @@ export default function AdminUsers() {
     },
   });
 
+  // Bulk actions mutations
+  const bulkSuspendMutation = useMutation({
+    mutationFn: async ({ userIds, isBlocked }: { userIds: string[]; isBlocked: boolean }) => {
+      const promises = userIds.map(userId => 
+        apiRequest("PATCH", `/api/admin/users/${userId}/status`, { isBlocked })
+      );
+      const responses = await Promise.all(promises);
+      return responses;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/user-stats"], refetchType: 'all' });
+      setSelectedUsers([]);
+      const action = variables.isBlocked ? "suspended" : "unsuspended";
+      toast({
+        title: "Success",
+        description: `${variables.userIds.length} users ${action} successfully`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update user statuses. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (userIds: string[]) => {
+      const promises = userIds.map(userId => 
+        apiRequest("DELETE", `/api/admin/users/${userId}`)
+      );
+      const responses = await Promise.all(promises);
+      return responses;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/user-stats"] });
+      setSelectedUsers([]);
+      setShowBulkDeleteConfirm(false);
+      toast({
+        title: "Success",
+        description: `${variables.length} users deleted successfully`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete users. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const filteredUsers = users?.filter((user: any) => {
     const matchesSearch = searchQuery === "" || 
       user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -136,6 +196,79 @@ export default function AdminUsers() {
     );
   };
 
+  // Helper functions
+  const exportUsersToCSV = () => {
+    if (!displayUsers.length) {
+      toast({
+        title: "No Data",
+        description: "No users to export",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create CSV headers
+    const headers = [
+      'Name', 'Email', 'Status', 'Exam System', 'Level', 'Sparks', 
+      'Streak', 'Quizzes Completed', 'Average Score', 'Joined Date', 'Last Active'
+    ];
+    
+    // Create CSV rows
+    const rows = displayUsers.map(user => [
+      user.name || 'Unknown',
+      user.email || 'No email',
+      user.isActive === false ? 'Suspended' : 'Active',
+      user.examSystem || 'Not Set',
+      user.level || 'Not Set',
+      user.sparks || 0,
+      user.streak || 0,
+      user.quizzesCompleted || 0,
+      user.averageScore || 0,
+      user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Unknown',
+      user.lastActive || 'Never'
+    ]);
+    
+    // Create CSV content
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `daily-sparks-users-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Success",
+      description: `Exported ${displayUsers.length} users to CSV`,
+    });
+  };
+  
+  const handleSelectUser = (userId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedUsers(prev => [...prev, userId]);
+    } else {
+      setSelectedUsers(prev => prev.filter(id => id !== userId));
+    }
+  };
+  
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedUsers(displayUsers.map(user => user.id));
+    } else {
+      setSelectedUsers([]);
+    }
+  };
+  
+  const isAllSelected = displayUsers.length > 0 && selectedUsers.length === displayUsers.length;
+  const isIndeterminate = selectedUsers.length > 0 && selectedUsers.length < displayUsers.length;
+
   const displayUsers = filteredUsers || [];
 
   return (
@@ -149,11 +282,55 @@ export default function AdminUsers() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
-            <Settings className="h-4 w-4 mr-2" />
-            Bulk Actions
-          </Button>
-          <Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                disabled={selectedUsers.length === 0}
+                data-testid="button-bulk-actions"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Bulk Actions ({selectedUsers.length})
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                onClick={() => bulkSuspendMutation.mutate({ 
+                  userIds: selectedUsers, 
+                  isBlocked: true 
+                })}
+                disabled={bulkSuspendMutation.isPending}
+                data-testid="button-bulk-suspend"
+              >
+                <Ban className="h-4 w-4 mr-2" />
+                Suspend Selected ({selectedUsers.length})
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => bulkSuspendMutation.mutate({ 
+                  userIds: selectedUsers, 
+                  isBlocked: false 
+                })}
+                disabled={bulkSuspendMutation.isPending}
+                data-testid="button-bulk-unsuspend"
+              >
+                <CheckSquare className="h-4 w-4 mr-2" />
+                Unsuspend Selected ({selectedUsers.length})
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setShowBulkDeleteConfirm(true)}
+                className="text-red-600"
+                data-testid="button-bulk-delete"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Selected ({selectedUsers.length})
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button 
+            onClick={exportUsersToCSV}
+            data-testid="button-export-users"
+          >
+            <Download className="h-4 w-4 mr-2" />
             Export Users
           </Button>
         </div>
@@ -302,6 +479,14 @@ export default function AdminUsers() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={handleSelectAll}
+                      indeterminate={isIndeterminate}
+                      data-testid="checkbox-select-all"
+                    />
+                  </TableHead>
                   <TableHead>User</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Exam System</TableHead>
@@ -315,6 +500,13 @@ export default function AdminUsers() {
               <TableBody>
                 {displayUsers.map((user: any) => (
                   <TableRow key={user.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedUsers.includes(user.id)}
+                        onCheckedChange={(checked) => handleSelectUser(user.id, checked as boolean)}
+                        data-testid={`checkbox-select-user-${user.id}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-8 w-8">
@@ -606,6 +798,36 @@ export default function AdminUsers() {
               disabled={deleteUserMutation.isPending}
             >
               {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Multiple Users</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete {selectedUsers.length} selected users? This action cannot be undone.
+              <br /><br />
+              All user data, quiz history, and progress will be permanently removed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowBulkDeleteConfirm(false)}
+              disabled={bulkDeleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => bulkDeleteMutation.mutate(selectedUsers)}
+              disabled={bulkDeleteMutation.isPending}
+            >
+              {bulkDeleteMutation.isPending ? "Deleting..." : `Delete ${selectedUsers.length} Users`}
             </Button>
           </DialogFooter>
         </DialogContent>
