@@ -30,7 +30,7 @@ import { Profile, ExaminationSystem, Level } from '@shared/schema';
 function QuickStatsContent({ currentProfile }: { currentProfile: any }) {
   const { data: rankData } = useQuery({
     queryKey: ["/api/user/rank"],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 10000, // Refresh every 10 seconds for real-time updates
   });
 
   return (
@@ -71,7 +71,7 @@ function QuickStatsContent({ currentProfile }: { currentProfile: any }) {
 function NavbarStats({ currentProfile }: { currentProfile: any }) {
   const { data: rankData } = useQuery({
     queryKey: ["/api/user/rank"],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 10000, // Refresh every 10 seconds for real-time updates
   });
 
   return (
@@ -110,6 +110,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const { data: profiles } = useQuery<Profile[]>({
     queryKey: ['/api/profiles'],
     enabled: !!user,
+    refetchInterval: 10000, // Refresh every 10 seconds for real-time updates
   });
 
   // Get examination systems and levels

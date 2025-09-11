@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Profile } from "@shared/schema";
 
 interface ProfileModalProps {
   onClose: () => void;
@@ -9,10 +10,19 @@ interface ProfileModalProps {
 export default function ProfileModal({ onClose }: ProfileModalProps) {
   const { user } = useAuth();
 
+  // Fetch current profile data (same as MainLayout)
+  const { data: profiles } = useQuery<Profile[]>({
+    queryKey: ['/api/profiles'],
+    enabled: !!user,
+    refetchInterval: 10000, // Refresh every 10 seconds for real-time updates
+  });
+
   // Fetch user stats
   const { data: stats } = useQuery({
     queryKey: ["/api/user/stats"],
   });
+
+  const currentProfile = profiles?.[0];
 
   const handleLogout = async () => {
     try {
@@ -60,7 +70,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
           {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-500">{user?.sparks || 0}</div>
+              <div className="text-2xl font-bold text-orange-500">{currentProfile?.sparks || 0}</div>
               <div className="text-xs text-gray-600">Total Sparks</div>
             </div>
             <div className="text-center">
