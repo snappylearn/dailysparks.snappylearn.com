@@ -105,6 +105,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Verify current password
+      if (!user.password) {
+        return res.status(400).json({ message: "User does not have a password set" });
+      }
+      
       const isValidPassword = await verifyPassword(currentPassword, user.password);
       if (!isValidPassword) {
         return res.status(401).json({ message: "Current password is incorrect" });
