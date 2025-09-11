@@ -87,6 +87,9 @@ export default function AdminUsers() {
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
       const res = await apiRequest("DELETE", `/api/admin/users/${userId}`);
+      if (!res.ok) {
+        throw new Error(`Failed to delete user: ${res.statusText}`);
+      }
       return await res.json();
     },
     onSuccess: () => {
@@ -111,9 +114,13 @@ export default function AdminUsers() {
   // Bulk actions mutations
   const bulkSuspendMutation = useMutation({
     mutationFn: async ({ userIds, isBlocked }: { userIds: string[]; isBlocked: boolean }) => {
-      const promises = userIds.map(userId => 
-        apiRequest("PATCH", `/api/admin/users/${userId}/status`, { isBlocked })
-      );
+      const promises = userIds.map(async userId => {
+        const res = await apiRequest("PATCH", `/api/admin/users/${userId}/status`, { isBlocked });
+        if (!res.ok) {
+          throw new Error(`Failed to update user ${userId}: ${res.statusText}`);
+        }
+        return await res.json();
+      });
       const responses = await Promise.all(promises);
       return responses;
     },
@@ -138,9 +145,13 @@ export default function AdminUsers() {
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (userIds: string[]) => {
-      const promises = userIds.map(userId => 
-        apiRequest("DELETE", `/api/admin/users/${userId}`)
-      );
+      const promises = userIds.map(async userId => {
+        const res = await apiRequest("DELETE", `/api/admin/users/${userId}`);
+        if (!res.ok) {
+          throw new Error(`Failed to delete user ${userId}: ${res.statusText}`);
+        }
+        return await res.json();
+      });
       const responses = await Promise.all(promises);
       return responses;
     },
@@ -168,10 +179,24 @@ export default function AdminUsers() {
       user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesStatus = statusFilter === "all" || user.status === statusFilter;
+    // Consistent status filtering using isActive field
+    let matchesStatus = false;
+    if (statusFilter === "all") {
+      matchesStatus = true;
+    } else if (statusFilter === "active") {
+      matchesStatus = user.isActive !== false;
+    } else if (statusFilter === "suspended" || statusFilter === "inactive") {
+      matchesStatus = user.isActive === false;
+    } else {
+      // Fallback to original status field if it exists
+      matchesStatus = user.status === statusFilter;
+    }
     
     return matchesSearch && matchesStatus;
   }) || [];
+
+  // Define displayUsers immediately after filteredUsers to prevent initialization errors
+  const displayUsers = filteredUsers || [];
 
   const getStatusBadge = (status: string, isActive?: boolean) => {
     // Use isActive as the primary source of truth for user status
@@ -197,6 +222,23 @@ export default function AdminUsers() {
   };
 
   // Helper functions
+  // Sanitize CSV fields to prevent formula injection attacks
+  const sanitizeCSVField = (field: any): string => {
+    if (field === null || field === undefined) {
+      return '';
+    }
+    
+    const stringField = String(field);
+    
+    // If field starts with formula characters, prefix with a space to prevent execution
+    if (stringField.match(/^[=+\-@]/)) {
+      return ` ${stringField}`;
+    }
+    
+    // Escape any existing quotes and wrap in quotes for CSV safety
+    return stringField.replace(/"/g, '""');
+  };
+
   const exportUsersToCSV = () => {
     if (!displayUsers.length) {
       toast({
@@ -213,22 +255,22 @@ export default function AdminUsers() {
       'Streak', 'Quizzes Completed', 'Average Score', 'Joined Date', 'Last Active'
     ];
     
-    // Create CSV rows
+    // Create CSV rows with sanitized fields
     const rows = displayUsers.map(user => [
-      user.name || 'Unknown',
-      user.email || 'No email',
-      user.isActive === false ? 'Suspended' : 'Active',
-      user.examSystem || 'Not Set',
-      user.level || 'Not Set',
-      user.sparks || 0,
-      user.streak || 0,
-      user.quizzesCompleted || 0,
-      user.averageScore || 0,
-      user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Unknown',
-      user.lastActive || 'Never'
+      sanitizeCSVField(user.name || 'Unknown'),
+      sanitizeCSVField(user.email || 'No email'),
+      sanitizeCSVField(user.isActive === false ? 'Suspended' : 'Active'),
+      sanitizeCSVField(user.examSystem || 'Not Set'),
+      sanitizeCSVField(user.level || 'Not Set'),
+      sanitizeCSVField(user.sparks || 0),
+      sanitizeCSVField(user.streak || 0),
+      sanitizeCSVField(user.quizzesCompleted || 0),
+      sanitizeCSVField(user.averageScore || 0),
+      sanitizeCSVField(user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Unknown'),
+      sanitizeCSVField(user.lastActive || 'Never')
     ]);
     
-    // Create CSV content
+    // Create CSV content with properly escaped fields
     const csvContent = [headers, ...rows]
       .map(row => row.map(field => `"${field}"`).join(','))
       .join('\n');
@@ -268,8 +310,6 @@ export default function AdminUsers() {
   
   const isAllSelected = displayUsers.length > 0 && selectedUsers.length === displayUsers.length;
   const isIndeterminate = selectedUsers.length > 0 && selectedUsers.length < displayUsers.length;
-
-  const displayUsers = filteredUsers || [];
 
   return (
     <div className="space-y-6">
