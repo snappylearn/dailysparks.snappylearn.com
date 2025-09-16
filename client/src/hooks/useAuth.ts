@@ -6,7 +6,7 @@ interface AuthUser extends User {
 }
 
 export function useAuth() {
-  const { data: user, isLoading, error } = useQuery<AuthUser>({
+  const { data: user, isLoading, error } = useQuery<AuthUser | null>({
     queryKey: ["/api/auth/user"],
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes

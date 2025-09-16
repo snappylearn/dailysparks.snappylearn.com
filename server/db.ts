@@ -5,7 +5,7 @@ import * as schema from "@shared/schema";
 
 // Configure Neon with WebSocket settings
 neonConfig.webSocketConstructor = ws;
-// Handle SSL certificate issues in development 
+// Configure secure WebSocket settings for Neon
 neonConfig.wsProxy = (host) => `${host}:443/v2`;
 neonConfig.useSecureWebSocket = true;
 
