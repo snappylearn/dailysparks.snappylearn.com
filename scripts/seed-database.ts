@@ -78,10 +78,10 @@ async function seedDatabase() {
     // Seed in dependency order to avoid foreign key issues
 
     // 1. Core system setup - Examination Systems
-    if (data.examination_systems?.length > 0) {
+    if (data.examinationSystems?.length > 0) {
       console.log("📚 Seeding examination systems...");
-      await db.insert(examinationSystems).values(data.examination_systems).onConflictDoNothing();
-      console.log(`✅ Inserted ${data.examination_systems.length} examination systems`);
+      await db.insert(examinationSystems).values(data.examinationSystems).onConflictDoNothing();
+      console.log(`✅ Inserted ${data.examinationSystems.length} examination systems`);
     }
 
     // 2. Levels (depends on examination systems)
