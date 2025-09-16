@@ -550,10 +550,10 @@ export const userChallengeProgressRelations = relations(userChallengeProgress, (
 // Authentication schemas
 export const signupSchema = createInsertSchema(users).pick({
   email: true,
-  password: true,
   firstName: true,
   lastName: true,
 }).extend({
+  password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(1, "Please confirm your password"),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -562,7 +562,8 @@ export const signupSchema = createInsertSchema(users).pick({
 
 export const signinSchema = createInsertSchema(users).pick({
   email: true,
-  password: true,
+}).extend({
+  password: z.string().min(1, "Password is required"),
 });
 
 export const passwordSetupSchema = createInsertSchema(users).pick({
