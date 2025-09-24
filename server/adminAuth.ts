@@ -47,14 +47,31 @@ const adminLoginSchema = z.object({
 });
 
 export function setupAdminAuth(app: Express) {
-  // Set up admin-specific session handling for /admin routes
-  app.use('/admin/api', (req, res, next) => {
-    // For admin routes, we need to be more flexible with cookie settings for deployment
-    if (!req.session) {
-      return res.status(500).json({ message: "Session not available" });
-    }
-    next();
+  // Set up independent admin session middleware for /admin routes
+  const pgStore = connectPgSimple(session);
+  const sessionStore = new pgStore({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: false,
+    ttl: 7 * 24 * 60 * 60 * 1000, // 1 week
+    tableName: "sessions",
+    disableTouch: true,
   });
+
+  const adminSessionMiddleware = session({
+    secret: process.env.SESSION_SECRET || "admin-secret-key",
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
+    },
+    name: 'admin.sid', // Different cookie name for admin sessions
+  });
+
+  // Apply admin session middleware to all /admin routes
+  app.use('/admin', adminSessionMiddleware);
 
   // Admin login route
   app.post("/admin/api/login", async (req, res) => {
