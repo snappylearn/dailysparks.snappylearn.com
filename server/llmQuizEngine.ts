@@ -133,15 +133,70 @@ export class LLMQuizEngine {
   }
 
   /**
-   * Generate questions using your exact LLM prompt structure
+   * Generate variety elements to ensure fresh questions for repeat quizzes
+   */
+  private static generateVarietyElements(params: QuizGenerationParams) {
+    // Only add variety for random quizzes to avoid repetitive content
+    if (params.quizType !== 'random') {
+      return {
+        objectiveVariation: '',
+        focusVariation: '',
+        rulesVariation: ''
+      };
+    }
+
+    // Random variations to inject variety into the prompt
+    const objectiveVariations = [
+      'Focus on practical applications and real-world scenarios.',
+      'Emphasize conceptual understanding and theoretical foundations.',
+      'Include analytical thinking and problem-solving approaches.',
+      'Incorporate current developments and modern perspectives.',
+      'Balance fundamental concepts with advanced applications.'
+    ];
+
+    const focusVariations = [
+      '## Special Focus:\nEmphasize questions that test deep understanding rather than memorization.',
+      '## Special Focus:\nInclude a mix of calculation-based and concept-based questions.',
+      '## Special Focus:\nFocus on interconnections between different concepts and topics.',
+      '## Special Focus:\nIncorporate questions about practical applications and real-world examples.',
+      '## Special Focus:\nBalance theoretical knowledge with problem-solving skills.'
+    ];
+
+    const rulesVariations = [
+      '- Vary question formats: some direct, some scenario-based, some analytical.',
+      '- Include different cognitive levels: recall, comprehension, and application.',
+      '- Mix straightforward questions with those requiring multi-step reasoning.',
+      '- Ensure questions cover different aspects and perspectives of the subject.',
+      '- Create questions that test both breadth and depth of understanding.'
+    ];
+
+    // Use timestamp-based randomization for consistent variety
+    const seed = Date.now();
+    const objectiveIndex = seed % objectiveVariations.length;
+    const focusIndex = Math.floor(seed / 1000) % focusVariations.length;
+    const rulesIndex = Math.floor(seed / 100000) % rulesVariations.length;
+
+    return {
+      objectiveVariation: objectiveVariations[objectiveIndex],
+      focusVariation: focusVariations[focusIndex],
+      rulesVariation: rulesVariations[rulesIndex]
+    };
+  }
+
+  /**
+   * Generate questions using your exact LLM prompt structure with variety for fresh content
    */
   private static async generateQuestionsWithLLM(contextData: any, params: QuizGenerationParams): Promise<GeneratedQuestion[]> {
+    // For random quizzes, add variety to ensure fresh questions each time
+    const varietyElements = this.generateVarietyElements(params);
+    
     // Build dynamic prompt with variable substitution as per your instructions
     let prompt = `You are an expert educational content creator tasked with generating multiple-choice quizzes for students.
 
 ## Objective:
 Generate quizzes based on the given examination system, level, subject, term, and topic. 
 The quiz should be tailored to the selected educational context, but adapt gracefully when some details are missing.
+${varietyElements.objectiveVariation}
 
 ## Dynamic Variables (fetched from database):
 - examination_system: ${contextData.examinationSystem?.title || 'Not specified'}
@@ -167,6 +222,8 @@ Note: Only include variables that are provided. If a variable is missing (null),
 2. **Term Quiz** → Use examination_system + level + subject + term.
 3. **Topical Quiz** → Use examination_system + level + subject + topic.
 
+${varietyElements.focusVariation}
+
 ## Output Requirements:
 - CRITICAL: Respond with ONLY valid JSON, no markdown formatting, no code blocks, no additional text.
 - Format the response as a JSON object with a "questions" array.
@@ -184,6 +241,7 @@ Note: Only include variables that are provided. If a variable is missing (null),
 - Maintain consistent difficulty suitable for the specified level.
 - If no subject/term/topic is provided, generate questions covering varied subjects available in the given examination system & level.
 - Never reference the existence of variables in the question text itself (e.g., don't say "Since this is a term quiz...").
+${varietyElements.rulesVariation}
 
 Generate exactly ${params.questionCount} questions following this format.`;
 
