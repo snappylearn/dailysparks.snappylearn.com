@@ -131,6 +131,24 @@ export default function AdminTopics() {
     return subject.examinationSystemId === selectedExamSystem || subject.examination_system_id === selectedExamSystem;
   }) || [];
 
+  // Filter terms based on selected examination system (for form)
+  const filteredTerms = terms?.filter((term: any) => {
+    if (!selectedExamSystemId) return true;
+    return term.examinationSystemId === selectedExamSystemId || term.examination_system_id === selectedExamSystemId;
+  }) || [];
+  
+  // Filter terms based on selected examination system (for edit form)
+  const filteredTermsForEdit = terms?.filter((term: any) => {
+    if (!editSelectedExamSystemId) return true;
+    return term.examinationSystemId === editSelectedExamSystemId || term.examination_system_id === editSelectedExamSystemId;
+  }) || [];
+
+  // Filter terms based on selected examination system (for main filters)
+  const filteredTermsForFilter = terms?.filter((term: any) => {
+    if (selectedExamSystem === 'all') return true;
+    return term.examinationSystemId === selectedExamSystem || term.examination_system_id === selectedExamSystem;
+  }) || [];
+
   const createTopicMutation = useMutation({
     mutationFn: async (data: CreateTopicFormData) => {
       const response = await apiRequest("POST", "/api/admin/topics", data);
@@ -318,9 +336,10 @@ export default function AdminTopics() {
                         <FormLabel>Examination System *</FormLabel>
                         <Select onValueChange={(value) => {
                           field.onChange(value);
-                          // Reset level and subject when exam system changes
+                          // Reset level, subject, and term when exam system changes
                           form.setValue("levelId", "");
                           form.setValue("subjectId", "");
+                          form.setValue("termId", "");
                         }} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -408,7 +427,7 @@ export default function AdminTopics() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="no-term">No Term</SelectItem>
-                            {terms?.map((term: any) => (
+                            {filteredTerms?.map((term: any) => (
                               <SelectItem key={term.id} value={term.id}>
                                 {term.title}
                               </SelectItem>
@@ -518,9 +537,10 @@ export default function AdminTopics() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Select value={selectedExamSystem} onValueChange={(value) => {
               setSelectedExamSystem(value);
-              // Reset level and subject when exam system changes
+              // Reset level, subject, and term when exam system changes
               setSelectedLevel("all");
               setSelectedSubject("all");
+              setSelectedTerm("all");
             }}>
               <SelectTrigger>
                 <SelectValue placeholder="Exam System" />
@@ -573,7 +593,7 @@ export default function AdminTopics() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Terms</SelectItem>
-                {terms?.map((term: any) => (
+                {filteredTermsForFilter?.map((term: any) => (
                   <SelectItem key={term.id} value={term.id}>
                     {term.title}
                   </SelectItem>
@@ -720,6 +740,7 @@ export default function AdminTopics() {
                         field.onChange(value);
                         editForm.setValue("levelId", "");
                         editForm.setValue("subjectId", "");
+                        editForm.setValue("termId", "");
                       }} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -806,7 +827,7 @@ export default function AdminTopics() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="no-term">No Term</SelectItem>
-                          {terms?.map((term: any) => (
+                          {filteredTermsForEdit?.map((term: any) => (
                             <SelectItem key={term.id} value={term.id}>
                               {term.title}
                             </SelectItem>
