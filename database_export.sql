@@ -797,9 +797,9 @@ CREATE TABLE IF NOT EXISTS "subscription_plans" (
 );
 
 INSERT INTO "subscription_plans" ("id", "name", "code", "description", "price", "currency", "billing_cycle", "daily_quiz_limit", "question_bank_size", "features", "has_ai_personalization", "support_level", "is_active", "sort_order", "created_at", "updated_at") VALUES
-  ('1', 'Basic Plan', 'basic', 'Essential features for casual learners', '6.00', 'USD', 'weekly', 5, 1000, '["Basic quiz access","Limited questions","Email support"]', FALSE, 'email', TRUE, 1, '2025-08-22T13:11:43.819Z', '2025-08-22T13:11:43.819Z'),
-  ('2', 'Premium Plan', 'premium', 'Perfect for serious students', '25.00', 'USD', 'weekly', NULL, 5000, '["Unlimited quizzes","AI explanations","Progress tracking","Priority support"]', TRUE, 'priority', TRUE, 2, '2025-08-22T13:11:43.819Z', '2025-08-22T13:11:43.819Z'),
-  ('3', 'Premium Plus', 'premium_plus', 'Maximum learning potential', '50.00', 'USD', 'weekly', NULL, 10000, '["Everything in Premium","Advanced analytics","Custom study plans","1-on-1 tutoring","Exam predictions"]', TRUE, 'dedicated', TRUE, 3, '2025-08-22T13:11:43.819Z', '2025-08-22T13:11:43.819Z');
+  ('1', 'Spark Starter', 'basic', 'Perfect for getting started with your KCSE/IGCSE/KPSEA preparation', '99.00', 'KES', 'weekly', 5, 1000, '["5 daily quizzes","KCSE/IGCSE/KPSEA question bank","Basic progress tracking","Email support","Quiz bank saving"]', FALSE, 'email', TRUE, 1, '2025-09-25T07:44:43.819Z', '2025-09-25T07:44:43.819Z'),
+  ('2', 'Spark Champion', 'premium', 'Comprehensive exam preparation for serious students', '299.00', 'KES', 'weekly', NULL, 5000, '["Unlimited daily quizzes","AI-powered explanations","Advanced progress analytics","KCSE/IGCSE/KPSEA subject mastery","Streak tracking","Personalized study recommendations","Priority email support"]', TRUE, 'priority', TRUE, 2, '2025-09-25T07:44:43.819Z', '2025-09-25T07:44:43.819Z'),
+  ('3', 'Spark Elite', 'premium_plus', 'Ultimate exam preparation with personalized tutoring', '499.00', 'KES', 'weekly', NULL, 10000, '["Everything in Spark Champion","Advanced AI personalization","Custom study plans","Exam prediction analytics","Performance insights","Term-specific question mastery","Topic weakness identification","Dedicated support chat"]', TRUE, 'dedicated', TRUE, 3, '2025-09-25T07:44:43.819Z', '2025-09-25T07:44:43.819Z');
 
 ALTER TABLE "subscription_plans" ADD CONSTRAINT "subscription_plans_pkey" PRIMARY KEY ("id");
 
