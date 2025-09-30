@@ -429,7 +429,7 @@ export default function AdminTopics() {
                             <SelectItem value="no-term">No Term</SelectItem>
                             {filteredTerms?.map((term: any) => (
                               <SelectItem key={term.id} value={term.id}>
-                                {term.title}
+                                {term.title.replace(/^(Form \d+|Grade \d+|Year \d+)\s*/i, '')}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -652,7 +652,7 @@ export default function AdminTopics() {
                     <TableCell>
                       {topic.term ? (
                         <Badge variant="outline" className="text-xs">
-                          {topic.term}
+                          {topic.term.replace(/^(Form \d+|Grade \d+|Year \d+)\s*/i, '')}
                         </Badge>
                       ) : (
                         <span className="text-muted-foreground text-xs">No term</span>
@@ -829,7 +829,7 @@ export default function AdminTopics() {
                           <SelectItem value="no-term">No Term</SelectItem>
                           {filteredTermsForEdit?.map((term: any) => (
                             <SelectItem key={term.id} value={term.id}>
-                              {term.title}
+                              {term.title.replace(/^(Form \d+|Grade \d+|Year \d+)\s*/i, '')}
                             </SelectItem>
                           ))}
                         </SelectContent>
