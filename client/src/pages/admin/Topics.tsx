@@ -429,7 +429,7 @@ export default function AdminTopics() {
                             <SelectItem value="no-term">No Term</SelectItem>
                             {filteredTerms?.map((term: any) => (
                               <SelectItem key={term.id} value={term.id}>
-                                {term.title.replace(/^(Form \d+|Grade \d+|Year \d+)\s*/i, '')}
+                                {term.title}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -652,7 +652,7 @@ export default function AdminTopics() {
                     <TableCell>
                       {topic.term ? (
                         <Badge variant="outline" className="text-xs">
-                          {topic.term.replace(/^(Form \d+|Grade \d+|Year \d+)\s*/i, '')}
+                          {topic.term}
                         </Badge>
                       ) : (
                         <span className="text-muted-foreground text-xs">No term</span>
@@ -818,25 +818,18 @@ export default function AdminTopics() {
                   name="termId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Term (Optional)
-                        {selectedTopic?.term && (
-                          <span className="ml-2 text-xs text-muted-foreground font-normal">
-                            Current: {selectedTopic.term.replace(/^(Form \d+|Grade \d+|Year \d+)\s*/i, '')}
-                          </span>
-                        )}
-                      </FormLabel>
+                      <FormLabel>Term (Optional)</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select term" />
+                            <SelectValue placeholder={selectedTopic?.term ? `Current: ${selectedTopic.term}` : "Select term"} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="no-term">No Term</SelectItem>
                           {filteredTermsForEdit?.map((term: any) => (
                             <SelectItem key={term.id} value={term.id}>
-                              {term.title.replace(/^(Form \d+|Grade \d+|Year \d+)\s*/i, '')}
+                              {term.title}
                             </SelectItem>
                           ))}
                         </SelectContent>
