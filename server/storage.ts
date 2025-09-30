@@ -441,9 +441,16 @@ export class DatabaseStorage implements IStorage {
 
   // Term operations
   async getTerms(): Promise<Term[]> {
-    const termsList = await db.select().from(terms).orderBy(terms.order);
+    const termsList = await db
+      .select({
+        ...terms,
+        levelTitle: levels.title
+      })
+      .from(terms)
+      .innerJoin(levels, eq(terms.levelId, levels.id))
+      .orderBy(terms.order);
     
-    // Add calculated fields for each term
+    // Add calculated fields and displayName for each term
     const termsWithMetrics = await Promise.all(
       termsList.map(async (term) => {
         try {
@@ -473,6 +480,7 @@ export class DatabaseStorage implements IStorage {
 
           return {
             ...term,
+            displayName: `${term.levelTitle} ${term.title}`,
             quizCount: Number(quizCountResult[0]?.count || 0),
             quizAttempts: Number(attemptCountResult[0]?.count || 0),
             usersCount: Number(userCountResult[0]?.count || 0)
@@ -481,6 +489,7 @@ export class DatabaseStorage implements IStorage {
           console.error(`Error calculating metrics for term ${term.id}:`, error);
           return {
             ...term,
+            displayName: `${term.levelTitle} ${term.title}`,
             quizCount: 0,
             quizAttempts: 0,
             usersCount: 0
@@ -493,9 +502,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTermsBySystem(systemId: string): Promise<Term[]> {
-    return await db.select().from(terms)
+    const termsList = await db
+      .select({
+        ...terms,
+        levelTitle: levels.title
+      })
+      .from(terms)
+      .innerJoin(levels, eq(terms.levelId, levels.id))
       .where(eq(terms.examinationSystemId, systemId))
       .orderBy(terms.order);
+    
+    // Add displayName to each term
+    return termsList.map(term => ({
+      ...term,
+      displayName: `${term.levelTitle} ${term.title}`
+    }));
   }
 
   async getUserStats(userId: string): Promise<{
