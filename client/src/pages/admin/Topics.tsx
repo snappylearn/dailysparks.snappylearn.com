@@ -71,6 +71,7 @@ export default function AdminTopics() {
   
   // Watch edit form values for dynamic filtering in edit dialog
   const editSelectedExamSystemId = editForm.watch("examinationSystemId");
+  const editSelectedLevelId = editForm.watch("levelId");
 
   // Fetch topics data with filters
   const { data: topics, isLoading: topicsLoading } = useQuery({
@@ -137,10 +138,17 @@ export default function AdminTopics() {
     return term.examinationSystemId === selectedExamSystemId || term.examination_system_id === selectedExamSystemId;
   }) || [];
   
-  // Filter terms based on selected examination system (for edit form)
+  // Filter terms based on selected examination system AND level (for edit form)
   const filteredTermsForEdit = terms?.filter((term: any) => {
-    if (!editSelectedExamSystemId) return true;
-    return term.examinationSystemId === editSelectedExamSystemId || term.examination_system_id === editSelectedExamSystemId;
+    const matchesExamSystem = !editSelectedExamSystemId || 
+      term.examinationSystemId === editSelectedExamSystemId || 
+      term.examination_system_id === editSelectedExamSystemId;
+    
+    const matchesLevel = !editSelectedLevelId || 
+      term.levelId === editSelectedLevelId || 
+      term.level_id === editSelectedLevelId;
+    
+    return matchesExamSystem && matchesLevel;
   }) || [];
 
   // Filter terms based on selected examination system (for main filters)
