@@ -440,10 +440,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Term operations
-  async getTerms(): Promise<Term[]> {
+  async getTerms(): Promise<any[]> {
     const termsList = await db
       .select({
-        ...terms,
+        id: terms.id,
+        examinationSystemId: terms.examinationSystemId,
+        levelId: terms.levelId,
+        title: terms.title,
+        description: terms.description,
+        order: terms.order,
+        createdAt: terms.createdAt,
         levelTitle: levels.title
       })
       .from(terms)
@@ -501,10 +507,16 @@ export class DatabaseStorage implements IStorage {
     return termsWithMetrics;
   }
 
-  async getTermsBySystem(systemId: string): Promise<Term[]> {
+  async getTermsBySystem(systemId: string): Promise<any[]> {
     const termsList = await db
       .select({
-        ...terms,
+        id: terms.id,
+        examinationSystemId: terms.examinationSystemId,
+        levelId: terms.levelId,
+        title: terms.title,
+        description: terms.description,
+        order: terms.order,
+        createdAt: terms.createdAt,
         levelTitle: levels.title
       })
       .from(terms)
