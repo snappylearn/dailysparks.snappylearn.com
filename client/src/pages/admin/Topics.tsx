@@ -818,8 +818,15 @@ export default function AdminTopics() {
                   name="termId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Term (Optional)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <FormLabel>
+                        Term (Optional)
+                        {selectedTopic?.term && (
+                          <span className="ml-2 text-xs text-muted-foreground font-normal">
+                            Current: {selectedTopic.term.replace(/^(Form \d+|Grade \d+|Year \d+)\s*/i, '')}
+                          </span>
+                        )}
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select term" />
