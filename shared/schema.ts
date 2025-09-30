@@ -227,11 +227,15 @@ export const subjects = pgTable("subjects", {
 export const terms = pgTable("terms", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   examinationSystemId: varchar("examination_system_id").notNull().references(() => examinationSystems.id),
-  title: varchar("title").notNull(), // "Term 1", "Term 2", "Term 3"
+  levelId: varchar("level_id").notNull().references(() => levels.id),
+  title: varchar("title").notNull(), // "Term 1", "Term 2", "Term 3" (clean names only)
   description: text("description"),
   order: integer("order").notNull(), // 1, 2, 3
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  // Ensure unique terms per exam system, level, and order
+  uniqueTerm: unique().on(table.examinationSystemId, table.levelId, table.order),
+}));
 
 // Topics table (within subjects)
 export const topics = pgTable("topics", {
