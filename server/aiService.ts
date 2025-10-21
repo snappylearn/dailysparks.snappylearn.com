@@ -64,6 +64,11 @@ Generate comprehensive, well-structured educational notes in markdown format tha
 3. Include clear explanations, examples, and practical applications
 4. Use proper markdown formatting (headers, lists, emphasis, etc.)
 5. Include relevant Kenyan context and examples where appropriate
+6. For mathematical expressions:
+   - Use $...$ for inline math (e.g., "The formula is $E = mc^2$")
+   - Use $$...$$ for display/block equations (e.g., $$\\frac{a}{b} = c$$)
+   - Always wrap ALL mathematical expressions in these delimiters
+   - Use proper LaTeX syntax within the delimiters
 
 The content should be:
 - Detailed but accessible for the student level
@@ -71,6 +76,7 @@ The content should be:
 - Include key concepts, definitions, and examples
 - Provide practical applications and real-world connections
 - Use proper markdown syntax for formatting
+- Format all mathematical expressions with LaTeX delimiters
 
 Return only the markdown content, no additional formatting or explanations.`;
 
