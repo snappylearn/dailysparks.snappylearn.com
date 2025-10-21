@@ -731,12 +731,12 @@ export default function AdminTopics() {
 
       {/* Edit Topic Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Edit Topic</DialogTitle>
           </DialogHeader>
           <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(onUpdate)} className="space-y-4">
+            <form onSubmit={editForm.handleSubmit(onUpdate)} className="space-y-4 overflow-y-auto px-1" style={{ maxHeight: 'calc(90vh - 8rem)' }}>
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={editForm.control}
@@ -901,16 +901,18 @@ export default function AdminTopics() {
                       </Button>
                     </FormLabel>
                     <FormControl>
-                      <div data-color-mode="light">
-                        <MDEditor
-                          key={`editor-${selectedTopic?.id || 'new'}-${editorKey}`}
-                          value={field.value || ""}
-                          onChange={(value) => field.onChange(value || "")}
-                          preview="edit"
-                          hideToolbar={false}
-                          visibleDragBar={false}
-                          height={300}
-                        />
+                      <div data-color-mode="light" className="border rounded-md overflow-hidden">
+                        <div className="max-h-[400px] overflow-y-auto">
+                          <MDEditor
+                            key={`editor-${selectedTopic?.id || 'new'}-${editorKey}`}
+                            value={field.value || ""}
+                            onChange={(value) => field.onChange(value || "")}
+                            preview="edit"
+                            hideToolbar={false}
+                            visibleDragBar={false}
+                            height={400}
+                          />
+                        </div>
                       </div>
                     </FormControl>
                     <FormMessage />
