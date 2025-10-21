@@ -4,9 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, BookOpen, Clock, Brain, Lightbulb } from "lucide-react";
-import { MainLayout } from "@/components/MainLayout";
-import ReactMarkdown from "react-markdown";
 
 interface StudyNotesData {
   id: string;
