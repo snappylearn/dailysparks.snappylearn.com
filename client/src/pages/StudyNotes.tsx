@@ -4,6 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, FileText, BookOpen, Clock, Brain, Lightbulb } from "lucide-react";
+import { MainLayout } from "@/components/MainLayout";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 interface StudyNotesData {
   id: string;
@@ -164,6 +169,8 @@ export default function StudyNotes() {
           <CardContent className="p-8">
             <div className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-ul:text-gray-700 prose-ol:text-gray-700">
               <ReactMarkdown
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeKatex]}
                 components={{
                   h1: ({ children, ...props }) => (
                     <h1 className="text-2xl font-bold text-gray-900 mt-8 mb-4 first:mt-0" {...props}>
