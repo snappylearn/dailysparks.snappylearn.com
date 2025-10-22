@@ -14,6 +14,24 @@ import { sql } from "drizzle-orm";
 // This script imports data to production database
 // Run with: PRODUCTION_DATABASE_URL=<your-prod-url> npx tsx import-to-production.ts <export-file.json>
 
+// Helper function to convert timestamp strings to Date objects
+function convertTimestamps(obj: any): any {
+  if (!obj) return obj;
+  
+  const result = { ...obj };
+  
+  // Convert common timestamp field names
+  const timestampFields = ['createdAt', 'updatedAt', 'completedAt', 'startedAt'];
+  
+  for (const field of timestampFields) {
+    if (result[field] && typeof result[field] === 'string') {
+      result[field] = new Date(result[field]);
+    }
+  }
+  
+  return result;
+}
+
 async function importData(filename: string, productionUrl: string) {
   console.log("\n📥 Importing Data to Production Database");
   console.log("=" + "=".repeat(60) + "\n");
@@ -44,15 +62,16 @@ async function importData(filename: string, productionUrl: string) {
     if (exportData.data.examinationSystems?.length > 0) {
       console.log("📝 Importing examination systems...");
       for (const item of exportData.data.examinationSystems) {
+        const converted = convertTimestamps(item);
         await prodDb
           .insert(examinationSystems)
-          .values(item)
+          .values(converted)
           .onConflictDoUpdate({
             target: examinationSystems.id,
             set: {
-              name: item.name,
-              code: item.code,
-              description: item.description,
+              name: converted.name,
+              code: converted.code,
+              description: converted.description,
             },
           });
       }
@@ -63,16 +82,17 @@ async function importData(filename: string, productionUrl: string) {
     if (exportData.data.levels?.length > 0) {
       console.log("📝 Importing levels...");
       for (const item of exportData.data.levels) {
+        const converted = convertTimestamps(item);
         await prodDb
           .insert(levels)
-          .values(item)
+          .values(converted)
           .onConflictDoUpdate({
             target: levels.id,
             set: {
-              title: item.title,
-              code: item.code,
-              order: item.order,
-              systemId: item.systemId,
+              title: converted.title,
+              code: converted.code,
+              order: converted.order,
+              systemId: converted.systemId,
             },
           });
       }
@@ -83,17 +103,18 @@ async function importData(filename: string, productionUrl: string) {
     if (exportData.data.subjects?.length > 0) {
       console.log("📝 Importing subjects...");
       for (const item of exportData.data.subjects) {
+        const converted = convertTimestamps(item);
         await prodDb
           .insert(subjects)
-          .values(item)
+          .values(converted)
           .onConflictDoUpdate({
             target: subjects.id,
             set: {
-              name: item.name,
-              code: item.code,
-              description: item.description,
-              icon: item.icon,
-              systemId: item.systemId,
+              name: converted.name,
+              code: converted.code,
+              description: converted.description,
+              icon: converted.icon,
+              systemId: converted.systemId,
             },
           });
       }
@@ -104,19 +125,20 @@ async function importData(filename: string, productionUrl: string) {
     if (exportData.data.topics?.length > 0) {
       console.log("📝 Importing topics (including AI-generated notes)...");
       for (const item of exportData.data.topics) {
+        const converted = convertTimestamps(item);
         await prodDb
           .insert(topics)
-          .values(item)
+          .values(converted)
           .onConflictDoUpdate({
             target: topics.id,
             set: {
-              title: item.title,
-              description: item.description,
-              order: item.order,
-              subjectId: item.subjectId,
-              levelId: item.levelId,
-              summaryContent: item.summaryContent, // AI-generated notes!
-              detailedContent: item.detailedContent,
+              title: converted.title,
+              description: converted.description,
+              order: converted.order,
+              subjectId: converted.subjectId,
+              levelId: converted.levelId,
+              summaryContent: converted.summaryContent, // AI-generated notes!
+              detailedContent: converted.detailedContent,
             },
           });
       }
@@ -127,20 +149,21 @@ async function importData(filename: string, productionUrl: string) {
     if (exportData.data.questions?.length > 0) {
       console.log("📝 Importing questions...");
       for (const item of exportData.data.questions) {
+        const converted = convertTimestamps(item);
         await prodDb
           .insert(questions)
-          .values(item)
+          .values(converted)
           .onConflictDoUpdate({
             target: questions.id,
             set: {
-              questionText: item.questionText,
-              options: item.options,
-              correctAnswer: item.correctAnswer,
-              explanation: item.explanation,
-              difficulty: item.difficulty,
-              topicId: item.topicId,
-              subjectId: item.subjectId,
-              levelId: item.levelId,
+              questionText: converted.questionText,
+              options: converted.options,
+              correctAnswer: converted.correctAnswer,
+              explanation: converted.explanation,
+              difficulty: converted.difficulty,
+              topicId: converted.topicId,
+              subjectId: converted.subjectId,
+              levelId: converted.levelId,
             },
           });
       }
@@ -151,22 +174,23 @@ async function importData(filename: string, productionUrl: string) {
     if (exportData.data.quizzes?.length > 0) {
       console.log("📝 Importing quizzes...");
       for (const item of exportData.data.quizzes) {
+        const converted = convertTimestamps(item);
         await prodDb
           .insert(quizzes)
-          .values(item)
+          .values(converted)
           .onConflictDoUpdate({
             target: quizzes.id,
             set: {
-              userId: item.userId,
-              type: item.type,
-              subjectId: item.subjectId,
-              levelId: item.levelId,
-              topicId: item.topicId,
-              status: item.status,
-              totalQuestions: item.totalQuestions,
-              correctAnswers: item.correctAnswers,
-              score: item.score,
-              completedAt: item.completedAt,
+              userId: converted.userId,
+              type: converted.type,
+              subjectId: converted.subjectId,
+              levelId: converted.levelId,
+              topicId: converted.topicId,
+              status: converted.status,
+              totalQuestions: converted.totalQuestions,
+              correctAnswers: converted.correctAnswers,
+              score: converted.score,
+              completedAt: converted.completedAt,
             },
           });
       }
