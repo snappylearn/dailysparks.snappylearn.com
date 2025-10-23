@@ -1616,8 +1616,8 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
                   </FormLabel>
                   <p className="text-sm text-muted-foreground">
                     {field.value 
-                      ? "This quiz is verified and will be shown to students." 
-                      : "This quiz requires manual verification before it can be used by students."}
+                      ? "This quiz has been reviewed and marked as verified." 
+                      : "This quiz is marked as unverified and requires manual review."}
                   </p>
                 </div>
                 <FormControl>
