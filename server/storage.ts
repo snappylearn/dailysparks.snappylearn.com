@@ -1781,6 +1781,11 @@ export class DatabaseStorage implements IStorage {
         updateFields.questions = updateData.questions;
       }
 
+      // Include isVerified if provided in updateData
+      if (updateData.isVerified !== undefined) {
+        updateFields.isVerified = updateData.isVerified;
+      }
+
       // Update the quiz in the database
       const [updatedQuiz] = await db
         .update(quizzes)
