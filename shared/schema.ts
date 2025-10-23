@@ -302,6 +302,7 @@ export const quizzes = pgTable("quizzes", {
   timeLimit: integer("time_limit").notNull(), // in minutes
   difficulty: varchar("difficulty").default('medium'),
   isActive: boolean("is_active").default(true),
+  isVerified: boolean("is_verified").default(false), // Manual verification for AI-generated quizzes
   createdBy: varchar("created_by").notNull().references(() => users.id), // Admin who created it
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

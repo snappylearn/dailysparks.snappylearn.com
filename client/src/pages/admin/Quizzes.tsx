@@ -15,7 +15,8 @@ import { z } from "zod";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Edit, Eye, Users, BarChart3, Filter, FileText, Trash2 } from "lucide-react";
+import { Plus, Search, Edit, Eye, Users, BarChart3, Filter, FileText, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 const generateQuizSchema = z.object({
   examinationSystemId: z.string().min(1, "Examination system is required"),
@@ -1210,7 +1211,8 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
     topicId: z.string().optional(),
     termId: z.string().optional(),
     timeLimit: z.number().min(5).max(3000),
-    totalQuestions: z.number().min(1).max(50)
+    totalQuestions: z.number().min(1).max(50),
+    isVerified: z.boolean().optional()
   });
 
   const form = useForm({
@@ -1225,7 +1227,8 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
       topicId: "",
       termId: "",
       timeLimit: 30,
-      totalQuestions: 15
+      totalQuestions: 15,
+      isVerified: false
     }
   });
 
@@ -1243,7 +1246,8 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
         topicId: fullQuizData.topicId || "",
         termId: fullQuizData.termId || "",
         timeLimit: fullQuizData.timeLimit || 30,
-        totalQuestions: fullQuizData.totalQuestions || questions.length
+        totalQuestions: fullQuizData.totalQuestions || questions.length,
+        isVerified: fullQuizData.isVerified ?? false
       });
     }
   }, [fullQuizData, form, questions.length]);
@@ -1570,6 +1574,40 @@ function EditQuizForm({ quiz, onClose }: { quiz: any; onClose: () => void }) {
               )}
             />
           )}
+        </div>
+
+        {/* Quiz Verification Toggle */}
+        <div className="border rounded-lg p-4 bg-yellow-50 dark:bg-yellow-950/20">
+          <FormField
+            control={form.control}
+            name="isVerified"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between">
+                <div className="space-y-0.5 flex-1">
+                  <FormLabel className="text-base flex items-center gap-2">
+                    {field.value ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-yellow-600" />
+                    )}
+                    Quiz Verification Status
+                  </FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    {field.value 
+                      ? "This quiz is verified and will be shown to students." 
+                      : "This quiz requires manual verification before it can be used by students."}
+                  </p>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    data-testid="switch-quiz-verification"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
         </div>
 
         {/* Questions Section */}

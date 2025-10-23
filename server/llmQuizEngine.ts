@@ -351,9 +351,32 @@ Generate exactly ${params.questionCount} questions following this format.`;
         questions: questionsSnapshot, // JSONB snapshot
         totalQuestions: params.questionCount,
         timeLimit: params.timeLimit,
+        isVerified: false, // AI-generated quizzes require manual verification
         createdBy: adminUserId
       })
       .returning();
+
+    // Send email notification for quiz verification
+    try {
+      const { sendQuizVerificationEmail } = await import('./emailService');
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+        : 'https://dailysparkssnappylearncom.replit.app';
+      
+      await sendQuizVerificationEmail({
+        quizId: quiz.id,
+        quizTitle: title,
+        quizType: params.quizType,
+        subject: contextData.subject?.name || 'Unknown',
+        level: contextData.level?.title || 'Unknown',
+        totalQuestions: params.questionCount,
+        difficulty: 'mixed',
+        adminQuizLink: `${baseUrl}/admin/quizzes`
+      });
+    } catch (emailError) {
+      console.error('Failed to send quiz verification email:', emailError);
+      // Don't fail quiz creation if email fails
+    }
 
     return quiz.id;
   }
