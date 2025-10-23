@@ -1443,7 +1443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             quizType: quizType || 'random',
             topicId: topicId || null,
             termId: termId || null,
-            questionCount: 10,
+            questionCount: 15, // Standardized to match admin quiz generation
             timeLimit: 1800 // 30 minutes default
           };
 
