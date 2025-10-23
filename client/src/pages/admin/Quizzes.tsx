@@ -908,6 +908,7 @@ export default function AdminQuizzes() {
                   <TableHead className="text-center">Sessions</TableHead>
                   <TableHead className="text-center">Users</TableHead>
                   <TableHead>Created</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -951,6 +952,27 @@ export default function AdminQuizzes() {
                     <TableCell>
                       {quiz.created ? new Date(quiz.created).toLocaleDateString() : 'N/A'}
                     </TableCell>
+                    <TableCell className="text-center">
+                      {quiz.isVerified || quiz.is_verified ? (
+                        <Badge 
+                          variant="outline" 
+                          className="bg-green-50 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-400"
+                          data-testid={`badge-verified-${quiz.id}`}
+                        >
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Verified
+                        </Badge>
+                      ) : (
+                        <Badge 
+                          variant="outline" 
+                          className="bg-yellow-50 text-yellow-700 border-yellow-300 dark:bg-yellow-950 dark:text-yellow-400"
+                          data-testid={`badge-unverified-${quiz.id}`}
+                        >
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Unverified
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button 
@@ -992,7 +1014,7 @@ export default function AdminQuizzes() {
                 
                 {filteredQuizzes.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                       No quizzes found. Generate your first quiz!
                     </TableCell>
                   </TableRow>

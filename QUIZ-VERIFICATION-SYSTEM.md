@@ -62,8 +62,15 @@ const baseUrl = process.env.REPLIT_DEV_DOMAIN
 ### 4. Admin UI Enhancements
 **File:** `client/src/pages/admin/Quizzes.tsx`
 
-#### Edit Quiz Form Improvements
+#### Quiz Listing Table - Status Column
+**New "Status" column in the main quizzes table:**
+- Shows verification status at a glance without clicking edit
+- **Verified Badge:** Green background with checkmark icon (✓)
+- **Unverified Badge:** Yellow background with warning icon (⚠)
+- Color-coded for quick visual scanning
+- Test IDs: `badge-verified-{quizId}` and `badge-unverified-{quizId}`
 
+#### Edit Quiz Form - Verification Toggle
 **New Verification Toggle Component:**
 - Visual status indicator (CheckCircle2 for verified, AlertCircle for unverified)
 - Color-coded background (yellow/warning theme for unverified state)
@@ -286,12 +293,14 @@ export const quizzes = pgTable("quizzes", {
 
 ## Files Modified
 
-1. `shared/schema.ts` - Database schema
-2. `server/emailService.ts` - Email notification function
-3. `server/llmQuizEngine.ts` - Quiz generation integration
-4. `server/storage.ts` - Database operations
-5. `server/routes.ts` - API endpoints (no changes needed)
-6. `client/src/pages/admin/Quizzes.tsx` - Admin UI
+1. `shared/schema.ts` - Database schema with `isVerified` field
+2. `server/emailService.ts` - Email notification function (`sendQuizVerificationEmail`)
+3. `server/llmQuizEngine.ts` - Quiz generation integration with email triggers
+4. `server/storage.ts` - Database operations (`updateQuiz` method updated)
+5. `server/routes.ts` - API endpoints (no changes needed, passes through `isVerified`)
+6. `client/src/pages/admin/Quizzes.tsx` - Admin UI with:
+   - Status column in quizzes listing table
+   - Verification toggle in edit form
 
 ## Database Migrations
 
