@@ -239,6 +239,13 @@ export default function Landing() {
               <p className="text-gray-400">
                 Making exam preparation as engaging as social media.
               </p>
+              <a 
+                href="/admin-login" 
+                className="inline-block mt-4 text-xs text-gray-500 hover:text-gray-400 transition-colors"
+                data-testid="link-admin-login"
+              >
+                Admin Access →
+              </a>
             </div>
             <div>
               <h4 className="font-semibold text-white mb-4">Product</h4>
