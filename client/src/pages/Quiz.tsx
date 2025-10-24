@@ -847,9 +847,9 @@ export default function Quiz() {
                   .filter(term => {
                     // Match examination system
                     const matchesExamSystem = term.examinationSystemId === currentProfile?.examinationSystemId;
-                    // Only show terms without a specific level (general terms like "Term 1", "Term 2", "Term 3")
-                    const isGeneralTerm = !term.levelId;
-                    return matchesExamSystem && isGeneralTerm;
+                    // Match the student's current level to show only their terms
+                    const matchesLevel = term.levelId === currentProfile?.levelId;
+                    return matchesExamSystem && matchesLevel;
                   })
                   .map((term) => (
                   <Button
