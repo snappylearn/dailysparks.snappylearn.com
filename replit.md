@@ -6,7 +6,18 @@ Daily Sparks is an AI-powered revision platform specifically designed for Kenyan
 
 The application offers gamified quiz experiences where students can take random quizzes, topical quizzes, or term-specific quizzes. The AI engine analyzes user performance to optimize question difficulty, schedule reviews, and provide personalized explanations. Students earn "sparks" (points) and maintain learning streaks to encourage consistent study habits.
 
-**Recent Updates (October 23, 2025):**
+**Recent Updates (October 24, 2025):**
+- **Authentication Routing Fixes:** Fixed admin and password reset routing issues
+  - Moved admin routes outside student authentication flow for independent access
+  - Admin login at `/admin-login` now correctly redirects to `/admin` dashboard
+  - Password reset routes (`/reset-password`, `/forgot-password`) now publicly accessible
+  - Admin and student sessions completely separated
+- **Term Selection Cleanup:** Removed duplicate level-specific terms from quiz flow
+  - Updated Quiz.tsx to filter terms by examination system and exclude level-specific terms
+  - Students now see only general terms (Term 1, Term 2, Term 3) instead of duplicates
+  - Matches admin panel term filtering logic for consistency
+
+**Previous Updates (October 23, 2025):**
 - **Quiz Verification System:** Implemented comprehensive quiz verification workflow with email notifications
   - Added `isVerified` field to quizzes table (default: false)
   - AI-generated quizzes automatically marked as unverified
