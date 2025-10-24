@@ -844,7 +844,13 @@ export default function Quiz() {
             {terms && terms.length > 0 ? (
               <div className="space-y-2">
                 {terms
-                  .filter(term => term.examinationSystemId === currentProfile?.examinationSystemId)
+                  .filter(term => {
+                    // Match examination system
+                    const matchesExamSystem = term.examinationSystemId === currentProfile?.examinationSystemId;
+                    // Only show terms without a specific level (general terms like "Term 1", "Term 2", "Term 3")
+                    const isGeneralTerm = !term.levelId;
+                    return matchesExamSystem && isGeneralTerm;
+                  })
                   .map((term) => (
                   <Button
                     key={term.id}
