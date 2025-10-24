@@ -45,78 +45,9 @@ function Router() {
       {/* Admin login routes - accessible independently */}
       <Route path="/admin-login" component={AdminLogin} />
       <Route path="/admin/login" component={AdminLogin} />
-      {/* All other routes go through authentication check */}
-      <Route path="/*" component={AuthenticatedRoutes} />
-    </Switch>
-  );
-}
-
-function AuthenticatedRoutes() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  // Get user profiles if authenticated
-  const { data: profiles, isLoading: profilesLoading } = useQuery<ProfileType[]>({
-    queryKey: ['/api/profiles'],
-    enabled: isAuthenticated,
-  });
-
-  // Show loading state
-  if (isLoading || (isAuthenticated && profilesLoading)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-100 via-white to-teal-50">
-        <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-full flex items-center justify-center animate-pulse">
-          <i className="fas fa-fire text-white text-2xl"></i>
-        </div>
-      </div>
-    );
-  }
-
-  // Show auth pages or landing for non-authenticated users
-  if (!isAuthenticated) {
-    return (
-      <Switch>
-        <Route path="/signup" component={Signup} />
-        <Route path="/signin" component={Signin} />
-        <Route path="/forgot-password" component={ForgotPassword} />
-        <Route path="/reset-password" component={ResetPassword} />
-        <Route path="/" component={Landing} />
-        {/* Redirect all other paths to landing */}
-        <Route>
-          {() => {
-            window.location.href = '/';
-            return null;
-          }}
-        </Route>
-      </Switch>
-    );
-  }
-
-  // Redirect authenticated users away from auth pages
-  const currentPath = window.location.pathname;
-  if (currentPath === '/signin' || currentPath === '/signup' || currentPath === '/') {
-    window.location.href = '/home';
-    return null;
-  }
-
-  // Show onboarding if no profiles exist
-  if (profiles && profiles.length === 0) {
-    return <Onboarding onComplete={() => window.location.reload()} />;
-  }
-
-  // Show main app routes
-  return (
-    <Switch>
       
-      {/* Root path redirect to home for authenticated users */}
-      <Route path="/" exact>
-        {() => {
-          window.location.href = '/home';
-          return null;
-        }}
-      </Route>
-      
-      {/* Admin Routes */}
-      <Route path="/admin">
+      {/* Admin Routes - separate from student authentication */}
+      <Route path="/admin" exact>
         <AdminAuthProvider>
           <AdminLayout>
             <AdminDashboard />
@@ -200,9 +131,77 @@ function AuthenticatedRoutes() {
           </AdminLayout>
         </AdminAuthProvider>
       </Route>
-
-      {/* Quiz Preview Route (for admin) */}
       <Route path="/quiz-preview/:quizId" component={QuizPreview} />
+      
+      {/* All other routes go through student authentication check */}
+      <Route path="/*" component={AuthenticatedRoutes} />
+    </Switch>
+  );
+}
+
+function AuthenticatedRoutes() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Get user profiles if authenticated
+  const { data: profiles, isLoading: profilesLoading } = useQuery<ProfileType[]>({
+    queryKey: ['/api/profiles'],
+    enabled: isAuthenticated,
+  });
+
+  // Show loading state
+  if (isLoading || (isAuthenticated && profilesLoading)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-100 via-white to-teal-50">
+        <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-yellow-400 rounded-full flex items-center justify-center animate-pulse">
+          <i className="fas fa-fire text-white text-2xl"></i>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth pages or landing for non-authenticated users
+  if (!isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/signup" component={Signup} />
+        <Route path="/signin" component={Signin} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
+        <Route path="/" component={Landing} />
+        {/* Redirect all other paths to landing */}
+        <Route>
+          {() => {
+            window.location.href = '/';
+            return null;
+          }}
+        </Route>
+      </Switch>
+    );
+  }
+
+  // Redirect authenticated users away from auth pages
+  const currentPath = window.location.pathname;
+  if (currentPath === '/signin' || currentPath === '/signup' || currentPath === '/') {
+    window.location.href = '/home';
+    return null;
+  }
+
+  // Show onboarding if no profiles exist
+  if (profiles && profiles.length === 0) {
+    return <Onboarding onComplete={() => window.location.reload()} />;
+  }
+
+  // Show main app routes
+  return (
+    <Switch>
+      
+      {/* Root path redirect to home for authenticated users */}
+      <Route path="/" exact>
+        {() => {
+          window.location.href = '/home';
+          return null;
+        }}
+      </Route>
 
       {/* Student Routes */}
       <Route path="/home" component={SimpleHome} />
