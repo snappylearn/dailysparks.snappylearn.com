@@ -42,12 +42,14 @@ import AdminLogin from "@/pages/admin/AdminLogin";
 function Router() {
   return (
     <Switch>
-      {/* Admin login routes - accessible independently */}
+      {/* Public auth routes - accessible to everyone */}
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/admin-login" component={AdminLogin} />
       <Route path="/admin/login" component={AdminLogin} />
       
       {/* Admin Routes - separate from student authentication */}
-      <Route path="/admin" exact>
+      <Route path="/admin">
         <AdminAuthProvider>
           <AdminLayout>
             <AdminDashboard />
@@ -133,6 +135,10 @@ function Router() {
       </Route>
       <Route path="/quiz-preview/:quizId" component={QuizPreview} />
       
+      {/* Signup and Signin routes */}
+      <Route path="/signup" component={Signup} />
+      <Route path="/signin" component={Signin} />
+      
       {/* All other routes go through student authentication check */}
       <Route path="/*" component={AuthenticatedRoutes} />
     </Switch>
@@ -165,8 +171,6 @@ function AuthenticatedRoutes() {
       <Switch>
         <Route path="/signup" component={Signup} />
         <Route path="/signin" component={Signin} />
-        <Route path="/forgot-password" component={ForgotPassword} />
-        <Route path="/reset-password" component={ResetPassword} />
         <Route path="/" component={Landing} />
         {/* Redirect all other paths to landing */}
         <Route>
@@ -196,7 +200,7 @@ function AuthenticatedRoutes() {
     <Switch>
       
       {/* Root path redirect to home for authenticated users */}
-      <Route path="/" exact>
+      <Route path="/">
         {() => {
           window.location.href = '/home';
           return null;
