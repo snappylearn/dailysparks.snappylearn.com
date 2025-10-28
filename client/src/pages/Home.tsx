@@ -10,7 +10,7 @@ import BottomNavigation from "@/components/BottomNavigation";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { MainLayout } from "@/components/MainLayout";
-import { BookOpen, Award, Trophy, Zap } from "lucide-react";
+import { BookOpen, Award, Trophy, Zap, Flame } from "lucide-react";
 
 export default function Home() {
   const { user, isLoading } = useAuth();
@@ -133,13 +133,35 @@ export default function Home() {
     return <Onboarding onComplete={() => window.location.reload()} />;
   }
 
+  const isNewStudent = (currentProfile?.totalQuizzes || 0) === 0;
+
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Daily Sparks!</h2>
-          <p className="text-gray-600">Choose a subject to start your learning journey</p>
-        </div>
+        {/* Dynamic Welcome Banner - Only show when profile data is loaded */}
+        {currentProfile && (
+          <div 
+            className="bg-gradient-to-r from-orange-500 to-yellow-400 rounded-lg p-6 shadow-lg"
+            data-testid="banner-welcome"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <Flame className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-white mb-2" data-testid="text-banner-title">
+                  {isNewStudent ? '🔥 Welcome to Daily Sparks!' : 'Welcome back!'}
+                </h2>
+                <p className="text-white/95 leading-relaxed" data-testid="text-banner-message">
+                  {isNewStudent 
+                    ? 'Your profile-based learning platform is now ready. Start taking quizzes to earn sparks and build your learning streaks!'
+                    : `Ready to continue your learning journey and build your streak? You're on a ${currentProfile.currentStreak || 0}-day streak!`
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Dashboard Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
