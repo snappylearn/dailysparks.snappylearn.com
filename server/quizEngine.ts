@@ -467,28 +467,58 @@ export class QuizEngine {
   /**
    * Check and complete challenges based on sparks earned
    */
-  private static async checkAndCompleteCharlenges(userId: string, sparksEarned: number): Promise<void> {
+  private static async checkAndCompleteChallenges(userId: string, sparksEarned: number): Promise<void> {
     try {
       const { storage } = await import('./storage');
+      const { profiles } = await import('@shared/schema');
       
-      // Get user's active challenges
+      // Get all active challenges
+      const allChallenges = await db.select().from(challenges).where(eq(challenges.isActive, true));
+      
+      // Get user's challenge records
       const userChallenges = await storage.getUserChallenges(userId);
+      const userChallengeMap = new Map(userChallenges.map(uc => [uc.challengeId, uc]));
       
-      for (const userChallenge of userChallenges) {
-        if (!userChallenge.completed) {
-          // Update challenge progress
-          const newProgress = (userChallenge.progress || 0) + sparksEarned;
+      // Get user's default profile for sparks update
+      const userProfiles = await storage.getUserProfiles(userId);
+      const defaultProfile = userProfiles.find(p => p.isDefault) || userProfiles[0];
+      
+      for (const challenge of allChallenges) {
+        let userChallenge = userChallengeMap.get(challenge.id);
+        
+        // Auto-initialize challenge if user doesn't have it yet
+        if (!userChallenge) {
+          userChallenge = await storage.initializeUserChallenge(userId, challenge.id);
+        }
+        
+        // Skip if already completed and sparks were awarded
+        if (userChallenge.completed && userChallenge.sparksAwarded) {
+          continue;
+        }
+        
+        // Update challenge progress
+        const newProgress = (userChallenge.progress || 0) + sparksEarned;
+        
+        // Check if challenge threshold is met
+        if (newProgress >= (challenge.sparks || 0)) {
+          // Complete the challenge and award sparks
+          await storage.completeChallenge(userId, challenge.id);
           
-          // Check if challenge should be completed
-          const challenge = await db.select().from(challenges).where(eq(challenges.id, userChallenge.challengeId)).limit(1);
-          if (challenge[0] && newProgress >= challenge[0].sparks) {
-            // Complete the challenge
-            await storage.completeChallenge(userId, userChallenge.challengeId);
-            console.log(`✅ Challenge completed: ${challenge[0].title} for user ${userId}`);
-          } else {
-            // Update progress
-            await storage.updateChallengeProgress(userId, userChallenge.challengeId, newProgress);
+          // Award challenge reward sparks to user's profile
+          if (defaultProfile && (challenge.sparks || 0) > 0 && !userChallenge.sparksAwarded) {
+            await db
+              .update(profiles)
+              .set({
+                sparks: sql`${profiles.sparks} + ${challenge.sparks}`,
+                updatedAt: new Date(),
+              })
+              .where(eq(profiles.id, defaultProfile.id));
+            
+            console.log(`✅ Challenge completed: ${challenge.title} for user ${userId} - Awarded ${challenge.sparks} sparks`);
           }
+        } else {
+          // Update progress only
+          await storage.updateChallengeProgress(userId, challenge.id, newProgress);
         }
       }
     } catch (error) {

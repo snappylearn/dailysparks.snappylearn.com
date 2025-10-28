@@ -250,8 +250,10 @@ export interface IStorage {
   awardTrophy(userId: string, trophyId: string): Promise<UserTrophy>;
   getChallenges(): Promise<Challenge[]>;
   getUserChallenges(userId: string): Promise<UserChallenge[]>;
+  initializeUserChallenge(userId: string, challengeId: string): Promise<UserChallenge>;
   updateChallengeProgress(userId: string, challengeId: string, progress: number): Promise<void>;
   completeChallenge(userId: string, challengeId: string): Promise<UserChallenge>;
+  resetDailyChallenges(userId: string): Promise<void>;
   getUserSparkBoosts(userId: string): Promise<UserSparkBoost[]>;
   createSparkBoost(fromUserId: string, toUserId: string, sparks: number): Promise<UserSparkBoost>;
   canBoostUser(fromUserId: string): Promise<boolean>;
@@ -1862,14 +1864,65 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(userChallenges).where(eq(userChallenges.userId, userId));
   }
 
+  async initializeUserChallenge(userId: string, challengeId: string): Promise<UserChallenge> {
+    const [userChallenge] = await db
+      .insert(userChallenges)
+      .values({
+        userId,
+        challengeId,
+        progress: 0,
+        completed: false,
+        sparksAwarded: false,
+      })
+      .onConflictDoUpdate({
+        target: [userChallenges.userId, userChallenges.challengeId],
+        set: { updatedAt: new Date() }
+      })
+      .returning();
+    return userChallenge;
+  }
 
   async completeChallenge(userId: string, challengeId: string): Promise<UserChallenge> {
     const [userChallenge] = await db
       .update(userChallenges)
-      .set({ completed: true, updatedAt: new Date() })
+      .set({ 
+        completed: true, 
+        sparksAwarded: true,
+        completedAt: new Date(),
+        updatedAt: new Date() 
+      })
       .where(and(eq(userChallenges.userId, userId), eq(userChallenges.challengeId, challengeId)))
       .returning();
     return userChallenge;
+  }
+
+  async resetDailyChallenges(userId: string): Promise<void> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Get all daily challenges (those with 'daily' in their ID)
+    const allChallenges = await db.select().from(challenges).where(eq(challenges.isActive, true));
+    const dailyChallengeIds = allChallenges.filter(c => c.id.includes('daily')).map(c => c.id);
+    
+    if (dailyChallengeIds.length > 0) {
+      // Reset daily challenges that were completed before today
+      await db
+        .update(userChallenges)
+        .set({
+          completed: false,
+          sparksAwarded: false,
+          progress: 0,
+          completedAt: null,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(userChallenges.userId, userId),
+            inArray(userChallenges.challengeId, dailyChallengeIds),
+            sql`${userChallenges.completedAt} < ${today}`
+          )
+        );
+    }
   }
 
   async getUserSparkBoosts(userId: string): Promise<UserSparkBoost[]> {

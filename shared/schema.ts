@@ -199,9 +199,14 @@ export const userChallenges = pgTable("user_challenges", {
   challengeId: varchar("challenge_id").notNull().references(() => challenges.id),
   completed: boolean("completed").default(false),
   progress: integer("progress").default(0), // For tracking partial progress
+  sparksAwarded: boolean("sparks_awarded").default(false), // Track if reward sparks were given
+  completedAt: timestamp("completed_at"), // When the challenge was completed
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  // Ensure one record per user-challenge combination
+  userChallengeUnique: unique().on(table.userId, table.challengeId),
+}));
 
 // User spark boost table
 export const userSparkBoost = pgTable("user_spark_boost", {
