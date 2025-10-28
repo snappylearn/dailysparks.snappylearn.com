@@ -2615,6 +2615,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reset daily challenges
+  app.post('/api/user/:userId/challenges/reset-daily', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      await storage.resetDailyChallenges(userId);
+      res.json({ message: "Daily challenges reset successfully" });
+    } catch (error) {
+      console.error("Error resetting daily challenges:", error);
+      res.status(500).json({ message: "Failed to reset daily challenges" });
+    }
+  });
+
   // Get user spark boosts
   app.get('/api/user/:userId/spark-boosts', isAdminAuthenticated, async (req: any, res) => {
     try {

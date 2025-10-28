@@ -141,18 +141,24 @@ export default function Challenges() {
               {activeChallenges.map((challenge: any) => {
                 const userProgress = userProgressMap.get(challenge.id);
                 const isCompleted = userProgress?.completed || false;
+                const sparksAwarded = userProgress?.sparksAwarded || false;
                 const progress = userProgress?.progress || 0;
+                const completedAt = userProgress?.completedAt;
                 
-                // Calculate progress percentage (example logic)
-                const progressPercentage = challenge.sparks > 0 
-                  ? Math.min((progress / challenge.sparks) * 100, 100)
-                  : 0;
+                // Check if it's a daily challenge and was completed today
+                const isDailyChallenge = challenge.id.includes('daily');
+                const wasCompletedToday = completedAt && 
+                  new Date(completedAt).toDateString() === new Date().toDateString();
+                
+                // Calculate progress percentage based on challenge requirement
+                const requirement = challenge.sparks || 100; // Default to 100 if not set
+                const progressPercentage = Math.min((progress / requirement) * 100, 100);
 
                 return (
                   <div 
                     key={challenge.id}
                     className={`p-4 rounded-lg border transition-all ${
-                      isCompleted 
+                      isCompleted && wasCompletedToday
                         ? 'bg-green-50 border-green-200' 
                         : 'bg-white border-gray-200 hover:border-blue-300'
                     }`}
@@ -160,35 +166,51 @@ export default function Challenges() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className={`font-semibold ${isCompleted ? 'text-green-800' : 'text-gray-900'}`}>
+                          <h3 className={`font-semibold ${
+                            isCompleted && wasCompletedToday ? 'text-green-800' : 'text-gray-900'
+                          }`}>
                             {challenge.title}
                           </h3>
-                          {isCompleted && (
+                          {isCompleted && wasCompletedToday && (
                             <Badge variant="secondary" className="bg-green-100 text-green-800">
                               <CheckCircle className="h-3 w-3 mr-1" />
-                              Completed
+                              Completed {isDailyChallenge ? 'Today' : ''}
                             </Badge>
                           )}
                         </div>
                         
-                        <p className={`text-sm mb-3 ${isCompleted ? 'text-green-700' : 'text-gray-600'}`}>
+                        <p className={`text-sm mb-3 ${
+                          isCompleted && wasCompletedToday ? 'text-green-700' : 'text-gray-600'
+                        }`}>
                           {challenge.description}
                         </p>
                         
-                        {!isCompleted && progress > 0 && (
+                        {(!isCompleted || !wasCompletedToday) && (
                           <div className="mb-3">
                             <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
-                              <span>Progress</span>
-                              <span>{progress} / {challenge.sparks}</span>
+                              <span>Progress (Auto-Tracked)</span>
+                              <span className="font-medium">{progress} / {requirement} sparks earned</span>
                             </div>
                             <Progress value={progressPercentage} className="h-2" />
+                          </div>
+                        )}
+                        
+                        {isCompleted && wasCompletedToday && sparksAwarded && (
+                          <div className="mb-3 bg-green-100 border border-green-200 rounded-md p-2">
+                            <p className="text-sm text-green-800 flex items-center gap-2">
+                              <Zap className="h-4 w-4 text-green-600" />
+                              <strong>Reward Claimed:</strong> +{challenge.sparks} sparks added to your account!
+                              {isDailyChallenge && <span className="ml-2 text-xs">(Resets tomorrow)</span>}
+                            </p>
                           </div>
                         )}
                         
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-1 text-orange-600">
                             <Zap className="h-4 w-4" />
-                            <span className="text-sm font-medium">{challenge.sparks} sparks</span>
+                            <span className="text-sm font-medium">
+                              {challenge.sparks} sparks reward
+                            </span>
                           </div>
                           
                           {challenge.streaks > 0 && (
@@ -207,18 +229,22 @@ export default function Challenges() {
                       </div>
                       
                       <div className="ml-4">
-                        {!isCompleted ? (
+                        {isCompleted && wasCompletedToday ? (
                           <Button 
                             size="sm" 
-                            variant="outline"
-                            onClick={() => setLocation('/home')}
-                            data-testid={`button-start-challenge-${challenge.id}`}
+                            className="bg-green-500 hover:bg-green-600 text-white"
+                            disabled
+                            data-testid={`button-completed-challenge-${challenge.id}`}
                           >
-                            Start
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Completed
                           </Button>
                         ) : (
-                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <CheckCircle className="h-5 w-5 text-green-600" />
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500 mb-1">Auto-Tracked</div>
+                            <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700 font-medium">
+                              {Math.round(progressPercentage)}%
+                            </div>
                           </div>
                         )}
                       </div>
