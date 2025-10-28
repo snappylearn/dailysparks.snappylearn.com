@@ -120,6 +120,77 @@ Create detailed, well-structured notes that cover all key concepts, provide clea
   }
 }
 
+// Generate insights based on topic content
+interface TopicInsightsParams extends TopicContentParams {
+  content?: string; // The existing topic content to base insights on
+}
+
+const INSIGHTS_SYSTEM_PROMPT = `You are an expert educator creating insightful learning materials.
+Your task is to generate key insights and deeper understanding points for educational topics.
+These insights should help students:
+- Understand WHY concepts matter and HOW they connect
+- See real-world applications and relevance
+- Identify common misconceptions and how to avoid them
+- Make connections between different concepts
+- Develop critical thinking about the subject matter
+
+Format your response in clear markdown with:
+- Clear section headings
+- Bullet points for key insights
+- Real-world examples and applications
+- Common pitfalls to avoid
+- Connection points to other topics
+
+Return only the markdown content, no additional formatting or explanations.`;
+
+export async function generateTopicInsights(params: TopicInsightsParams): Promise<string> {
+  const { subject, level, topicTitle, topicDescription, termTitle, content } = params;
+
+  const contextInfo = termTitle ? `${termTitle} term content` : 'general syllabus content';
+  const descriptionInfo = topicDescription ? `\nTopic Description: ${topicDescription}` : '';
+  const contentInfo = content ? `\n\nExisting Notes:\n${content.substring(0, 1500)}` : '';
+
+  const userPrompt = `Generate insightful learning materials and key takeaways for:
+
+Subject: ${subject}
+Level: ${level}
+Topic: ${topicTitle}${descriptionInfo}
+Context: ${contextInfo}${contentInfo}
+
+Create insights that go beyond basic facts. Help students understand:
+1. WHY this topic is important
+2. HOW it connects to real-world applications
+3. Common misconceptions and how to avoid them
+4. Connections to other concepts in ${subject}
+5. Study tips and key points to remember
+
+Format the insights in clear, engaging markdown suitable for ${level} students.`;
+
+  try {
+    console.log('Generating topic insights with OpenAI...');
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: INSIGHTS_SYSTEM_PROMPT },
+        { role: "user", content: userPrompt }
+      ],
+      max_tokens: 2000,
+      temperature: 0.8,
+    });
+
+    const insights = completion.choices[0]?.message?.content;
+    if (!insights) {
+      throw new Error('No insights received from OpenAI');
+    }
+
+    console.log('Successfully generated topic insights');
+    return insights.trim();
+  } catch (error) {
+    console.error('Error generating topic insights:', error);
+    throw new Error('Failed to generate topic insights');
+  }
+}
+
 export async function generateQuestions(params: QuestionGenerationParams): Promise<QuizQuestion[]> {
   const {
     subject,

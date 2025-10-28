@@ -21,6 +21,7 @@ const createTopicSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   summaryContent: z.string().optional(),
+  insightsContent: z.string().optional(),
   examinationSystemId: z.string().min(1, "Examination system is required"),
   levelId: z.string().min(1, "Level is required"),
   subjectId: z.string().min(1, "Subject is required"),
@@ -51,6 +52,7 @@ export default function AdminTopics() {
       title: "",
       description: "",
       summaryContent: "",
+      insightsContent: "",
     }
   });
 
@@ -61,6 +63,7 @@ export default function AdminTopics() {
       title: "",
       description: "",
       summaryContent: "",
+      insightsContent: "",
     }
   });
 
@@ -275,6 +278,48 @@ export default function AdminTopics() {
     }
   });
 
+  const generateInsightsMutation = useMutation({
+    mutationFn: async (topicId: string) => {
+      const response = await apiRequest("POST", `/api/admin/topics/${topicId}/generate-insights`);
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Success",
+        description: "Insights generated successfully!"
+      });
+      // Update the form with generated insights - ensure it's a string
+      let insights = '';
+      if (typeof data === 'string') {
+        insights = data;
+      } else if (data && typeof data.insights === 'string') {
+        insights = data.insights;
+      } else {
+        toast({
+          title: "Error",
+          description: "Invalid insights format received from server",
+          variant: "destructive"
+        });
+        return;
+      }
+      editForm.setValue("insightsContent", String(insights), { 
+        shouldValidate: true, 
+        shouldDirty: true,
+        shouldTouch: true 
+      });
+      // Force editor re-render
+      setEditorKey(prev => prev + 1);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/topics"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate insights",
+        variant: "destructive"
+      });
+    }
+  });
+
   const onSubmit = (data: CreateTopicFormData) => {
     createTopicMutation.mutate(data);
   };
@@ -296,6 +341,7 @@ export default function AdminTopics() {
         title: selectedTopic.title || "",
         description: selectedTopic.description || "",
         summaryContent: selectedTopic.summaryContent || selectedTopic.content || "",
+        insightsContent: selectedTopic.insightsContent || "",
         examinationSystemId: selectedTopic.examinationSystemId || selectedTopic.examination_system_id || "",
         levelId: selectedTopic.levelId || selectedTopic.level_id || "",
         subjectId: selectedTopic.subjectId || selectedTopic.subject_id || "",
@@ -905,6 +951,46 @@ export default function AdminTopics() {
                         <div className="max-h-[400px] overflow-y-auto">
                           <MDEditor
                             key={`editor-${selectedTopic?.id || 'new'}-${editorKey}`}
+                            value={field.value || ""}
+                            onChange={(value) => field.onChange(value || "")}
+                            preview="edit"
+                            hideToolbar={false}
+                            visibleDragBar={false}
+                            height={400}
+                          />
+                        </div>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="insightsContent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center justify-between">
+                      <span>Generate Insights</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => selectedTopic && generateInsightsMutation.mutate(selectedTopic.id)}
+                        disabled={generateInsightsMutation.isPending}
+                        className="ml-2"
+                        data-testid="generate-insights-button"
+                      >
+                        <Sparkles className="h-4 w-4 mr-1" />
+                        {generateInsightsMutation.isPending ? "Generating..." : "Generate Insights"}
+                      </Button>
+                    </FormLabel>
+                    <FormControl>
+                      <div data-color-mode="light" className="border rounded-md overflow-hidden">
+                        <div className="max-h-[400px] overflow-y-auto">
+                          <MDEditor
+                            key={`insights-editor-${selectedTopic?.id || 'new'}-${editorKey}`}
                             value={field.value || ""}
                             onChange={(value) => field.onChange(value || "")}
                             preview="edit"
