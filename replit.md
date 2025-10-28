@@ -13,10 +13,19 @@ Layout preferences: Sidebar navigation should only appear on the dashboard page,
 Top navigation design: Consistent navbar across all pages with Daily Sparks logo on left, "Start A Quiz" and "Leaderboard" buttons in center, stats (position, sparks, streak) with icons and user avatar dropdown on right. No greeting text for cleaner design.
 Gamification layout: Badges and trophies should appear below leaderboard rankings as compact rows, not separate sections. Challenges should appear below dashboard stats, not above subjects.
 
+## Recent Changes
+
+**October 28, 2025 - Home Page Consolidation:**
+- Resolved critical architectural issue where two conflicting home page implementations existed (Home.tsx and SimpleHome.tsx)
+- Consolidated to single authoritative Home.tsx with dynamic welcome banner at top
+- Banner shows "Welcome to Daily Sparks!" for new students (0 quizzes) vs "Welcome back! X-day streak" for returning students
+- Eliminated duplicate code and TDZ errors from old implementation
+- All routes now point to unified Home component with proper TypeScript typing
+
 ## System Architecture
 
 ### Frontend Architecture
-The frontend is a React 18 SPA using TypeScript. It utilizes Wouter for routing, TanStack Query for server state management, and Tailwind CSS with shadcn/ui for a mobile-first design. Vite is used for building.
+The frontend is a React 18 SPA using TypeScript. It utilizes Wouter for routing, TanStack Query for server state management, and Tailwind CSS with shadcn/ui for a mobile-first design. Vite is used for building. The home page features a dynamic welcome banner that personalizes the experience for new vs. returning students.
 
 ### Backend Architecture
 The backend is a RESTful API built with Node.js and Express.js using TypeScript. It features modular route organization, session-based authentication with bcrypt, and a middleware pattern for logging, error handling, and authentication. A storage abstraction layer separates business logic from database operations, and an enhanced quiz engine implements LMS best practices.
