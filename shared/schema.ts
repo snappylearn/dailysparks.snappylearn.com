@@ -182,6 +182,7 @@ export const challenges = pgTable("challenges", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: varchar("title").notNull(),
   description: text("description"),
+  targetValue: integer("target_value").notNull().default(100), // Goal amount (e.g., 50 sparks to earn)
   sparks: integer("sparks").default(0), // Reward amount
   streaks: integer("streaks").default(0), // Reward streaks
   badgeId: varchar("badge_id").references(() => badges.id), // Optional badge award upon completion
