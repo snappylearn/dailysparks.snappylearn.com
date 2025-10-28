@@ -30,10 +30,52 @@ export default function BadgesAndTrophies() {
     enabled: !!user?.id,
   });
 
-  // Get earned badge IDs for easy lookup
-  const earnedBadgeIds = new Set(userBadges.map(ub => ub.badgeId));
+  // Helper function to check if badge is earned in current period
+  const isBadgeEarnedInPeriod = (userBadge: any, badgeTypeTitle: string) => {
+    if (!userBadge || !userBadge.lastEarnedAt) return false;
+    
+    const lastEarned = new Date(userBadge.lastEarnedAt);
+    const now = new Date();
+    
+    // For Daily badges - check if earned today
+    if (badgeTypeTitle.toLowerCase().includes('daily')) {
+      return lastEarned.toDateString() === now.toDateString();
+    }
+    
+    // For Weekly badges - check if earned this week
+    if (badgeTypeTitle.toLowerCase().includes('weekly')) {
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+      startOfWeek.setHours(0, 0, 0, 0);
+      return lastEarned >= startOfWeek;
+    }
+    
+    // For Monthly badges - check if earned this month
+    if (badgeTypeTitle.toLowerCase().includes('monthly')) {
+      return lastEarned.getMonth() === now.getMonth() && 
+             lastEarned.getFullYear() === now.getFullYear();
+    }
+    
+    // For all other badges (achievement, streak, spark) - once earned, always shown
+    return true;
+  };
 
-  // Create a map of user badge counts
+  // Create a map of user badge records with full info
+  const userBadgeRecords = new Map(userBadges.map(ub => [ub.badgeId, ub]));
+  
+  // For each badge, check if it's earned in the current period
+  const earnedBadgeIds = new Set(
+    badges
+      .filter(badge => {
+        const userBadge = userBadgeRecords.get(badge.id);
+        if (!userBadge) return false;
+        const badgeTypeTitle = badge.badgeType?.title || '';
+        return isBadgeEarnedInPeriod(userBadge, badgeTypeTitle);
+      })
+      .map(badge => badge.id)
+  );
+  
+  // Create a map of user badge counts (always show total count)
   const userBadgeMap = new Map(
     userBadges.map(ub => [ub.badgeId, ub.count || 1])
   );
@@ -122,13 +164,33 @@ export default function BadgesAndTrophies() {
                               </h3>
                               {isEarned && (
                                 <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                                  {earnedCount > 1 ? `Earned ${earnedCount}x` : 'Earned'}
+                                  {badge.badgeType?.title?.toLowerCase().includes('daily') ? 'Earned Today' :
+                                   badge.badgeType?.title?.toLowerCase().includes('weekly') ? 'Earned This Week' :
+                                   badge.badgeType?.title?.toLowerCase().includes('monthly') ? 'Earned This Month' :
+                                   'Earned'}
+                                </Badge>
+                              )}
+                              {earnedCount > 1 && (
+                                <Badge variant="outline" className="text-xs">
+                                  Total: {earnedCount}x
                                 </Badge>
                               )}
                             </div>
                             <p className={`text-sm ${isEarned ? 'text-yellow-700' : 'text-gray-500'}`}>
                               {badge.description}
                             </p>
+                            
+                            {/* Show reset info for time-based badges */}
+                            {isEarned && (
+                              badge.badgeType?.title?.toLowerCase().includes('daily') ? (
+                                <p className="text-xs text-yellow-600 mt-1">Resets tomorrow</p>
+                              ) : badge.badgeType?.title?.toLowerCase().includes('weekly') ? (
+                                <p className="text-xs text-yellow-600 mt-1">Resets next week</p>
+                              ) : badge.badgeType?.title?.toLowerCase().includes('monthly') ? (
+                                <p className="text-xs text-yellow-600 mt-1">Resets next month</p>
+                              ) : null
+                            )}
+                            
                             {badge.sparks && (
                               <div className="flex items-center gap-1 mt-2">
                                 <Zap className="h-3 w-3 text-orange-500" />

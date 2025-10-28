@@ -1807,12 +1807,58 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(badgeTypes).orderBy(badgeTypes.title);
   }
 
-  async getBadges(): Promise<Badge[]> {
-    return await db.select().from(badges).orderBy(badges.title);
+  async getBadges(): Promise<any[]> {
+    const result = await db
+      .select({
+        id: badges.id,
+        title: badges.title,
+        description: badges.description,
+        sparks: badges.sparks,
+        icon: badges.icon,
+        badgeTypeId: badges.badgeTypeId,
+        createdAt: badges.createdAt,
+        badgeType: {
+          id: badgeTypes.id,
+          title: badgeTypes.title,
+          description: badgeTypes.description,
+        }
+      })
+      .from(badges)
+      .leftJoin(badgeTypes, eq(badges.badgeTypeId, badgeTypes.id))
+      .orderBy(badges.title);
+    return result;
   }
 
-  async getUserBadges(userId: string): Promise<UserBadge[]> {
-    return await db.select().from(userBadges).where(eq(userBadges.userId, userId));
+  async getUserBadges(userId: string): Promise<any[]> {
+    const result = await db
+      .select({
+        id: userBadges.id,
+        userId: userBadges.userId,
+        badgeId: userBadges.badgeId,
+        count: userBadges.count,
+        streaks: userBadges.streaks,
+        lastEarnedAt: userBadges.lastEarnedAt,
+        createdAt: userBadges.createdAt,
+        updatedAt: userBadges.updatedAt,
+        badge: {
+          id: badges.id,
+          title: badges.title,
+          description: badges.description,
+          sparks: badges.sparks,
+          icon: badges.icon,
+          badgeTypeId: badges.badgeTypeId,
+          badgeType: {
+            id: badgeTypes.id,
+            title: badgeTypes.title,
+            description: badgeTypes.description,
+          }
+        }
+      })
+      .from(userBadges)
+      .leftJoin(badges, eq(userBadges.badgeId, badges.id))
+      .leftJoin(badgeTypes, eq(badges.badgeTypeId, badgeTypes.id))
+      .where(eq(userBadges.userId, userId));
+    return result;
   }
 
   async awardBadge(userId: string, badgeId: string, streaks = 0): Promise<UserBadge> {
