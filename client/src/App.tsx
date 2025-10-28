@@ -11,7 +11,7 @@ import Signup from "@/pages/Signup";
 import Signin from "@/pages/Signin";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
-import SimpleHome from "@/pages/SimpleHome";
+import Home from "@/pages/Home";
 import Quiz from "@/pages/Quiz";
 import QuizHistory from "@/pages/QuizHistory";
 import Results from "@/pages/Results";
@@ -208,7 +208,7 @@ function AuthenticatedRoutes() {
       </Route>
 
       {/* Student Routes */}
-      <Route path="/home" component={SimpleHome} />
+      <Route path="/home" component={Home} />
       <Route path="/quiz/:sessionId?" component={Quiz} />
       <Route path="/study-notes/:topicId" component={StudyNotes} />
       <Route path="/quiz-history" component={QuizHistory} />
@@ -221,7 +221,7 @@ function AuthenticatedRoutes() {
 
 
       {/* Default route for authenticated users */}
-      <Route component={SimpleHome} />
+      <Route component={Home} />
     </Switch>
   );
 }
