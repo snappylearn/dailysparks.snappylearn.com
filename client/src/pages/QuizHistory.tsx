@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MainLayout } from "@/components/MainLayout";
+import { UserProgressStats } from "@/components/UserProgressStats";
 import { Clock, CheckCircle, XCircle, RotateCcw, Calendar, Target, Trophy, Eye } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatDistanceToNow, format } from "date-fns";
@@ -102,51 +103,8 @@ export default function QuizHistory() {
           <p className="text-gray-600">Track your learning progress and retake quizzes</p>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Quizzes</p>
-                  <p className="text-2xl font-bold text-gray-900">{quizHistory.length}</p>
-                </div>
-                <Target className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {quizHistory.filter(q => q.isCompleted).length}
-                  </p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Average Score</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {quizHistory.length > 0 
-                      ? `${Math.round(quizHistory.reduce((acc, q) => acc + (q.correctAnswers / q.totalQuestions) * 100, 0) / quizHistory.length)}%`
-                      : '0%'
-                    }
-                  </p>
-                </div>
-                <Trophy className="h-8 w-8 text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Stats Overview - Live data from backend */}
+        <UserProgressStats />
 
         {/* Quiz History List */}
         {quizHistory.length === 0 ? (

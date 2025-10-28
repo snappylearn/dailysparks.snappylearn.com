@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Profile, Subject } from "@shared/schema";
 import { Book, Flame, Zap, TrendingUp, Plus, ArrowRight } from "lucide-react";
 import { MainLayout } from "@/components/MainLayout";
+import { UserProgressStats } from "@/components/UserProgressStats";
 
 export default function Home() {
   const { user } = useAuth();
@@ -29,7 +30,7 @@ export default function Home() {
     subject.examinationSystemId === currentProfile?.examinationSystemId
   );
 
-  // Get user stats for progress section
+  // Get user stats for banner (streak check)
   const { data: userStats } = useQuery<{
     totalSparks: number;
     totalQuizzes: number;
@@ -39,7 +40,6 @@ export default function Home() {
     queryKey: ['/api/user-stats'],
     enabled: !!user,
   });
-
 
   if (profilesLoading) {
     return (
@@ -152,52 +152,13 @@ export default function Home() {
           )}
         </div>
 
-        {/* Progress Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5 text-green-500" />
-                <span>Your Progress</span>
-              </CardTitle>
-              <CardDescription>
-                See how well you're doing
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {userStats && userStats.totalQuizzes > 0 ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-500">{userStats.totalSparks}</div>
-                      <div className="text-xs text-gray-600">Total Sparks</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-teal-500">{userStats.totalQuizzes}</div>
-                      <div className="text-xs text-gray-600">Quizzes Completed</div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-yellow-500">{userStats.averageScore}%</div>
-                      <div className="text-xs text-gray-600">Average Score</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-500">{userStats.currentStreak}</div>
-                      <div className="text-xs text-gray-600">Current Streak</div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <Book className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">
-                    Take your first quiz to see your progress!
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Progress Overview - Live data synced across all pages */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-green-500" />
+            Your Progress
+          </h3>
+          <UserProgressStats />
         </div>
 
       </div>
