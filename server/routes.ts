@@ -1419,6 +1419,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Found existing termly quizzes for term:', quizzesWithQuestions.length);
       }
 
+      // For random-topical quizzes, randomly select a topic and get questions from it
+      else if (quizType === 'random-topical') {
+        // Get all topics for this subject and level
+        const availableTopics = await db
+          .select()
+          .from(topics)
+          .where(and(
+            eq(topics.subjectId, subjectId),
+            eq(topics.levelId, profile.levelId)
+          ));
+        
+        if (availableTopics.length > 0) {
+          // Randomly select a topic
+          const randomTopic = availableTopics[Math.floor(Math.random() * availableTopics.length)];
+          console.log('Random topic selected:', randomTopic.title);
+          
+          // Filter for topical quizzes with this random topic
+          quizzesWithQuestions = quizzesWithQuestions.filter(quiz => 
+            quiz.quizType === 'topical' && quiz.topicId === randomTopic.id
+          );
+          console.log('Found quizzes for random topic:', quizzesWithQuestions.length);
+        } else {
+          console.log('No topics found for random-topical quiz');
+        }
+      }
+
+      // For random-termly quizzes, randomly select a term and get questions from it
+      else if (quizType === 'random-termly') {
+        // Get all terms for this examination system
+        const availableTerms = await db
+          .select()
+          .from(terms)
+          .where(eq(terms.examinationSystemId, profile.examinationSystemId));
+        
+        if (availableTerms.length > 0) {
+          // Randomly select a term
+          const randomTerm = availableTerms[Math.floor(Math.random() * availableTerms.length)];
+          console.log('Random term selected:', randomTerm.title);
+          
+          // Filter for termly quizzes with this random term
+          quizzesWithQuestions = quizzesWithQuestions.filter(quiz => 
+            quiz.quizType === 'termly' && quiz.termId === randomTerm.id
+          );
+          console.log('Found quizzes for random term:', quizzesWithQuestions.length);
+        } else {
+          console.log('No terms found for random-termly quiz');
+        }
+      }
+
       console.log('Final filtered quizzes with questions:', quizzesWithQuestions.length);
 
       // If we have admin quizzes with questions, use them

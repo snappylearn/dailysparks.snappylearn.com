@@ -80,6 +80,7 @@ export default function Quiz() {
   const [selectedTermName, setSelectedTermName] = useState<string>("");
   const [showTopicModal, setShowTopicModal] = useState(false);
   const [showTermModal, setShowTermModal] = useState(false);
+  const [showRandomModal, setShowRandomModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   
   // Quiz session states
@@ -624,15 +625,7 @@ export default function Quiz() {
               <Button
                 onClick={() => {
                   setSelectedQuizType('random');
-                  // Start random quiz immediately
-                  if (subjectId && currentProfile) {
-                    const data = {
-                      quizType: 'random',
-                      subjectId,
-                      profileId: currentProfile.id
-                    };
-                    startQuizMutation.mutate(data);
-                  }
+                  setShowRandomModal(true);
                 }}
                 className="w-full"
                 data-testid="button-select-random"
@@ -722,6 +715,74 @@ export default function Quiz() {
         </div>
 
       </div>
+
+      {/* Random Quiz Type Selection Modal */}
+      <Dialog open={showRandomModal} onOpenChange={setShowRandomModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shuffle className="h-5 w-5 text-orange-500" />
+              Random Quiz
+            </DialogTitle>
+            <DialogDescription>
+              Choose the type of random quiz you'd like to take
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-4">
+            {/* Random Topical Quiz */}
+            <Button
+              onClick={() => {
+                setShowRandomModal(false);
+                if (subjectId && currentProfile) {
+                  const data = {
+                    quizType: 'random-topical',
+                    subjectId,
+                    profileId: currentProfile.id
+                  };
+                  startQuizMutation.mutate(data);
+                }
+              }}
+              className="w-full h-auto py-4 flex flex-col items-start gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+              disabled={startQuizMutation.isPending}
+              data-testid="button-random-topical"
+            >
+              <div className="flex items-center gap-2 w-full">
+                <Target className="h-5 w-5" />
+                <span className="font-semibold">Random Topical Quiz</span>
+              </div>
+              <span className="text-sm text-white/90 text-left">
+                Random questions from a randomly selected topic
+              </span>
+            </Button>
+
+            {/* Random Termly Quiz */}
+            <Button
+              onClick={() => {
+                setShowRandomModal(false);
+                if (subjectId && currentProfile) {
+                  const data = {
+                    quizType: 'random-termly',
+                    subjectId,
+                    profileId: currentProfile.id
+                  };
+                  startQuizMutation.mutate(data);
+                }
+              }}
+              className="w-full h-auto py-4 flex flex-col items-start gap-2 bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600"
+              disabled={startQuizMutation.isPending}
+              data-testid="button-random-termly"
+            >
+              <div className="flex items-center gap-2 w-full">
+                <Calendar className="h-5 w-5" />
+                <span className="font-semibold">Random Termly Quiz</span>
+              </div>
+              <span className="text-sm text-white/90 text-left">
+                Random questions from a randomly selected term
+              </span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Topic Selection Modal */}
       <Dialog open={showTopicModal} onOpenChange={setShowTopicModal}>
