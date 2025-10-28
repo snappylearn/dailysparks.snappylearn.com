@@ -150,9 +150,9 @@ export default function Challenges() {
                 const wasCompletedToday = completedAt && 
                   new Date(completedAt).toDateString() === new Date().toDateString();
                 
-                // Calculate progress percentage based on challenge requirement
-                const requirement = challenge.sparks || 100; // Default to 100 if not set
-                const progressPercentage = Math.min((progress / requirement) * 100, 100);
+                // Calculate progress percentage based on challenge target
+                const targetValue = challenge.targetValue || 100; // Default to 100 if not set
+                const progressPercentage = Math.min((progress / targetValue) * 100, 100);
 
                 return (
                   <div 
@@ -189,7 +189,7 @@ export default function Challenges() {
                           <div className="mb-3">
                             <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
                               <span>Progress (Auto-Tracked)</span>
-                              <span className="font-medium">{progress} / {requirement} sparks earned</span>
+                              <span className="font-medium">{progress} / {targetValue} sparks earned</span>
                             </div>
                             <Progress value={progressPercentage} className="h-2" />
                           </div>
