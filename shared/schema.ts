@@ -253,6 +253,7 @@ export const topics = pgTable("topics", {
   title: varchar("title").notNull(),
   description: text("description"),
   summaryContent: text("summary_content"),
+  insightsContent: text("insights_content"), // AI-generated insights based on notes
   order: integer("order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });

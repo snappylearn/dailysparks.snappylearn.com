@@ -1113,6 +1113,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate insights for a topic
+  app.post('/api/admin/topics/:topicId/generate-insights', isAdminAuthenticated, async (req: any, res) => {
+    try {
+      const { topicId } = req.params;
+      
+      // Get topic details
+      const topic = await storage.getTopicById(topicId);
+      if (!topic) {
+        return res.status(404).json({ message: "Topic not found" });
+      }
+
+      // Import AI service
+      const { generateTopicInsights } = await import('./aiService');
+      
+      // Generate insights based on the topic content
+      const insights = await generateTopicInsights({
+        subject: topic.subject || 'Unknown Subject',
+        level: topic.level || 'Unknown Level',
+        topicTitle: topic.title,
+        topicDescription: topic.description,
+        termTitle: topic.term,
+        content: topic.summaryContent || topic.content
+      });
+
+      // Update topic with generated insights
+      await storage.updateTopic(topicId, { insightsContent: insights });
+
+      res.json({ insights });
+    } catch (error) {
+      console.error("Error generating topic insights:", error);
+      res.status(500).json({ message: "Failed to generate insights" });
+    }
+  });
+
+  // Get questions by topic ID
+  app.get('/api/questions/topic/:topicId', async (req: any, res) => {
+    try {
+      const { topicId } = req.params;
+      
+      // Get questions for this topic
+      const questions = await storage.getQuestionsByTopic(topicId, 50);
+      
+      res.json(questions);
+    } catch (error) {
+      console.error("Error fetching questions by topic:", error);
+      res.status(500).json({ message: "Failed to fetch questions" });
+    }
+  });
+
   // Admin user management routes
   app.get('/api/admin/users', isAdminAuthenticated, async (req: any, res) => {
     try {
@@ -1656,6 +1705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: topic.title,
           description: topic.description,
           content: content,
+          insights: topic.insightsContent,
           subject: topic.subject,
           level: topic.level,
           term: topic.term
@@ -1667,6 +1717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: topic.title,
           description: topic.description,
           content: topic.summaryContent,
+          insights: topic.insightsContent,
           subject: topic.subject,
           level: topic.level,
           term: topic.term
