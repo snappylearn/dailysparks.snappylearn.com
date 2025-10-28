@@ -1414,6 +1414,7 @@ export class DatabaseStorage implements IStorage {
         questionCount: quizzes.totalQuestions,
         timeLimit: quizzes.timeLimit,
         createdAt: quizzes.createdAt,
+        isVerified: quizzes.isVerified,
         subjectName: subjects.name,
         levelTitle: levels.title,
         examinationSystemName: examinationSystems.name,
@@ -1457,6 +1458,7 @@ export class DatabaseStorage implements IStorage {
           sessions: sessionCount?.count || 0,
           users: sessionCount?.count || 0,
           created: quiz.createdAt,
+          isVerified: quiz.isVerified ?? false,
           actions: 'View | Edit | Delete'
         };
       })
