@@ -176,16 +176,22 @@ export default function Home() {
         </div>
 
         {/* Welcome Message */}
-        <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+        <Card className="bg-gradient-to-r from-orange-500 to-yellow-400 text-white border-0">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Flame className="h-5 w-5" />
-              <span>Welcome to Daily Sparks!</span>
+              <span>
+                {!userStats || userStats.totalQuizzes === 0 
+                  ? "Welcome to Daily Sparks!" 
+                  : `Welcome back${user?.firstName ? `, ${user.firstName}` : ''}!`}
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-purple-100">
-              Your profile-based learning platform is now ready. Start taking quizzes to earn sparks and build your learning streaks!
+            <p className="text-orange-50">
+              {!userStats || userStats.totalQuizzes === 0 
+                ? "Your profile-based learning platform is now ready. Start taking quizzes to earn sparks and build your learning streaks!"
+                : `Great to see you again! You're on a ${userStats.currentStreak}-day streak. Keep it going by taking another quiz today!`}
             </p>
           </CardContent>
         </Card>
