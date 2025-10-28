@@ -85,22 +85,17 @@ export default function Home() {
         {/* Welcome Banner - At the top */}
         <Card className="bg-gradient-to-r from-orange-500 to-yellow-400 text-white border-0" data-testid="banner-welcome">
           <CardContent className="p-6">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                <Flame className="h-6 w-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-white mb-2" data-testid="text-banner-title">
-                  {isNewStudent 
-                    ? "🔥 Welcome to Daily Sparks!" 
-                    : `Welcome back${user?.firstName ? `, ${user.firstName}` : ''}!`}
-                </h2>
-                <p className="text-white/95 leading-relaxed" data-testid="text-banner-message">
-                  {isNewStudent 
-                    ? "Your profile-based learning platform is now ready. Start taking quizzes to earn sparks and build your learning streaks!"
-                    : `Great to see you again! You're on a ${userStats?.currentStreak || 0}-day streak. Keep it going by taking another quiz today!`}
-                </p>
-              </div>
+            <div>
+              <h2 className="text-xl font-bold text-white mb-2" data-testid="text-banner-title">
+                {isNewStudent 
+                  ? "🔥 Welcome to Daily Sparks!" 
+                  : `Welcome back${user?.firstName ? `, ${user.firstName}` : ''}!`}
+              </h2>
+              <p className="text-white/95 leading-relaxed" data-testid="text-banner-message">
+                {isNewStudent 
+                  ? "Your profile-based learning platform is now ready. Start taking quizzes to earn sparks and build your learning streaks!"
+                  : `Great to see you again! You're on a ${userStats?.currentStreak || 0}-day streak. Keep it going by taking another quiz today!`}
+              </p>
             </div>
           </CardContent>
         </Card>
