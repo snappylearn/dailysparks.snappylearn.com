@@ -733,13 +733,13 @@ export default function Quiz() {
             <Button
               onClick={() => {
                 setShowRandomModal(false);
+                setSelectedQuizType('random-topical');
                 if (subjectId && currentProfile) {
-                  const data = {
+                  startQuizMutation.mutate({
                     quizType: 'random-topical',
                     subjectId,
                     profileId: currentProfile.id
-                  };
-                  startQuizMutation.mutate(data);
+                  });
                 }
               }}
               className="w-full h-auto py-4 flex flex-col items-start gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
@@ -759,13 +759,13 @@ export default function Quiz() {
             <Button
               onClick={() => {
                 setShowRandomModal(false);
+                setSelectedQuizType('random-termly');
                 if (subjectId && currentProfile) {
-                  const data = {
+                  startQuizMutation.mutate({
                     quizType: 'random-termly',
                     subjectId,
                     profileId: currentProfile.id
-                  };
-                  startQuizMutation.mutate(data);
+                  });
                 }
               }}
               className="w-full h-auto py-4 flex flex-col items-start gap-2 bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-600 hover:to-violet-600"
