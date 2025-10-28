@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { MainLayout } from "@/components/MainLayout";
 import { Crown, Medal, Trophy, Zap, Flame, Target, User, Award, Star } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface LeaderboardEntry {
   rank: number;
@@ -20,6 +21,7 @@ interface LeaderboardEntry {
 }
 
 export default function Leaderboard() {
+  const { user } = useAuth();
   const [filterType, setFilterType] = useState<'overall' | 'today'>('today');
   
   const { data: leaderboard = [], isLoading } = useQuery<LeaderboardEntry[]>({
@@ -27,7 +29,7 @@ export default function Leaderboard() {
     queryFn: () => fetch(`/api/leaderboard/${filterType}`).then(res => res.json()),
   });
 
-  // Fetch badges and trophies
+  // Fetch badges and trophies with badgeType information
   const { data: badges = [] } = useQuery({
     queryKey: ['/api/badges'],
     queryFn: () => fetch('/api/badges').then(res => res.json()),
@@ -37,6 +39,67 @@ export default function Leaderboard() {
     queryKey: ['/api/trophies'],
     queryFn: () => fetch('/api/trophies').then(res => res.json()),
   });
+
+  // Fetch user's earned badges and trophies
+  const { data: userBadges = [] } = useQuery<any[]>({
+    queryKey: ['/api/user', user?.id, 'badges'],
+    queryFn: () => fetch(`/api/user/${user?.id}/badges`).then(res => res.json()),
+    enabled: !!user?.id,
+  });
+
+  const { data: userTrophies = [] } = useQuery<any[]>({
+    queryKey: ['/api/user', user?.id, 'trophies'],
+    queryFn: () => fetch(`/api/user/${user?.id}/trophies`).then(res => res.json()),
+    enabled: !!user?.id,
+  });
+
+  // Helper function to check if badge is earned in current period
+  const isBadgeEarnedInPeriod = (userBadge: any, badgeTypeTitle: string) => {
+    if (!userBadge || !userBadge.lastEarnedAt) return false;
+    
+    const lastEarned = new Date(userBadge.lastEarnedAt);
+    const now = new Date();
+    
+    // For Daily badges - check if earned today
+    if (badgeTypeTitle.toLowerCase().includes('daily')) {
+      return lastEarned.toDateString() === now.toDateString();
+    }
+    
+    // For Weekly badges - check if earned this week
+    if (badgeTypeTitle.toLowerCase().includes('weekly')) {
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      return lastEarned >= startOfWeek;
+    }
+    
+    // For Monthly badges - check if earned this month
+    if (badgeTypeTitle.toLowerCase().includes('monthly')) {
+      return lastEarned.getMonth() === now.getMonth() && 
+             lastEarned.getFullYear() === now.getFullYear();
+    }
+    
+    // For all other badges - once earned, always shown
+    return true;
+  };
+
+  // Create maps for badge status
+  const userBadgeRecords = new Map(userBadges.map(ub => [ub.badgeId, ub]));
+  const earnedBadgeIds = new Set(
+    badges
+      .filter((badge: any) => {
+        const userBadge = userBadgeRecords.get(badge.id);
+        if (!userBadge) return false;
+        const badgeTypeTitle = badge.badgeType?.title || '';
+        return isBadgeEarnedInPeriod(userBadge, badgeTypeTitle);
+      })
+      .map((badge: any) => badge.id)
+  );
+  const userBadgeMap = new Map(userBadges.map(ub => [ub.badgeId, ub.count || 1]));
+
+  // Create maps for trophy status
+  const earnedTrophyIds = new Set(userTrophies.map((ut: any) => ut.trophyId));
+  const userTrophyMap = new Map(userTrophies.map((ut: any) => [ut.trophyId, ut.count || 1]));
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -310,7 +373,37 @@ export default function Leaderboard() {
           ))}
         </div>
 
-        {leaderboard.length === 0 && (
+        {leaderboard.length === 0 && filterType === 'today' && (
+          <Card className="border-2 border-dashed border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardContent className="p-12 text-center">
+              <div className="mb-4">
+                <Star className="h-20 w-20 text-blue-400 mx-auto mb-3 animate-pulse" />
+              </div>
+              <h3 className="text-2xl font-bold text-blue-900 mb-3">
+                🎉 You're the First! 🎉
+              </h3>
+              <p className="text-lg text-blue-700 mb-2">
+                Congratulations! No one has taken a quiz today yet.
+              </p>
+              <p className="text-blue-600 mb-6">
+                Be the trailblazer and set the pace for everyone else!
+              </p>
+              <Button 
+                onClick={() => window.location.href = '/home'}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg"
+                data-testid="button-take-first-quiz"
+              >
+                <Trophy className="h-5 w-5 mr-2" />
+                Take a Quiz Now
+              </Button>
+              <p className="text-sm text-blue-500 mt-4">
+                Claim your spot at the top of today's leaderboard! 🚀
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {leaderboard.length === 0 && filterType === 'overall' && (
           <Card>
             <CardContent className="p-12 text-center">
               <Trophy className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -331,20 +424,49 @@ export default function Leaderboard() {
                   <h4 className="font-medium text-gray-900">Available Badges</h4>
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-2">
-                  {badges.map((badge: any) => (
-                    <div key={badge.id} className="flex-shrink-0 bg-white rounded-lg border p-3 text-center min-w-[100px]">
-                      <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-1">
-                        <span className="text-lg">{badge.icon || '🏆'}</span>
-                      </div>
-                      <h5 className="font-medium text-xs text-gray-900 mb-1">{badge.title}</h5>
-                      {badge.sparks && (
-                        <div className="flex items-center justify-center gap-1">
-                          <Zap className="h-3 w-3 text-orange-500" />
-                          <span className="text-xs font-medium text-orange-600">{badge.sparks}</span>
+                  {badges.map((badge: any) => {
+                    const isEarned = earnedBadgeIds.has(badge.id);
+                    const earnedCount = userBadgeMap.get(badge.id) || 0;
+                    
+                    return (
+                      <div 
+                        key={badge.id} 
+                        className={`flex-shrink-0 rounded-lg border p-3 text-center min-w-[120px] transition-all ${
+                          isEarned 
+                            ? 'bg-yellow-50 border-yellow-200 shadow-sm' 
+                            : 'bg-white border-gray-200 opacity-60'
+                        }`}
+                      >
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-1 relative ${
+                          isEarned ? 'bg-yellow-100' : 'bg-gray-100'
+                        }`}>
+                          <span className="text-xl">{badge.icon || '🏆'}</span>
+                          {earnedCount > 1 && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold">
+                              {earnedCount}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        <h5 className={`font-medium text-xs mb-1 ${isEarned ? 'text-yellow-900' : 'text-gray-600'}`}>
+                          {badge.title}
+                        </h5>
+                        {isEarned && (
+                          <div className="text-[10px] text-yellow-600 mb-1">
+                            {badge.badgeType?.title?.toLowerCase().includes('daily') ? '✓ Today' :
+                             badge.badgeType?.title?.toLowerCase().includes('weekly') ? '✓ This Week' :
+                             badge.badgeType?.title?.toLowerCase().includes('monthly') ? '✓ This Month' :
+                             '✓ Earned'}
+                          </div>
+                        )}
+                        {badge.sparks && (
+                          <div className="flex items-center justify-center gap-1">
+                            <Zap className="h-3 w-3 text-orange-500" />
+                            <span className="text-xs font-medium text-orange-600">{badge.sparks}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -357,14 +479,38 @@ export default function Leaderboard() {
                   <h4 className="font-medium text-gray-900">Achievement Trophies</h4>
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-2">
-                  {trophies.map((trophy: any) => (
-                    <div key={trophy.id} className="flex-shrink-0 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg border border-amber-200 p-3 text-center min-w-[100px]">
-                      <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-1">
-                        <span className="text-lg">{trophy.icon || '🏆'}</span>
+                  {trophies.map((trophy: any) => {
+                    const isEarned = earnedTrophyIds.has(trophy.id);
+                    const earnedCount = userTrophyMap.get(trophy.id) || 0;
+                    
+                    return (
+                      <div 
+                        key={trophy.id} 
+                        className={`flex-shrink-0 rounded-lg border p-3 text-center min-w-[100px] transition-all ${
+                          isEarned
+                            ? 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-300 shadow-sm'
+                            : 'bg-white border-gray-200 opacity-60'
+                        }`}
+                      >
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-1 relative ${
+                          isEarned ? 'bg-amber-100' : 'bg-gray-100'
+                        }`}>
+                          <span className="text-xl">{trophy.icon || '🏆'}</span>
+                          {earnedCount > 1 && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-600 text-white text-[9px] rounded-full flex items-center justify-center font-bold">
+                              {earnedCount}
+                            </div>
+                          )}
+                        </div>
+                        <h5 className={`font-medium text-xs ${isEarned ? 'text-amber-900' : 'text-gray-600'}`}>
+                          {trophy.title}
+                        </h5>
+                        {isEarned && (
+                          <div className="text-[10px] text-amber-600 mt-1">✓ Earned</div>
+                        )}
                       </div>
-                      <h5 className="font-medium text-xs text-amber-900">{trophy.title}</h5>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
