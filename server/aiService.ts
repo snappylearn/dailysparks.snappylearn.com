@@ -58,9 +58,14 @@ Return valid JSON array with the exact structure specified.`;
 
 const CONTENT_SYSTEM_PROMPT = `You are an expert educator and content creator for the Kenyan education system. 
 
-Generate comprehensive, well-structured educational notes in markdown format that:
-1. Follow Kenyan curriculum standards (KCSE/IGCSE/A-Level)
-2. Are appropriate for the specified form level
+Generate comprehensive, well-structured educational notes ONLY for the SPECIFIC topic requested. DO NOT include:
+- Table of contents for the entire subject or course
+- Lists of other topics in the subject
+- General subject overview
+
+Instead, focus ONLY on the requested topic and:
+1. Follow Kenyan curriculum standards (KCSE/IGCSE/KPSEA)
+2. Are appropriate for the specified form/year/grade level
 3. Include clear explanations, examples, and practical applications
 4. Use proper markdown formatting (headers, lists, emphasis, etc.)
 5. Include relevant Kenyan context and examples where appropriate
@@ -72,13 +77,15 @@ Generate comprehensive, well-structured educational notes in markdown format tha
 
 The content should be:
 - Detailed but accessible for the student level
-- Well-organized with clear sections and subsections
-- Include key concepts, definitions, and examples
-- Provide practical applications and real-world connections
+- Well-organized with clear sections and subsections specific to THIS topic only
+- Include key concepts, definitions, and examples for THIS topic
+- Provide practical applications and real-world connections for THIS topic
 - Use proper markdown syntax for formatting
 - Format all mathematical expressions with LaTeX delimiters
+- Start with the topic title as the main heading (# Topic Title)
+- Then dive directly into the content for this specific topic
 
-Return only the markdown content, no additional formatting or explanations.`;
+Return only the markdown content for this specific topic, no additional formatting or explanations.`;
 
 export async function generateTopicContent(params: TopicContentParams): Promise<string> {
   const { subject, level, topicTitle, topicDescription, termTitle } = params;
@@ -86,37 +93,55 @@ export async function generateTopicContent(params: TopicContentParams): Promise<
   const contextInfo = termTitle ? `${termTitle} term content` : 'general syllabus content';
   const descriptionInfo = topicDescription ? `\nTopic Description: ${topicDescription}` : '';
 
-  const userPrompt = `Generate comprehensive educational notes in markdown format for:
+  const userPrompt = `Generate comprehensive educational notes in markdown format ONLY for this specific topic:
 
 Subject: ${subject}
 Level: ${level}
 Topic: ${topicTitle}${descriptionInfo}
 Context: ${contextInfo}
 
-Create detailed, well-structured notes that cover all key concepts, provide clear explanations, include relevant examples, and follow proper markdown formatting. The content should be suitable for ${level} students studying ${subject}.`;
+IMPORTANT: Generate notes ONLY for "${topicTitle}". Do NOT include:
+- A table of contents for the entire ${subject} subject
+- Lists of other topics or chapters
+- General subject overview
 
-  try {
-    console.log('Generating topic content with OpenAI...');
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: CONTENT_SYSTEM_PROMPT },
-        { role: "user", content: userPrompt }
-      ],
-      max_tokens: 3000,
-      temperature: 0.7,
-    });
+Instead:
+- Start with "# ${topicTitle}" as the main heading
+- Dive directly into explaining this specific topic
+- Cover all key concepts for THIS topic only
+- Provide clear explanations and relevant examples for THIS topic
+- Include practical applications specific to THIS topic
+- Follow proper markdown formatting with LaTeX for math expressions
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No content received from OpenAI');
+The content should be detailed, well-structured, and suitable for ${level} students studying ${subject}.`;
+
+  // Try Gemini first
+  if (gemini) {
+    try {
+      console.log('Generating topic content with Gemini...');
+      const response = await gemini.models.generateContent({
+        model: 'gemini-2.0-flash-exp',
+        config: {
+          systemInstruction: CONTENT_SYSTEM_PROMPT,
+          temperature: 0.7,
+          maxOutputTokens: 4096,
+        },
+        contents: userPrompt
+      });
+
+      const content = response.text;
+      if (!content) {
+        throw new Error('No content received from Gemini');
+      }
+
+      console.log('Successfully generated topic content with Gemini');
+      return content.trim();
+    } catch (error) {
+      console.error('Error generating topic content with Gemini:', error);
+      throw new Error('Failed to generate topic content with Gemini');
     }
-
-    console.log('Successfully generated topic content');
-    return content.trim();
-  } catch (error) {
-    console.error('Error generating topic content:', error);
-    throw new Error('Failed to generate topic content');
+  } else {
+    throw new Error('Gemini API key not configured');
   }
 }
 
@@ -150,44 +175,50 @@ export async function generateTopicInsights(params: TopicInsightsParams): Promis
   const descriptionInfo = topicDescription ? `\nTopic Description: ${topicDescription}` : '';
   const contentInfo = content ? `\n\nExisting Notes:\n${content.substring(0, 1500)}` : '';
 
-  const userPrompt = `Generate insightful learning materials and key takeaways for:
+  const userPrompt = `Generate insightful learning materials and key takeaways ONLY for this specific topic:
 
 Subject: ${subject}
 Level: ${level}
 Topic: ${topicTitle}${descriptionInfo}
 Context: ${contextInfo}${contentInfo}
 
-Create insights that go beyond basic facts. Help students understand:
-1. WHY this topic is important
-2. HOW it connects to real-world applications
-3. Common misconceptions and how to avoid them
-4. Connections to other concepts in ${subject}
-5. Study tips and key points to remember
+Create insights that go beyond basic facts for THIS SPECIFIC TOPIC ONLY. Help students understand:
+1. WHY "${topicTitle}" is important
+2. HOW "${topicTitle}" connects to real-world applications (especially in Kenya)
+3. Common misconceptions about "${topicTitle}" and how to avoid them
+4. How "${topicTitle}" connects to other concepts in ${subject}
+5. Study tips and key points to remember for "${topicTitle}"
+6. KCSE/IGCSE/KPSEA exam focus areas for this topic
 
-Format the insights in clear, engaging markdown suitable for ${level} students.`;
+Format the insights in clear, engaging markdown suitable for ${level} students. Use Kenyan context and examples.`;
 
-  try {
-    console.log('Generating topic insights with OpenAI...');
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: INSIGHTS_SYSTEM_PROMPT },
-        { role: "user", content: userPrompt }
-      ],
-      max_tokens: 2000,
-      temperature: 0.8,
-    });
+  // Try Gemini first
+  if (gemini) {
+    try {
+      console.log('Generating topic insights with Gemini...');
+      const response = await gemini.models.generateContent({
+        model: 'gemini-2.0-flash-exp',
+        config: {
+          systemInstruction: INSIGHTS_SYSTEM_PROMPT,
+          temperature: 0.8,
+          maxOutputTokens: 3000,
+        },
+        contents: userPrompt
+      });
 
-    const insights = completion.choices[0]?.message?.content;
-    if (!insights) {
-      throw new Error('No insights received from OpenAI');
+      const insights = response.text;
+      if (!insights) {
+        throw new Error('No insights received from Gemini');
+      }
+
+      console.log('Successfully generated topic insights with Gemini');
+      return insights.trim();
+    } catch (error) {
+      console.error('Error generating topic insights with Gemini:', error);
+      throw new Error('Failed to generate topic insights with Gemini');
     }
-
-    console.log('Successfully generated topic insights');
-    return insights.trim();
-  } catch (error) {
-    console.error('Error generating topic insights:', error);
-    throw new Error('Failed to generate topic insights');
+  } else {
+    throw new Error('Gemini API key not configured');
   }
 }
 
